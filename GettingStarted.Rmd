@@ -1,0 +1,893 @@
+---
+title: "Getting Started with R, RStudio, & R Markdown for ENVH 556"
+author: "Lianne Sheppard"
+date: "Created for Winter 2019; printed `r format(Sys.time(), '%d %B, %Y')`"
+output:
+  pdf_document:
+    toc: true
+    toc_depth: 3
+    number_sections: true
+urlcolor: blue
+---
+
+<!--
+TODO:  revise and reorganize to make as a useful reference document and then 
+create an abridged version as a tutorial.  Rethink the organization as needed.
+
+TODO:  my test of reformatting code (Ctrl-Shift-A) doesn't seem to be working 
+in this document.  It says it is only valid for R code chunks, which is where 
+I'm trying to use it! 
+NOTE: Works for me in Plasmid with code within chunks in this document. (BKH)
+
+TODO: Talk about latest versions/eras of packages
+
+TODO:  Add in principles of clearing the environment
+
+TODO:  Show an example with getwd/setwd and ".."
+
+TODO:  Add in commands to find namespace conflicts
+
+TODO:  Add a section on code readability principles with a link to the style 
+document?  And advice to check the global options first?
+-->
+
+
+```{r setup, eval=TRUE, include=FALSE}
+# ---------setup------
+
+# Set knitr options
+
+# Default .Rmd options
+#knitr::opts_chunk$set(echo = TRUE)
+
+# Some useful knitr options:
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, tidy=TRUE, 
+  tidy.opts=list(width.cutoff=80, blank=FALSE), cache=TRUE, messages=FALSE)
+
+# Set R option:  here we show only 2 digits when displaying
+options(digits = 2)
+
+# Clear workspace of all objects and unload all extra (non-base) packages
+rm(list = ls(all = TRUE))
+if (!is.null(sessionInfo()$otherPkgs)) {
+    res <- suppressWarnings(
+        lapply(paste('package:', names(sessionInfo()$otherPkgs), sep=""),
+               detach, character.only=TRUE, unload=TRUE, force=TRUE))
+}
+
+# load key packages using pacman (see below for explanation)
+my_repo <- 'http://cran.r-project.org'
+if (!require("pacman")) {install.packages("pacman", repos = my_repo)}
+
+# Load the other packages, installing as needed
+# Key principle:  Only load the packages you will need
+pacman::p_load(knitr, readr, dplyr, ggplot2, formatR)
+
+```
+
+# Part I
+
+## Why R Markdown and reproducible reports?
+
+All good data analysis should be reproducible.  Markdown is a popular variant 
+of the syntax often used in Wikis, such as Wikipedia.  R Markdown is an 
+exension of Markdown to support the execution and rendering of R code within 
+the document.  It integrates easily with R to allow you to produce reproducible 
+reports.  We will use these tools and reproducible research practices to support 
+your development in this course.  
+
+### Credit
+
+This document was modified and expanded from one created by Emily Voldal in fall 
+2018.  It also incorporates input from Brian High.
+
+**The .html (output) and .Rmd (source) documents are optimally used side-by-side 
+so that you can see both the code and its result.  Before you knit this 
+yourself, you will need to install the packages `rmarkdown` and `knitr`.**
+
+### What is Markdown, and why bother?
+
+Just like an R script is better than typing code in the console, using R 
+Markdown is better than using an R script.  R Markdown documents allow you to 
+save your code, the output that corresponds to your code, and a record of how 
+each calculation and figure was created.  Not only will this help you with the 
+homework for this class, it's good practice for doing reproducible research. 
+
+Although a .Rmd document looks a lot different from an R script, the basics of 
+R Markdown are straightforward compared to the rest of R.  After you become 
+familiar with the tricks of R Markdown, you may find it easier and faster to 
+use than an R script.
+
+## Getting started
+
+### Log onto plasmid and open RStudio
+
+In ENVH 556 we will ensure that all applications and labs work on plasmid, the 
+DEOHS virtual Linux machine.  While you are welcome to do your work locally on 
+your laptop, we will not strive to support any applications other than those 
+that run on plasmid.  It runs runs [RStudio Server](https://www.rstudio.com/), 
+which allows you to use R on this server through your [web browser](https://plasmid.deohs.washington.edu/).
+
+To gain access, try connecting to plasmid [(plasmid connection instructions)](https://portal.deohs.washington.edu/node/1111) through your [web browser](https://plasmid.deohs.washington.edu/), through an 
+[X2Go session](https://portal.deohs.washington.edu/sites/default/files/plasmid_x2go_session_profile.png), 
+or through an SSH terminal program (such as [PuTTy](http://www.putty.org/)).
+
+
+### To work locally instead, install the applications on your computer
+
+You will need the most recent version of RStudio and R.  An easy way to do this 
+is to follow directions on a tutorial program (Swirl) which begins by walking 
+you through the process of downloading R and RStudio.  Here is the link to the 
+Swirl tutorial:  <https://swirlstats.com/students.html>.  If you need to become 
+familiar with R and RStudio, try the first few lessons of the 'Basics of R 
+Programming' series you will find within Swirl.
+
+### Become familiar with R Markdown
+
+The first thing you should do is install the `rmarkdown` package.  For this 
+document, you will also need to install `knitr`.  If, at any point during this 
+process, R tells you that you need to install other packages, do so.
+
+To open a new R Markdown document (.Rmd), select 'File', 'New File', 
+'R Markdown'.  You will see a window asking you for some information about your 
+document; R will use this information to fill in some code in the .Rmd file, 
+which you can change at any time.  For now, leave the default HTML setting and 
+fill in whatever you want for the title and author.  Save this file, just like 
+you would save an R script.
+
+This is an R Markdown document. The following text is the beginning explanation 
+in the text that is included in every new R Markdown documents you open:
+
+> Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word 
+> documents. For more details on using R Markdown see 
+> <https://rmarkdown.rstudio.com>. 
+
+> When you click the **Knit** button a document will be generated that includes 
+> both content as well as the output of any embedded R code chunks within the 
+> document. 
+
+Every time you open a new .Rmd file, you will see this example.  To turn this 
+code into a nice document, press the 'knit' button at the top of the panel.  A 
+window will pop up with the knitted document.  Once you are done admiring a 
+knitted document, always close it - if you leave it open and try to knit it 
+again, it will not update.  Every time you knit a document, in addition to 
+showing you the preview in R, it will save the knitted document in the same 
+location as the .Rmd file.
+
+You can run code line-by-line from the .Rmd document as you build it.  However, 
+one key to success when using R Markdown is to knit often!  If you type many 
+lines of code without knitting and then discover that there is an error, it can 
+be difficult to locate the source of the error.
+
+There are also good resources right inside RStudio.  For instance, if you click 
+on the Help, you will find a R Markdown Quick Reference.  The Cheat Sheets 
+section also has a R Markdown Cheat Sheet and a R Markdown Reference Guide.
+
+
+## Anatomy of a .Rmd file
+
+### YAML header
+
+The header is enclosed by dashes and is always at the top of the .Rmd file. By 
+default, it will include a title, author, date, and what type of file the .Rmd 
+will knit to.  You can change the text of the title, author, and date here any 
+time.  These will show up at the  top of your knitted document.  You can also 
+change the file type at any time.  For example, if I write `word_document` 
+instead of `html_document`, I will get a Word file.  However, be aware that 
+some commands are specific to certain document types, or just show up 
+differently.  It appears that `html_document` is the most flexible and least 
+fussy type of output.  
+
+Whenever you open a new .Rmd file and see the example, leave the header and 
+delete the rest of the example below the last `---`.  
+
+### Text
+
+To put plain text into an R Markdown document, you don't need anything special! 
+Text that is black in the .Rmd document is plain text in the knitted document. 
+Blue text in the .Rmd indicates that it has been formatted in some way by using 
+special characters (for example, the knitted text may be bold).
+
+### Chunks
+
+Interspersed in the text are lines of code; these may have a shaded  background 
+in your .Rmd file; these are called 'chunks'.  The position of each chunk 
+determines where its output ends up in the knitted document.  We can control 
+what the code and output of each  chunk look like by changing 'chunk options'.  
+If we removed all the text from a .Rmd, the chunks would make up the complete 
+R script for that analysis.
+
+See section 5 for more information on chunks.
+
+## Text-related tools
+
+There are some things that you might be used to in other text processors (like 
+Word) which aren't easy to do in R Markdown.  For example, you'll note that I 
+don't indent my paragraphs; that's because it's too much work to do in R 
+Markdown.  When formatting assignments for this class, you should not spend 
+much time making your text 'pretty', but your answers should be well-organized. 
+This section will cover some (easy) things to do in R Markdown to organize and 
+manipulate text.
+
+To make a new paragraph in your knitted document, please hit 'enter' twice.  
+If you only hit 'enter' once, it can be difficult to distinguish paragraphs 
+because there is no change in line spacing and no paragraph indent.  You can 
+make font **bold**, or *italicized*.  You can make numbered lists (see the 
+Table of Contents), or bulleted lists:
+
+* Note the space between the asterisk and the text.
+
+* This is one of the few cases where R cares about a space.
+
+You can organize your content using headings, which are indicated by `# ` (see 
+my section headings).  The more pound symbols, the smaller the heading:
+
+## Subtitle (level 2)  
+### Sub-subtitle (level 3)  
+#### Sub-sub-subtitle (level 4)  
+
+The easy page breaks in R Markdown use `\newpage`.  You can also separate 
+content using a string of asterisks.  This creates a dividing line in the 
+output as you see below.
+
+****************
+
+Finally, you can put comments in your .Rmd file that won't be visible in your 
+ouptput.  For example, this text doesn't appear in the rendered document: (it 
+appears twice in the .Rmd file; the second one is not enclosed in back quotes 
+to make it visible.)
+`<!-- This is a text comment and won't appear in the output -->`
+
+<!-- This is a text comment and won't appear in the output -->
+
+## Chunks
+
+You can think of each chunk as a miniature R script.  Within a Markdown 
+document, your code all needs to be in order (you can't print a plot after your 
+first paragraph if you don't load the data set until paragraph three).  You 
+also can't use *anything* outside the Markdown document; you need to call 
+`library()`, load data, ect. all within this Mardown document.  This will 
+become an issue when you try to knit the document, even if it worked while 
+running code straight from the .Rmd.
+
+There are lots of extra things you can do with chunks while running code 
+straight from the .Rmd.  In the upper-right corner of your .Rmd panel, there 
+is a butten labeled 'Run'; the drop-down menu from that has useful chunk 
+commands.
+
+Below is the basic format of a chunk.  You can make new chunks by pressing 
+'Ctrl' 'Alt' 'i' in Windows, or 'Cmd' 'Option' 'i' in Macs.  You can also 
+just type out the symbols below (note that those are tick marks, not 
+apostrophes!).  If you read this and are still confused, you might check out [this](http://kbroman.org/knitr_knutshell/pages/Rmarkdown.html) as well. 
+
+It is good practice to name every chunk with a word following `r`, e.g. 
+`{r chunk_name_goes_here, and chunk options go after the comma, options separated by commas}`.  
+
+
+```{r example_chunk}
+# -------example_chunk-----------
+
+# Code goes here; output appears below
+
+# Just making it so that my random numbers are the same each time.
+set.seed(45)
+
+# Generate random numbers from a Normal distribution and save as a vector.
+a <- rnorm(mean=0, sd=2, n=20)
+
+mean(a)
+```
+
+The code and output above would not be acceptable in a homework writeup.  You 
+can use chunk options to change how code and output appear in the knitted 
+document (but chunk options don't affect anything when you are running code in 
+the .Rmd document).  Below, I'll give some examples of chunk options; check out 
+the knitted document to see what each of them do.  Chunk options can be combined 
+by separating them with commas.
+
+#### Chunk options
+
+*eval=FALSE*  
+
+The following code won't be run
+
+```{r code_chunk_that_wont_run, eval=FALSE, error=TRUE}
+# ------code chunk that won't run----
+
+# This code won't even be run!
+mean(a)
+mean(I can type whatever I want because this is not run.)
+```
+
+*echo=FALSE*  
+
+The following code won't be shown, but it will run and the output will be 
+displayed.
+
+```{r example_chunk_that_wont_be_shown, echo=FALSE}
+# ----------example chunk that wont be shown-----
+
+# This code won't be shown, but it will be run and output will show up.
+mean(a)
+```
+
+*results="hide"*  
+
+The following output won't be shown, but the code will still run in R.
+```{r example_chunk_that_wont_show_output, results="hide"}
+# --------example chunk that wont show output------
+
+# This output won't be shown, but it will still run in R.
+mean(a)
+```
+
+*Hiding Absolutely Everything: include=FALSE*
+
+To hide absolutely everything, you could use these chunk options:
+
+`echo=FALSE, results='hide', message=FALSE, warning=FALSE, fig.show='hide'`
+
+Or, equivalently, just use this one:
+
+`include=FALSE`
+
+For more information about `include=FALSE`, see: 
+https://yihui.name/en/2017/11/knitr-include-false/
+
+It is possible to hide errors and warnings in your knitted document.  **Do not** 
+leave the `message=FALSE` and `warning=FALSE` options turned on while you are 
+creating your document because they will hide important messages from R.  Just 
+add these when you are done coding; for example, using `library()` often creates 
+some messages which you need to hide.  In general, we *want* to see the messages 
+and warnings from R as we are coding.
+
+The following chunk won't be shown and it creates output that won't be shown.  
+However, the code will still run in R.
+
+```{r example_chunk_hide_everything, include=FALSE}
+# -------example chunk hides everything----------
+
+# This would be how to do all your coding for which you don't want to show the 
+# output in your lab report.
+# All this code runs, but nothing shows up in your knitted document.
+# Any variable I create here will be 'remembered' for the rest of this knitted 
+# document.
+mean(a)
+```
+
+*Accept errors:  error=TRUE*
+
+Without this chunk option, if there is an error in your code the document won't 
+knit at all.  This chunk option is a temporary band-aid to help you record and 
+understand the error; **do not** make all your chunks `error=TRUE` as a way of 
+bypassing code issues.  
+
+```{r example_chunk_accept_errors,error=TRUE}
+# -----example chunk accept errors-----
+
+# Sometimes in a work-in-progress, you may want a knitted copy of everything - 
+# even things that go wrong.
+# This wouldn't be a chunk option to use in a polished homework assignment
+
+# This is an error because I haven't loaded the  titanic data in this document 
+# yet (regardless of whether it's loaded in my RStudio right now)
+head(titanic) 
+mean(a)
+```
+
+#### Plots
+
+To print a plot, you don't need any special chunk options.  
+
+```{r example_plot}
+# ----example plot----------
+hist(a)
+```
+
+However, to hide a plot you need to use `include=FALSE`, which hides all code 
+and output (using `results="hide"` won't work on plots).
+
+*include=FALSE to hide a plot and its code*
+
+The following chunk is hidden, as is its output.
+
+```{r example_plot_is_hidden,include=FALSE}
+# ---------example plot is hidden----------
+hist(a)
+# Still run in R, though!
+```
+
+
+
+## In-line code
+
+We saw above that output from chunks is usually not 'pretty' enough for homework 
+assignments.  To include code output in a sentence, we use this format: 
+`r paste("R output")` (again, those are tick marks, not apostrophes).  So we 
+can write: The mean of the data is `r mean(a)`.  Ideally you pay attention to 
+scientific reporting standards, for instance by rounding it to an appropriate 
+number of significant figures: The mean is `r round(mean(a),3)`.  This is much 
+better than typing "The mean is 0.217" for these reasons:
+
+* Eliminates typos
+
+* Automatically updates if you change other code (i.e. if I decided to remove 
+one person from my data set, I wouldn't have to re-type all my numbers)
+
+* Creates a record of exactly how you calculated every number (so another 
+scientist could easily reproduce your entire analysis, and you will never 
+forget how you calculated something)
+
+In general, only use the in-line code format for printing out one or two 
+numbers.  If you need a table or plot, that needs to come from a chunk.
+
+## Tables
+
+TODO:  Re-review from here.  Consider adding stargazer, xtable too.
+
+Unlike RStudio, R Markdown has the ability to create nice tables (nice enough 
+to use for homework).  There are several different packages for creating 
+tables; feel free to explore your options.
+
+```{r example_table_with_data_generation}
+# -----example table with data generation----
+
+# Generate some toy data
+sex <- rbinom(1, n = 20, prob = .5)
+height <- rnorm(mean = (50 + 10 * sex),
+sd = 10,
+n = 20)
+hair_color <- rep(c("brown", "black", "blond"), length = 20)
+
+toy.data <- data.frame(sex, height, hair_color)
+
+# Let's make a table with the average and standard deviation of height for each 
+# hair color category.
+
+# Step 1: make a vector of each  thing we want.
+
+# We use as.numeric to get rid of the extra labels from 'by'.
+table_col_1 <- as.numeric(by(height, as.factor(hair_color), mean)) 
+table_col_1
+table_col_2 <- as.numeric(by(height, as.factor(hair_color), sd))
+table_col_2
+
+# Step 2: make a data frame
+
+table_df <- data.frame(table_col_1, table_col_2)
+table_df
+
+# Step 3: make helpful row and column headings (if necessary)
+
+colnames(table_df) <- c("Average height", "SD of height")
+rownames(table_df) <- c("Black hair", "Blond hair", "Brown hair")
+
+table_df
+```
+
+Emily's favorite table-making tool is `kable`.  You have to install the package 
+`knitr` before using this.  (Since you are using R Markdown, you will need 
+`knitr` well before now anyways!)
+TODO: should probably organize to put pacman earlier?? or just keep this as is?
+
+```{r example_kable_table}
+# --------example kable table-----------
+kable(table_df)
+```
+
+Although this is definitely not the most beautiful table you've ever seen, it's 
+much better than the tables made directly in RStudio.  Because tables are so 
+important, below is another example.
+
+```{r another_kable_example}
+# -----another_kable_example----
+
+# In this example, we build the data frame by row (instead of by column like 
+# above).
+
+table_row_1 <- c(sum(sex == 0),mean(height[sex == 0]))
+table_row_2 <- c(sum(sex == 1),mean(height[sex == 1]))
+
+# Note that we have to use rbind to let R know that we are giving it rows 
+# instead of columns
+table_df_2 <- data.frame(rbind(table_row_1,table_row_2))
+
+rownames(table_df_2) <- c("Women","Men")
+colnames(table_df_2) <- c("Count","Average height")
+
+# Here, the table has a title using 'caption'.
+kable(table_df_2,caption="Height by sex") 
+```
+
+# Part II
+
+## Loading data within R Markdown
+
+As discussed above, when you write code in R Markdown it needs to be completely 
+self-contained - that is, it can't rely on anything you loaded, imported, or ran 
+in your RStudio session.  The only exception is that you don't need to 
+re-install packages within R Markdown (but you do need to load them using 
+`library()`).  
+
+### a. Automating preparation of the working environment
+
+An excellent principle is to automate the preparation of the working 
+environment.  This would include setting options and installing software 
+packages.  THe following chunk is an example of setting knitr options 
+TODO:  LS to better understand these option choices.  Also add some text 
+to describe the most useful options to set in general vs. setting them inside 
+chunks.  Finally, note that options were set above, so how does changing 
+them here affect the document?
+
+```{r set_knitr_options, echo=FALSE, message=FALSE, warning=FALSE}
+# --------set_knitr_options-----------
+suppressMessages(library(knitr))
+opts_chunk$set(tidy=FALSE, cache=FALSE, echo=TRUE, message=FALSE)
+```
+
+You can adjust these to suit your needs at the time of rendering, such as 
+disabling echo to make a report for someone who might be distracted by seeing 
+R code. Or enable cache once your script is complete and working to allow you 
+to more quickly render the script, such as when knitting a slide presentation 
+just before you delivering a talk.
+
+A key principle is to only load the packages you will need for your project.  
+To facilitate this, use the `packman` package in R instead of 
+`install.packages()` and `library()`.  This will allow your script to 
+automatically install any packages it needs to without forcing the installation 
+of a package which has already been installed. Here is an example:
+
+```{r setup_pacman, echo=TRUE, error=TRUE, eval=FALSE}
+# -------setup_pacman-----------
+
+# Not evaluated here since done at the beginning of the file
+# Load pacman into memory, installing as needed
+my_repo <- 'http://cran.r-project.org'
+if (!require("pacman")) {install.packages("pacman", repos = my_repo)}
+
+# Load the other packages, installing as needed
+# Key principle:  Only load the packages you will need
+pacman::p_load(knitr, readr, dplyr, ggplot2, formatR)
+
+```
+
+The first part installs `pacman` if it is missing, then the second part 
+installs and loads the other packages as needed. If you do this at the top 
+of your script for any packages needed later in your script, it makes it 
+really easy for people to see what packages your script depends on. This 
+approach will make it much more likely someone, particularly a new R user, 
+will be able to run your script and reproduce your results. Many new R 
+users get completely stuck if they run code that bombs simply because a 
+package has not been installed. And just putting in `install.packages()` 
+calls "just in case" will needlessly slow down your script (each and every 
+time it is run) if the packages have already been installed.
+
+### b. Use relative file paths, not absolute file paths
+
+Best practice does not include full paths ("C://Project_1/data/raw") to your 
+files, but uses relative paths ("data/raw") instead, so they will be more 
+portable -- able to run on someone else's system.  Even better, use 
+`file.path()` to construct these paths to make them platform independent, 
+so a person can use, e.g., Windows, macOS, or Linux to reproduce your results.  
+Windows users take note: paths like "data\\raw" will not work on a Mac. Use 
+"data/raw", or better yet, `file.path("data", "raw")` to solve this problem.
+
+TODO:  ADD some code chunk examples here
+
+### Best option:  Use projects and relative file paths within them
+
+An important principle is to keep your scripts, data files, and all other 
+inputs and outputs within a project folder.  Using an RStudio "project" 
+makes this easy, decreasing reliance on "setwd" commands in your scripts.  
+You would not refer to files outside of this project folder, but instead would 
+use subfolders (e.g., "data", "images", etc.) to organize your work within 
+your project.  Using project folders also works nicely with version control 
+(Git) as the project folder becomes your version control "repository" for 
+that project.
+
+TODO:  ADD text on how to set up and use a project
+
+#### Alternatives for file paths
+
+TODO:  Brian to advise/edit on what to say in this section and what to delete
+
+##### Discouraged approach:  Using the full absolute file path
+
+If you are using the full file path, you can load data exactly like you would 
+in a .R file.  If you need a refresher, check out the document "IntroToR1".  
+For example:
+
+```{r using_full_file_path, echo=TRUE, eval=FALSE}
+# ------using full file path--------
+titanic_from_RDS <- readRDS("P:/path/Titanic_Data_Subset_RDS.rds")
+# You'll have to change this file path before you knit this on your own computer
+```
+
+##### Somewhat better approach:  Using the working directory
+
+Using working directories means you don't have to use full file paths.  A 
+working directory is the place that R will look for files if you don't give a 
+file path.  R is always set to a certain working directory; you can check 
+where that is like this:
+
+```{r getwd}
+# -------getwd---------
+getwd()
+```
+
+You can make your default working directory the location of your .Rmd file; 
+it's different when you're running code in your console or in a .R file.  If 
+you want to change that default, you can use `setwd()`.  For example, let's 
+say my RDS file isn't in the same file as my .Rmd:
+
+```{r setwd_example, eval=FALSE, echo=TRUE}
+# ---------setwd example---------
+setwd("P:/Year_3")
+titanic_from_RDS_2 <- readRDS("Titanic_Data_Subset_RDS.rds")
+getwd() # You can see that my working directory changed
+```
+
+Using working directories would be especially helpful if you needed to load 
+lots of different data files and you didn't want to type out all the file 
+paths.  If you always put your .Rmd and data files in the same location, you 
+should be able to use the default working directory without typing file paths.
+
+One mild word of warning: there are some issues with working directories in R 
+Markdown.  If you are having trouble, you may want to make sure that `setwd()` 
+is in the same chunk as your `readRDS()` command.  There is also a more 
+[elegant solution](http://pbahr.github.io/tips/2016/04/16/fix_rmarkdown_working_directory_issue) to this.
+
+
+##### A backup plan for file paths to read data
+
+The two methods above require you to use file paths to identify files.  There 
+is a way to use a 'point-and-click' data import when knitting an R Markdown 
+file.  One big drawback of this is that you will need to knit your document 
+many, many times, and every time you will need to select the correct data file.  
+In addition, it requires you to remember which data file is associated with 
+the R Markdown; in terms of reproducible research and good record-keeping, this 
+is not ideal.  Although this method is inferior to using file paths, I'm 
+including it here because sometimes you may have issues with file paths or 
+errors that are difficult to debug, and it may be useful to have a backup plan.
+
+In summary, it is generally faster and more reliable to use file paths.  But 
+if you have a strong reason to not use a file path, you can use the code below.  
+If you want to see what it does, just remove the `eval=FALSE` option and knit.
+
+```{r,eval=FALSE}
+# -----file.choose example--------
+data <- readRDS(file.choose())
+# I set eval=FALSE because I want to knit this quickly and repeatedly, and it is 
+# good practice to avoid interactive commands in R Markdown documents.
+```
+
+
+## Reporting code
+
+TODO:  Be consistent about what is said in this section and the appendix code 
+listing.
+TODO:  Also ADD discussion of naming chunks and the value in the side index in 
+RStudio PLUS in the readability of the appendix.  Names as comments are more 
+useful if we want both with only one name.
+
+When you turn in assignments, in addition to your well-written answers (which 
+should not have any code or raw output), you will need to turn in the actual 
+code you used.  
+
+One helpful tool is the ability to turn .Rmd files into shorter .R files.  The 
+code below takes the Markdown file "GettingStarted.Rmd" in my working directory, 
+and creates a file "FileOfCode.R" in my working directory which contains all 
+my chunks and comments, but none of the plain text or formatting from the 
+Markdown document.  **This means that you would need to identify code for each 
+homework question using comments in your chunks.**
+
+TODO:  Add the chunk name as a comment in the beginning of the chunk and 
+describe how to turn this on in the global options.  Otherwisehe chunk names 
+disappear in the appendix code below.  
+TODO:  Is this still a problem??:  Also purl is not the same as what we give 
+below so I need to understand this.
+
+```{r purl for code to an R script,eval=FALSE}
+# -----purl for code to an R script----------
+
+# Turns .Rmd file into a .R file
+# Make sure knitr is loaded
+purl("GettingStarted.Rmd",output="FileOfCode.R")
+# Note that I set eval=FALSE because this isn't something I want to run every 
+# time I knit the document - I'll just run it once by hand when I'm finished 
+# coding.
+```
+
+Another helpful tool is the ability to add an appendix of R code at the end of 
+your knitted document.  The chunk options to accomplish this are: 
+
+    ref.label=knitr::all_labels(),echo=TRUE,eval=FALSE, tidy=TRUE, 
+      tidy.opts=list(width.cutoff=60)
+
+For an example of how to use this, I added a code appendix at the very end of 
+this document (see last chunk at the end).  If you are using .Rmd to write your 
+homework, this would be a great tool to use.  Note that you will still want to 
+**use comments in your code to indicate the start of each question and part**.  
+
+
+## Taking advantage of .Rmd
+
+Here are a few tips and tricks that can help you work quickly in R Markdown, 
+which you can't use in a regular R script.
+
+* Run the current chunk: Ctrl+Shift+Enter (Windows) or Command+Option+c (Mac) 
+or press the green 'play button' in the upper-right hand corner of the chunk
+
+* Run the next chunk: Ctrl+Alt+n (Windows) or Command+Option+n (Mac)
+
+* Run all chunks above: Ctrl+Alt+p (Windows) or press the upside-down triangle 
+in the upper-right hand corner of the chunk
+
+* Run all chunks: Ctrl+Alt+r (Windows) or go through the 'Run' button dropdown 
+(see below)
+
+There are lots more running options if you select the dropdown of the 'Run' 
+button on the right side of the toolbar for the .Rmd panel.  You can use the 
+arrows to the left of the 'Run' button to help navigate your document, 
+especially if you have a lot of text.
+
+R Markdown also has a primitive spell-checker which is good at checking only 
+regular text and not any code or special symbols.  To use it, press the button 
+to the right of the save button in the toolbar for the .Rmd panel.  It has 
+'ABC' and a green check mark.  If you want something more sophisticated which 
+will also check grammar, I would recommend knitting to a Word document and just 
+using the Word spell-checker.
+
+
+
+## Optional: Knitting to a PDF
+
+TODO:  clean this up to address tinytex
+
+There are a couple ways to get from a .Rmd to a pdf.  One is to simply knit a 
+Word document, then save it as a pdf from Word.  This also allows you to add or 
+bypass things which are hard to do in R Markdown (for example, formatting 
+tables).  You can knit to Word by selecting the dropdown from the 'Knit' button 
+and choosing 'Knit to Word', or by changing your header.
+
+You may want to knit your R Markdown directly to a .pdf to turn in.  TODO:  
+remove references to installing TeX  This is very easy; all you need to do is 
+install a couple extra things.  To check whether your computer is already set 
+up to knit to pdf, try selecting the dropdown from the 'Knit' button and 
+choosing 'Knit to PDF' (or change your header, as described below).  If that 
+doesn't work, you'll have to install some extra software. You can do this within
+R if you use the [tinytex](https://yihui.name/tinytex/) package, 
+which is a minimal TeX package for R users.
+
+    install.packages('tinytex')
+    tinytex::install_tinytex()
+
+You would only need to run these commands once. You would not include them in
+a regular R script, as doing so would needlessly repeat the installation.
+
+If you need a more complete TeX package for other uses, you will need to 
+download and install more software, separately from R. For Windows users, 
+there is an awesome tutorial 
+[here](https://medium.com/@sorenlind/create-pdf-reports-using-r-r-markdown-latex-and-knitr-on-windows-10-952b0c48bfa9), 
+and there is also a [Mac version](https://medium.com/@sorenlind/create-pdf-reports-using-r-r-markdown-latex-and-knitr-on-macos-high-sierra-e7b5705c9fd).  
+This will walk you through what you need to install (it also goes through 
+installing R and RStudio, but you can just skip that).  Once everything is 
+installed, you can set your output to `pdf_document` instead of `html_document` 
+to switch between .html and .pdf files.
+
+## Optional: LaTeX
+
+If you want to make your text clearer by using nicely formatted equations, you 
+can use the math language LaTeX to write greek letters and equations.  Below 
+are some examples that you can copy and paste, or just google it.  Be prepared 
+to have a little patience, because LaTeX is pretty picky.  This is *not* an 
+expectation for homework, it's just something extra for those of you who are 
+interested.  This is also an excuse to plug my 
+[favorite website](http://detexify.kirelabs.org/classify.html).
+
+$\alpha$
+
+$\alpha_0$
+
+$\alpha_1$
+
+$\beta$
+
+$\pi$
+
+$x_{Exposure}$
+
+$e^{\beta}$
+
+So we can write out models:
+
+$\log(x_{Disease})=\alpha_0+\beta x_{Exposure}$ 
+
+or log($x_{Disease}$) = $\alpha_0$ + $\beta$ $x_{Exposure}$
+
+
+
+# A compendium of resources
+
+TODO:  Go through this and reorganize it.  Give more attention to the R4DS book 
+and other key aspects.
+
+For more background on why and how to use R Markdown to create reproducible 
+scientific papers, see 
+[Michael Frank's YouTube video](https://www.youtube.com/watch?v=Nj9J5iCSMB0), 
+or the [html document it reviews](https://cdn.rawgit.com/mcfrank/openscience_tutorial/fec71433/rmarkdown_handout.html), 
+and the [R Markdown (.Rmd) document](https://github.com/mcfrank/openscience_tutorial/blob/master/rmarkdown_handout.Rmd) 
+that created it.
+
+Tutorials for R Markdown, compiled by Emily Voldal:
+
+* [The official tutorial](https://rmarkdown.rstudio.com/lesson-1.html) - This 
+tutorial has lots of pictures and is well-organized, but only covers the  basics.
+
+* [Getting Started, by 'John'](https://ourcodingclub.github.io/2016/11/24/rmarkdown-1.html) - 
+This is really great for someone who has never used R Markdown before, and 
+includes tutorials on setting up R Markdown and fixing problems.  It also has a great table 
+
+* [A book by Yihui Xie](https://bookdown.org/yihui/rmarkdown/) - This goes into 
+a lot of detail, but is really well organized and clear.
+
+* [Using R Markdown for Class Reports, by Cosma Shalizi](http://www.stat.cmu.edu/~cshalizi/rmarkdown/) - 
+This covers a lot of capabilities in R Markdown that I won't mention.  
+There isn't a lot of detail, but it is a good starting point if you're wondering 
+whether you can do something in R Markdown.
+
+Useful cheat sheets and reference guides:
+
+* [Official cheat sheet](https://www.rstudio.com/wp-content/uploads/2016/03/rmarkdown-cheatsheet-2.0.pdf)
+
+* [Reference guide](https://www.rstudio.com/wp-content/uploads/2015/03/rmarkdown-reference.pdf)
+
+* [Another cheat sheet](https://www.ethz.ch/content/dam/ethz/special-interest/math/statistics/sfs/Education/Advanced%20Studies%20in%20Applied%20Statistics/course-material-1719/Datenanalyse/rmarkdown-2.pdf)
+
+Additional references:
+
+See the [R for Data Science](https://r4ds.had.co.nz/) book by Garrett Grolemund 
+and Hadley Wickham.   
+    * [Chapter 8](https://r4ds.had.co.nz/workflow-projects.html) describes 
+    projects and why you should use them  
+    * [Chapter 26](https://r4ds.had.co.nz/communicate-intro.html) is the 
+    introduction to the Communication section with a brief overview of the 
+    following chapters  
+    * [Chapter 27](https://r4ds.had.co.nz/r-markdown.html) introduces R Markdown  
+    * [Chapter 30](https://r4ds.had.co.nz/r-markdown-workflow.html) covers 
+    R Markdown workflow  
+    
+Follow the [Google style guide](https://google.github.io/styleguide/Rguide.xml) 
+for writing code
+    
+
+
+
+# Appendix
+
+At a minimum, record version numbers of R and your packages with `sessionInfo()` 
+at the end of your script and record the output as an appendix.
+
+```{r session_info}
+# Print the session information
+sessionInfo()
+```
+
+For ENVH 556, we also want to see all of your code consolidated at the end of 
+your R Markdown output.  The following code will compile all your code into an 
+appendix code listing.  (This next version is for display in the rendered 
+document and not for execution.  It is followed by a working version that 
+creates the appendix. Note that the chuck header containing these options 
+should be a single line of code with no line-wrap.) 
+
+     ```{r appendix, ref.label=knitr::all_labels(), echo=TRUE, eval=FALSE, 
+     include=T}
+     ```
+
+For ENVH 556, if not already in a template, copy and paste the following chunk 
+into the end of every lab assignment: (This is the version that executes.)  
+
+```{r appendix, ref.label=knitr::all_labels(), echo=TRUE, eval=FALSE, include=T}
+# ---------appendix------------
+```
+
