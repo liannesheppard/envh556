@@ -4,9 +4,9 @@ author: "Lianne Sheppard for ENVH 556"
 date: "Created Winter 2019; updated `r format(Sys.time(), '%d %B, %Y')`"
 output: html_document
 ---
-
+<!--
 TODO:  Modify the loading of packages so ones loaded aren't reloaded.  Is this fixed now given we are using cache?
-
+-->
 ---
 
 Note:  The following three chunks should typically appear at the beginning of each R Markdown file.  We display them during this first lab so you can see them in the output.  Ordinarily we would not show them.
@@ -72,7 +72,7 @@ pacman::p_load(tidyverse, knitr, Hmisc, EnvStats)
 # Goal
 The goal of this lab is to help everyone become familiar with R, R Studio, and R Markdown through the context of the course content.  This is also your first opportunity to develop a lab write-up for ENVH 556 using R Markdown.
 
-Note:  It is in your best interest to learn modern R tools, such as those included in `tidyverse`.  Our goal in this class is to prioritize these tools as much as possible while recognizing that there are many ways to accomplish the same task and we don't want to get too bogged down in the best way to accomplish our goals.
+Note:  It is in your best interest to learn modern R tools, such as those included in [tidyverse](https://www.tidyverse.org).  Our goal in this class is to prioritize these tools as much as possible while recognizing that there are many ways to accomplish the same task and we don't want to get too bogged down in the best way to accomplish our goals.
 
 ---
 
@@ -89,10 +89,10 @@ A big part of data science is data management and ideally you will also learn ba
 Complete the following steps to set up the lab  <!--Note: need a new line for R Markdown to recognize the following is a bulleted list -->
 
 * Start a new R project in R Studio.  
-    + Note:  Put your project for this lab in a sensible directory.  
+    + Note:  Put your project for this course (and lab) in a sensible directory.  
     + Create a subdirectory of that directory with a name such as `Datasets` and copy the R dataset *DEMSCombinedPersonal.rds* into it. (This lab assumes your data directory is named `Datasets`.)
-    + Copy this file, *Week1Lab.Rmd* into your project directory and open it into RStudio.
-    + Note:  Often you will open a new .Rmd (R Markdown) file and populate it with code and text for this course, such as from the *LabReportGuidelines.Rmd* file.  
+    + Copy this lab's `.Rmd` file, *Week1Lab.Rmd* into your project directory and open it into RStudio.
+    + Note:  Often you will open a new `.Rmd` (R Markdown) file and populate it with code and text for this course, such as from the *LabReportGuidelines.Rmd* file.  
 
 * In the R Markdown file you are using for this lab make sure you have your file paths set up.  
     i) First assign your current path to a variable name (see *getwd* chunk).  
@@ -101,22 +101,27 @@ Complete the following steps to set up the lab  <!--Note: need a new line for R 
     
 <!--Note: to get this list to work correctly had to put ii) before the following R chunks-->
 ```{r getwd}
-#-----------getwd-----------------
+#-----getwd--------
     ProjectPath <- getwd()
     #ProjectPath
+    #
 ```
    
 ```{r datasets.path}
-#------------datasets.path----------------
+#------datasets.path--------
     dir.create(file.path(ProjectPath,"Datasets"),     showWarnings=FALSE, recursive = TRUE)
     datapath<-file.path(ProjectPath,"Datasets")
+    
 ```
 * Read in the data 
      + The data we will use have already been converted to an R dataset.  Make sure the "DEMSCombinedPersonal.rds" dataset is in your Datasets directory defined by `datapath`.
 ```{r read.data, eval=TRUE}
-#---------------read.data------------------------
-# Note:  for simplicity of typing in this lab we're calling the dataset DEMS, even though it is only one of several DEMS datasets we will use in this course.
+#-----read.data--------
+# Note:  for simplicity of typing in this lab we're calling the dataset DEMS,
+# even though it is only one of several DEMS datasets we will use in this
+# course.
 DEMS<-readRDS(file.path(datapath,"DEMSCombinedPersonal.rds"))
+
 ```
 
 
@@ -150,17 +155,32 @@ From `tidyverse`:
 Replace the comment in the chunk below with some of these commands.
 
 ```{r data.description1}
-#-----------------data.description1------------------
+#----------data.description1---------- 
 # STUDENTS may want to edit this chunk to look at the data differently
-#
-# Here is a first pass at commands to use to check your data
-class(DEMS) # we expect this to be a data frame
-dim(DEMS) # we expect this to have 1275 rows and 17 columns
-names(DEMS) # this list should correspond to the list in the data summary document
-sapply(DEMS,class) # this gives us details on the type of each variable in the dataset
-# Now for a tidyverse option.  We will also save the version in case we want to use tidverse commands
-(DEMSt<-as_tibble(DEMS)) # create and print the tibble DEMSt (The parentheses surrounding the command tell R to print the result of the assignment.)
-select(DEMSt,facilityno,u_s, ecdata,nodata,no2data) # our application of select zooms in to focus on the key exposure data
+
+#Here is a first pass at commands to use to check your data we expect this to be
+#a data frame
+class(DEMS) 
+
+# we expect this to have 1275 rows and 17 columns
+dim(DEMS) 
+
+# this list should correspond to the list in the data summary document:
+names(DEMS) 
+
+# this gives us details on the type of each variable in the dataset
+sapply(DEMS,class) 
+
+# Now for a tidyverse option.  We will also save the version in case we want to
+# use tidverse commands.
+
+# create and print the tibble DEMSt (The parentheses surrounding the command
+# tell R to print the result of the assignment.)
+(DEMSt<-as_tibble(DEMS)) 
+
+# our application of select zooms in to focus on the key exposure data
+select(DEMSt,facilityno,u_s, ecdata,nodata,no2data) 
+
 ```
 
 ###2. Get some basic understanding of the data 
@@ -179,10 +199,18 @@ Here are some commands:
 ```{r data.description2}
 #-----------------data.description2-------
 # Here is a first pass at commands for students to try to better understand the data
-head(DEMS) # first 6 rows and ALL variables (columns)
-summary(DEMS) # a basic summary of each variable
-describe(DEMS) # a different basic summary of each variable
-xtabs(~facilityno,data=DEMS) # tallies of the number of observations by facilityno
+# # first 6 rows and ALL variables (columns):
+head(DEMS) 
+
+# a basic summary of each variable
+summary(DEMS) 
+
+# a different basic summary of each variable
+describe(DEMS) 
+
+# tallies of the number of observations by facilityno
+xtabs(~facilityno,data=DEMS) 
+
 ```
 
 
@@ -197,10 +225,12 @@ ii) Note that there are missing data in this dataset.  As you proceed, you will 
         + Which variable(s) have the most missing data?
 
 ```{r data.description3}
-#-----------------data.description3------------------
+#----------data.description3------------------
 # STUDENTS ADD code to look at the data:
-#   Which commands from above will allow you to verify observation numbers and missing value counts?
-#   In this dataset it is important to understand summaries within mines.  Which commands from above will facilitate that?  (We will learn more below too.)
+# Which commands from above will allow you to verify observation numbers and
+# missing value counts?
+# In this dataset it is important to understand summaries within mines.  Which
+# commands from above will facilitate that?  (We will learn more below too.)
 ```
 
 ## III. Basic data description
@@ -232,11 +262,15 @@ xbar<-tapply(DEMS$ecdata,DEMS$facilityno,mean  ,na.rm=T)
 sd  <-tapply(DEMS$ecdata,DEMS$facilityno,sd    ,na.rm=T)
 n   <-tapply(DEMS$ecdata[!is.na(DEMS$ecdata)],DEMS$facilityno[!is.na(DEMS$ecdata)],length)
 cbind(mean=xbar,SD=sd,N=n)
-# Note you can present this table in a slightly nicer format using kable from the knitr package:
+
+# Note you can present this table in a slightly nicer format using kable from
+# the knitr package:
 kable(cbind(mean=xbar,SD=sd,N=n))
+
 ```
 
 ii) Here is a `tidyverse` option using `dplyr`:
+
 ```{r table.with.dplyr}
 #----table.with.dplyr------
 facility_ec <- DEMS %>% group_by(facilityno) %>% 
@@ -246,8 +280,8 @@ facility_ec <- DEMS %>% group_by(facilityno) %>%
               sd = sd(ecdata, na.rm = T),
               se = sd/sqrt(N)
     )
-
 facility_ec
+
 # And here is the same result printed using kable
 kable(facility_ec)
 ```
@@ -264,23 +298,31 @@ Note:  One reason to do computations in multiple ways is to help you make sure y
 
 ```{r hist.in.tidyverse, warning=FALSE, message=FALSE}
 #------hist.in.tidyverse---------
-# plot 1 with histogram only and count on the y axis (the default)
-# the default binwidth is 30 and often you will want to change it; see plot 2 for a narrower binwidth.
+# plot 1 with histogram only and count on the y axis (the default) the default
+# binwidth is 30 and often you will want to change it; see plot 2 for a narrower
+# binwidth.
 ggplot(data=DEMS,aes(ecdata,na.rm=T)) +
     geom_histogram(colour="black",fill="white")
-# plot 2 with density
-# base plot, just the histogram, now named 'p' for ease of re-use:
+
+# plot 2 with density base plot, just the histogram, now named 'p' for ease of
+# re-use:
 p <- ggplot(data=DEMS,aes(ecdata,na.rm=T)) +
     geom_histogram(aes(y=..density..),colour="black",fill="white",binwidth=20) 
+
 # overlay a normal density plot; need to create some variables to do this
 N <- sum(!is.na(DEMS$ecdata))
-x <- seq(0,1000,length.out=N) #divides the range 0-1000 into N equal increments
+#divides the range 0-1000 into N equal increments:
+x <- seq(0,1000,length.out=N) 
 df <- with(DEMS[!is.na(DEMS$ecdata),], data.frame(x, y = dnorm(x, mean(ecdata), sd(ecdata))))
 p +  geom_line(data = df, aes(x = x, y = y), color = "red")
-# plot 3 now also overlays a kernel density plot
-# The alpha parameter (range 0-1) controls the degree of transparency, while the `fill="red"` ensures the overlaid density is a specific color.  We are using the default bandwidth (bw) here.  
+
+# plot 3 now also overlays a kernel density plot.  The alpha parameter (range
+# 0-1) controls the degree of transparency, while the `fill="red"` ensures the
+# overlaid density is a specific color.  We are using the default bandwidth (bw)
+# here.
 p +  geom_line(data = df, aes(x = x, y = y), color = "red") +
   geom_density(alpha=.2,fill="red")
+
 ```
 
 Note:  In contrast to the normal density which overlays a probability distribution of a specific form, kernel density smoothers give you smooth curve that track the data.  The smooth curve will be rougher for smaller bandwidths.
@@ -300,13 +342,16 @@ Note that `mutate` adds the new variables to the end of the dataset.  For more f
 
 ```{r transform.vars}
 #-------transform.vars------
-# The following two variables will be added to the DEMS dataframe at the end of the frame:
+# The following two variables will be added to the DEMS dataframe at the end of
+# the frame:
 DEMS<-mutate(DEMS,
     ln_ecdata = log(ecdata)
     )
+
 DEMS<-mutate(DEMS,
     log10_ecdata = log10(ecdata)
     )
+
 ```
 
 ##V. More plots:  Try out some scatterplots
@@ -339,30 +384,40 @@ For more details on `ggplot` see R4DS, the [R for Data Science](https://r4ds.had
 `ggplot2` makes this easy:  
 
 ```{r scatterplot.in.tidyverse, echo=T, warning=F, message=F}
-#------scatterplot.in.tidyverse---------------------
+#------scatterplot.in.tidyverse------------
 # plot 1: simple way to use ggplot to ask for a scatterplot
 qplot(nodata, ecdata, data=DEMS) 
+
 # plot 2 is the same plot, now using standard ggplot notation
 ggplot(data=DEMS,aes(nodata,ecdata,na.rm=T)) +
-    geom_point() 
-# plot 3 adds a best fit line added and no 95% CI on the line (se=FALSE option).  We also add a title and axis labels
+    geom_point()
+
+# plot 3 adds a best fit line added and no 95% CI on the line (se=FALSE option).
+# We also add a title and axis labels
 ggplot(data=DEMS,aes(nodata,ecdata,na.rm=T)) +
     geom_point() + stat_smooth(method=lm, se=FALSE) +
     labs(title="Scatterplot of the DEMS NO (ppm) vs. REC (ug/m3) data",  x="NO (ppm)",
         y="REC (ug/m3)")
-# plot 4 replaces the best fit line with a smooth loess curve added and its 95% CI (the default smoother is gam for large datasets and loess when there are less than 1,000 observations)
+
+# plot 4 replaces the best fit line with a smooth loess curve added and its 95%
+# CI (the default smoother is gam for large datasets and loess when there are
+# less than 1,000 observations)
 ggplot(data=DEMS,aes(nodata,ecdata,na.rm=T)) +
     geom_point() + stat_smooth(method="loess") +
     labs(title="Scatterplot of the DEMS NO (ppm) vs. REC (ug/m3) data",  x="NO (ppm)",
         y="REC (ug/m3)") 
-##plot 5 adds different colors and smoothers for underground vs. surface data
+
+# plot 5 adds different colors and smoothers for underground vs. surface data
 ggplot(data=DEMS,aes(nodata,ecdata,na.rm=T)) +
     geom_point(mapping=aes(color=u_snum)) +
     geom_smooth(method="loess",aes(color=u_snum))+
     labs(title="Scatterplot of the DEMS NO (ppm) vs. REC (ug/m3) data\ncolored by where measurements were taken",  x="NO (ppm)",y="REC (ug/m3)", color="Measurement\nlocation")
-##plot 6 adds facets to plot 1 + colors for underground vs surface
-##Note:  the scales="free" option allows a different scale for each plot.  In this case it makes the individual plots more informative.
-##Note2:  the smoother was failing for facilty E for unknown reasons; without scales="free" all the plots had huge ranges
+
+#plot 6 adds facets to plot 1 + colors for underground vs surface 
+#Note1:  the scales="free" option allows a different scale for each plot.  In
+#this case it makes the individual plots more informative. 
+#Note2:  the smoother was failing for facilty E for unknown reasons; without
+#scales="free" all the plots had huge ranges
 ggplot(data=DEMS,aes(na.rm=T)) +
     geom_point(mapping=aes(nodata,ecdata,color=u_snum)) +
     facet_wrap(~facilityno, nrow=2,scales="free")+
@@ -396,15 +451,17 @@ gm  <-tapply(DEMS$ecdata,DEMS$facilityno,geoMean,na.rm=T)
 gsd <-tapply(DEMS$ecdata,DEMS$facilityno,geoSD ,na.rm=T)
 n   <-tapply(DEMS$ecdata[!is.na(DEMS$ecdata)],DEMS$facilityno[!is.na(DEMS$ecdata)],length)
 cbind(AM=xbar,SD=sd,GM=gm,GSD=gsd,N=n)
+
 # we can make this prettier using rounding and kable:
 kable(round(cbind(AM=xbar,SD=sd,GM=gm,GSD=gsd,N=n),2))
+
 ```
 
 And repeat this exercise for underground only:  (Allows checking against Coble Table 1, and the numbers are similar but not identical.  Without the partitioning by location, the GSD for mine B is enormous and not that believable.  However, I think this is the huge range of the data and not an error.)
 
 ```{r UGtable.with.GM+GSD}
 #----UGtable.with.GM+GSD using tapply and cbind ----------
-#This uses facilityno, a factor variable
+# This uses facilityno, a factor variable
 DEMSu<-DEMS[DEMS$u_s=="u",]
 xbar<-tapply(DEMSu$ecdata,DEMSu$facilityno,mean  ,na.rm=T)
 sd  <-tapply(DEMSu$ecdata,DEMSu$facilityno,sd    ,na.rm=T)
@@ -412,8 +469,10 @@ gm  <-tapply(DEMSu$ecdata,DEMSu$facilityno,geoMean,na.rm=T)
 gsd <-tapply(DEMSu$ecdata,DEMSu$facilityno,geoSD ,na.rm=T)
 n   <-tapply(DEMSu$ecdata[!is.na(DEMSu$ecdata)],DEMSu$facilityno[!is.na(DEMSu$ecdata)],length)
 cbind(AM=xbar,SD=sd,GM=gm,GSD=gsd,N=n)
+
 # we can make this prettier using rounding and kable:
 kable(round(cbind(AM=xbar,SD=sd,GM=gm,GSD=gsd,N=n),2))
+
 ```
 
 
@@ -442,6 +501,7 @@ facility_ec<-ddply(DEMS, .(facilityno), plyr::summarize,
             sd=sd(ecdata, na.rm=T),
             se=sd/sqrt(N))
 facility_ec
+
 ```
             
 b) with `summaryBy()` from the `doBy` package:  Out of date so code hidden  
@@ -455,17 +515,18 @@ fun <- function(x){
 summaryBy(ecdata~facilityno,data=DEMS,FUN=fun)
 summaryBy(no2data~facilityno,data=DEMS,FUN=fun)
 summaryBy(nodata~facilityno,data=DEMS,FUN=fun)
+
 ```
 
 c) with `aggregate()`:  
 The following gives means of 3 variables.  Note:  by comparing the results from facility H6, we can see that the the missing data were removed separately by each variable.  
 
 ```{r table.with.aggregate, echo=TRUE, eval=FALSE}
-#----------------table.with.aggregate----------------
-## part of the stats package
-
+#----------------table.with.aggregate-------
+# part of the stats package
 aggregate(DEMS[c("ecdata","no2data","nodata")],
         list(facility=DEMS$facilityno), mean, na.rm=T)
+
 ```
 
 
@@ -475,13 +536,16 @@ To get a basic histogram, use `hist`.  For a density plot, use `plot()` with `de
 
 ```{r hist.in.baseR, echo=T}
 #----------------hist.in.baseR-----------------
+# plot 1: basic histogram
+# can plot without explicitly excluding the missing data
+hist(DEMS$ecdata) 
 
-#plot 1: basic histogram
-hist(DEMS$ecdata)  #can plot without explicitly excluding the missing data
-#plot 2: same plot
-hist(DEMS$ecdata[!is.na(DEMS$ecdata)]) #same plot, now explicitly removing missing data
-#plot 3:  density plot
-plot(density(DEMS$ecdata[!is.na(DEMS$ecdata)])) #need to explicitly remove the missing data
+# plot 2: same plot, now explicitly removing missing data
+hist(DEMS$ecdata[!is.na(DEMS$ecdata)]) 
+
+# plot 3:  density plot:  need to explicitly remove missing data
+plot(density(DEMS$ecdata[!is.na(DEMS$ecdata)])) 
+
 ```
 
 ### Logarithmic transformations in base R:
@@ -493,12 +557,17 @@ plot(density(DEMS$ecdata[!is.na(DEMS$ecdata)])) #need to explicitly remove the m
 ### Base R option for a basic scatterplot and overlaid regression line: 
 
 ```{r scatterplot.in.baseR}
-#----------------scatterplot.in.baseR-----------------
-#plot 1 with best fit regression line
-plot(DEMS$ecdata,DEMS$nodata)  #gives a basic scatterplot
-abline(lm(DEMS$nodata~DEMS$ecdata)) #add a best fit regression line
+#----------------scatterplot.in.baseR-------
+# plot 1 with best fit regression line
+# gives a basic scatterplot
+plot(DEMS$ecdata,DEMS$nodata)  
+# add a best fit regression line
+abline(lm(DEMS$nodata~DEMS$ecdata))
+
 #plot 2 with scatterplot smoother
-scatter.smooth(DEMS$ecdata,DEMS$nodata) #repeat the plot, this time with a loess smooth curve with default span
+# repeat the plot, this time with a loess smooth curve with default span
+scatter.smooth(DEMS$ecdata,DEMS$nodata) 
+
 ```
 
 
@@ -507,8 +576,10 @@ scatter.smooth(DEMS$ecdata,DEMS$nodata) #repeat the plot, this time with a loess
 The next two chunks should be included in every R Markdown appendix so that you document your code and session information.  This supports the reproducibility of your work.  
 
 ```{r session.info}
-#-----------------session.info: beginning of Appendix -----------------
-#This allows reproducibility by documenting the version of R and every package you used.  It also prints your working directory (helpful for finding the project later!).
+#---session.info: beginning of Appendix -----------
+# This allows reproducibility by documenting the version of R and every package
+# you used.  It also prints your working directory (helpful for finding the
+# project later!).
 sessionInfo()
 getwd()
 ```

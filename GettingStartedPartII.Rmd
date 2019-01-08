@@ -17,10 +17,8 @@ TODO: Talk about latest versions/eras of packages?
 
 TODO:  These may belong in Part I??
     TODO: Add in principles of clearing the environment
-    TODO:  Show an example with getwd/setwd and ".."
-    TODO:  Add in commands to find namespace conflicts
-    TODO:  Add a section on code readability principles with a link to the style 
-document?  And advice to check the global options first?
+     TODO:  Add in commands to find namespace conflicts
+
 -->
 
 
@@ -67,18 +65,23 @@ much time making your text 'pretty', but your answers should be well-organized.
 This section will cover some (easy) things to do in R Markdown to organize and 
 manipulate text.
 
-To make a new paragraph in your knitted document, please hit 'enter' twice.  
-If you only hit 'enter' once, it can be difficult to distinguish paragraphs 
-because there is no change in line spacing and no paragraph indent.  You can 
-make font **bold**, or *italicized*.  You can make numbered lists (see the 
+To make a new paragraph in your knitted document, hit 'enter' twice.  If you
+only hit 'enter' once, it can be difficult to distinguish paragraphs because
+there is no change in line spacing and no paragraph indent.  
+
+You can make font **bold**, or *italicized*.
+
+You can make numbered lists (see the 
 Table of Contents), or bulleted lists:
 
 * Note the space between the asterisk and the text.
 
 * This is one of the few cases where R cares about a space.
 
-You can organize your content using headings, which are indicated by `# ` (see 
-my section headings).  The more pound symbols, the smaller the heading.  We show these examples without knitting them:
+You can organize your content using headings, which are indicated by `# ` (see
+my section headings).  The more pound symbols, the smaller the heading.  We show
+these examples without knitting them:
+
 ```
 # Title (level 1)
 ## Subtitle (level 2)  
@@ -86,43 +89,43 @@ my section headings).  The more pound symbols, the smaller the heading.  We show
 #### Sub-sub-subtitle (level 4)
 ```
 
-The easy page breaks in R Markdown use `\newpage`.  You can also separate 
-content using a string of asterisks or at least three dashes (`---`).  The string of asterisks creates a dividing line in the 
-output as you see below.
+The easy page breaks in R Markdown use `\newpage`.  You can also separate
+content using a string of asterisks or at least three dashes (`---`).  The
+string of asterisks creates a dividing line in the output as you see below.
 
 ****************
 
-The three dashes give the same result.
+The three dashes give the same result:
 
 ---
 
-Finally, you can put comments in your .Rmd file that won't be visible in your 
-ouptput.  For example, this text doesn't appear in the rendered document: (it 
-appears twice in the .Rmd file; the second one is not enclosed in back quotes 
-to make it visible.)
+Finally, you can put comments in your .Rmd file that won't be visible in your
+ouptput.  For example, this text doesn't appear in the rendered document: (it
+appears twice in the .Rmd file; the second one is not enclosed in back quotes so it is hidden.)
+
 `<!-- This is a text comment and won't appear in the output -->`
 
 <!-- This is a text comment and won't appear in the output -->
 
 # Chunks
 
-You can think of each chunk as a miniature R script.  Within a Markdown 
-document, your code all needs to be in order (you can't print a plot after your 
-first paragraph if you don't load the data set until paragraph three).  You 
-also can't use *anything* outside the Markdown document; you need to call 
-`library()`, load data, ect. all within this Mardown document.  This will 
-become an issue when you try to knit the document, even if it worked while 
-running code straight from the .Rmd.
+You can think of each chunk as a miniature R script.  Within a Markdown
+document, your code all needs to be in order (you can't print a plot after your
+first paragraph if you don't load the data set until paragraph three).  You also
+can't use *anything* outside the Markdown document; you need to call
+`library()`, load data, ect. all within this Mardown document.  This will become
+an issue when you try to knit the document, even if it worked while running code
+straight from the .Rmd.
 
-There are lots of extra things you can do with chunks while running code 
-straight from the .Rmd.  In the upper-right corner of your .Rmd panel, there 
-is a butten labeled 'Run'; the drop-down menu from that has useful chunk 
-commands.
+There are lots of extra things you can do with chunks while running code
+straight from the .Rmd.  In the upper-right corner of your .Rmd panel, there is
+a butten labeled 'Run'; the drop-down menu from that has useful chunk commands.
 
-Below is the basic format of a chunk.  You can make new chunks by pressing 
-'Ctrl' 'Alt' 'i' in Windows, or 'Cmd' 'Option' 'i' in Macs.  You can also 
-just type out the symbols below (note that those are tick marks, not 
-apostrophes!).  If you read this and are still confused, you might check out [this](http://kbroman.org/knitr_knutshell/pages/Rmarkdown.html) as well. 
+Below is the basic format of a chunk.  You can make new chunks by pressing
+'Ctrl' 'Alt' 'i' in Windows, or 'Cmd' 'Option' 'i' in Macs.  You can also just
+type out the symbols below (note that those are tick marks, not apostrophes!).
+If you read this and are still confused, you might check out
+[this help guide](http://kbroman.org/knitr_knutshell/pages/Rmarkdown.html) as well.
 
 It is good practice to name every chunk with a word following `r`, e.g. 
 `{r chunk_name_goes_here, and chunk options go after the comma, options separated by commas}`.  
@@ -138,15 +141,15 @@ set.seed(45)
 
 # Generate random numbers from a Normal distribution and save as a vector.
 a <- rnorm(mean=0, sd=2, n=20)
-
 mean(a)
+
 ```
 
-The code and output above would not be acceptable in a homework writeup.  You 
-can use chunk options to change how code and output appear in the knitted 
-document (but chunk options don't affect anything when you are running code in 
-the .Rmd document).  Below, I'll give some examples of chunk options; check out 
-the knitted document to see what each of them do.  Chunk options can be combined 
+The code and output above would not be acceptable in a homework writeup.  You
+can use chunk options to change how code and output appear in the knitted
+document (but chunk options don't affect anything when you are running code in
+the .Rmd document).  Below, I'll give some examples of chunk options; check out
+the knitted document to see what each of them do.  Chunk options can be combined
 by separating them with commas.
 
 ## Chunk options
@@ -157,10 +160,10 @@ The following code won't be run
 
 ```{r code_chunk_that_wont_run, eval=FALSE, error=TRUE}
 # ------code chunk that won't run----
-
 # This code won't even be run!
 mean(a)
 mean(I can type whatever I want because this is not run.)
+
 ```
 
 *echo=FALSE*  
@@ -169,20 +172,22 @@ The following code won't be shown, but it will run and the output will be
 displayed.
 
 ```{r example_chunk_that_wont_be_shown, echo=FALSE}
-# ----------example chunk that wont be shown-----
+# ------example chunk that wont be shown-----
 
 # This code won't be shown, but it will be run and output will show up.
 mean(a)
+
 ```
 
 *results="hide"*  
 
 The following output won't be shown, but the code will still run in R.
 ```{r example_chunk_that_wont_show_output, results="hide"}
-# --------example chunk that wont show output------
+# ----example chunk that wont show output------
 
 # This output won't be shown, but it will still run in R.
 mean(a)
+
 ```
 
 *Hiding Absolutely Everything: include=FALSE*
@@ -209,41 +214,37 @@ The following chunk won't be shown and it creates output that won't be shown.
 However, the code will still run in R.
 
 ```{r example_chunk_hide_everything, include=FALSE}
-# -------example chunk hides everything----------
+# ----example chunk hides everything----------
 
-# This would be how to do all your coding for which you don't want to show the 
-# output in your lab report.
-# All this code runs, but nothing shows up in your knitted document.
-# Any variable I create here will be 'remembered' for the rest of this knitted 
-# document.
+# This would be how to do all your coding for which you don't want to show the
+# output in your lab report. All this code runs, but nothing shows up in your
+# knitted document. Any variable I create here will be 'remembered' for the rest
+# of this knitted document.
 mean(a)
+
 ```
 
 *Accept errors:  error=TRUE*
 
-Without this chunk option, if there is an error in your code the document won't 
-knit at all.  This chunk option is a temporary band-aid to help you record and 
-understand the error; **do not** make all your chunks `error=TRUE` as a way of 
-bypassing code issues.  
+Without this chunk option, if there is an error in your code the document won't
+knit at all.  This chunk option is a temporary band-aid to help you record and
+understand the error; **do not** make all your chunks `error=TRUE` as a way of
+bypassing code issues.
 
 ```{r example_chunk_accept_errors,error=TRUE}
-# -----example chunk accept errors-----
-
-# Sometimes in a work-in-progress, you may want a knitted copy of everything - 
-# even things that go wrong.
-# This wouldn't be a chunk option to use in a polished homework assignment
-
-# This is an error because I haven't loaded the  titanic data in this document 
-# yet (regardless of whether it's loaded in my RStudio right now)
+# -----example chunk accept errors----- Sometimes in a work-in-progress, you may
+# want a knitted copy of everything - even things that go wrong. This wouldn't
+# be a chunk option to use in a polished homework assignment. This is an error
+# because I haven't loaded the  titanic data in this document yet (regardless of
+# whether it's loaded in my RStudio right now)
 head(titanic) 
 mean(a)
+
 ```
 
 ## Naming chunks
 
-TODO:  ADD  Also ADD discussion of naming chunks and the value in the side index in 
-RStudio PLUS in the readability of the appendix.  Names as comments are more 
-useful if we want both with only one name.
+It is good practice to name your chunks as we have done in the examples above.  Further, if you put a comment ending with at least 4 dashes at the end of the first comment line, this shows up in the outline section of your document in RStudio AND makes it easier to read your code in the appendix.  A comment formatted this wasy looks like this: `#--example chunk name-----`
 
 ## Plots
 
@@ -269,53 +270,25 @@ hist(a)
 
 # In-line code
 
-We saw above that output from chunks is usually not 'pretty' enough for refined reports.  To include code output in a sentence, we use this format: 
-`r paste("R output")` (again, those are tick marks, not apostrophes).  So we 
-can write: The mean of the data is `r mean(a)`.  Ideally you pay attention to 
-scientific reporting standards, for instance by rounding it to an appropriate 
-number of significant figures: The mean is `r round(mean(a),3)`.  This is much 
-better than typing "The mean is 0.217" because it follows several reproduciblity principles.  (See Part I for details.)
+We saw above that output from chunks is usually not 'pretty' enough for refined
+reports.  To include code output in a sentence, we use this formatformat of one
+backtick followed by "r ", a space, and then some R code, and ending with a
+second backtick.   So we can write: The mean of the data is `r mean(a)`.
+Ideally you pay attention to scientific reporting standards, for instance by
+rounding it to an appropriate number of significant figures: The mean is `r
+round(mean(a),2)`.  This is much better than typing "The mean is 0.217" because
+it follows several reproduciblity principles.  (See Part I for details.)
 
-In general, only use the in-line code format for printing out one or two 
+In general, only use the in-line code format for printing out one or two
 numbers.  If you need a table or plot, that needs to come from a chunk.
 
 
 
 # Tables
 
-TODO:  More details on how to do this or at least a link to  stargazer, xtable??
-
-Unlike RStudio, R Markdown has the ability to create nice tables (nice enough 
+R Markdown has the ability to create nice tables (nice enough 
 to use for homework).  There are several different packages for creating 
 tables; these include `kable`, `stargazer`, and `xtable`.  `kable` is the simplest to use and we show examples in Lab 1.  If you wish to develop more sophisticated tables, explore these other packages.
-
-
-## Other ways to distill code
-TODO:  Update
-
-In addition to the standard appendices for ENVH 556, there are other ways to extract code from a R Markdown file.  The 
-code below takes the Markdown file "GettingStarted.Rmd" in my working directory, 
-and creates a file "FileOfCode.R" in my working directory which contains all 
-my chunks and comments, but none of the plain text or formatting from the 
-Markdown document.  **This means that you would need to identify code for each 
-homework question using comments in your chunks.**
-
-TODO:  Add the chunk name as a comment in the beginning of the chunk and 
-describe how to turn this on in the global options.  Otherwisehe chunk names 
-disappear in the appendix code below.  
-TODO:  Is this still a problem??:  Also purl is not the same as what we give 
-below so I need to understand this.
-
-```{r purl for code to an R script,eval=FALSE}
-# -----purl for code to an R script----------
-
-# Turns .Rmd file into a .R file
-# Make sure knitr is loaded
-purl("GettingStarted.Rmd",output="FileOfCode.R")
-# Note that I set eval=FALSE because this isn't something I want to run every 
-# time I knit the document - I'll just run it once by hand when I'm finished 
-# coding.
-```
 
 
 # Taking advantage of R Markdown's capabilities within the RStudio environment
@@ -381,9 +354,9 @@ If you want to make your text clearer by using nicely formatted equations, you
 can use the math language LaTeX to write greek letters and equations.  Below 
 are some examples that you can copy and paste, or just google it.  Be prepared 
 to have a little patience, because LaTeX is pretty picky.  This is *not* an 
-expectation for homework, it's just something extra for those of you who are 
-interested.  This is also an excuse to plug my 
-[favorite website](http://detexify.kirelabs.org/classify.html).
+expectation for ENVH 556, it's just something extra for those of you who are 
+interested.  This is also an excuse to plug a 
+[useful website for finding LaTex commands](http://detexify.kirelabs.org/classify.html).
 
 $\alpha$
 
@@ -409,8 +382,8 @@ or log($x_{Disease}$) = $\alpha_0$ + $\beta$ $x_{Exposure}$
 
 # Additional Resources
 
-* For a set of best practicess for writing code, follow the [Google style guide](https://google.github.io/styleguide/Rguide.xml) 
-for writing R code
+* For a set of best practicess for writing code, follow the [Google style guide for writing R code](https://google.github.io/styleguide/Rguide.xml) 
+
     
 * For more background on why and how to use R Markdown to create reproducible 
 scientific papers, see 

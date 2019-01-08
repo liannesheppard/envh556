@@ -1,0 +1,209 @@
+---
+title: "Lab Report Guidelines"
+author: "ENVH 556"
+date: "Created for Winter 2019; printed `r format(Sys.time(), '%d %B, %Y')`"
+output: html_document
+---
+
+<!--Parts of this document were taken from guidelines prepared by Keith Baggerly for SIBD -->
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### Overview  
+Each homework assignment should be formatted as a lab report using R Markdown following the outline in this document. Adhere to reproducible research principles.  Include a code Appendix that will allow an independent replication of your results.  Note that all material that students want to be considered in grading should be in the main part of the report. 
+
+---
+
+### Outline
+
+1. Introduction
+    * Background
+    * Rationale
+    * Objectives
+2. Data & Methods
+    * Data description
+    * Statistical analysis approach
+3. Results
+4. Discussion and Conclusions
+5. References  
+6. Appendices
+    * Extended data analyses (optional)
+    * Session information (required) 
+    * Code (required)
+
+---
+
+## Introduction
+
+Use this section to provide an introductory paragraph (or at most two) summarizing the purpose of the lab and a short scientific description of the data.  A literature review is not necessary.  Topics to cover:
+
+* Background and rationale:
+    + Why are we doing this? (i.e., what is the purpose of the lab?)
+    + What data are we using and what do they represent scientifically?  
+
+* Objectives
+    + What are we trying to learn?
+    + What outcomes would constitute success?
+
+---
+
+## Data & Methods
+
+This section tells the reader what you did in order to answer the questions posed. Use it to describe your methods, noting how you analyzed your data. It covers all aspects of data description that don't fit naturally into the results section.   Here are some topics you can cover:
+
+#### What are our data?  
+Where did our data come from? (Supply URLs as appropriate)  
+How many samples/subjects?  
+How many measurements per subject/sample?  
+What covariates are important?  
+
+#### How are we processing the data?  
+If the data will be filtered or grouped, what cutoffs will be used?  
+
+#### Describe the analysis approach, i.e. the methods used in the analysis  
+What statistical tests are being used?  
+What sensitivity analyses are planned?  
+
+---
+
+## Results
+
+Use this section to provide an *objective summary* of the findings; interpretation goes in the conclusions section.  Anticipate questions from readers and answer them in your presentation of your findings.
+
+Summarize your results in text, tables and figures. In most lab assignments you should not need more than 2-5 figures or tables. Additional figures and tables can be provided in an appendix. Be thoughtful about how you design your tables and figures to convey the most important information. Address all the questions asked in the lab in the text, citing the tables and figures as appropriate. While signposting the questions is helpful for grading and therefore appreciated, please organize this section as readable text rather than Q&A responses to the questions in the lab.
+
+---
+
+## Discussion
+
+The discussion provides the context for the results.  This is the place for interpretation in light of your objectives.  You can also include a discussion of the implications of the findings, bring in additional perspectives, and/or ask questions you have.  For instance, this is a place to discuss the limitations of the data and your analysis.  You may also wish to address data quality issues, caveats or limitations of the approach, and possible next steps.
+
+It is useful to organize the discussion around the objectives.  For each objective, include a statement or two about how that objective has or hasn't been met.
+    * Keep reporting of objectives in the same order.
+
+---
+
+## References
+
+Include any references beyond those assigned in the course or lab.  This section may be omitted if you don't use references beyond those in the assignment.
+
+---
+
+## Appendices
+
+Include any additional details that don't belong in the primary results but need to be included.
+
+Also put in some documentation about the report, updated every time the report is run.
+
+### Appendix 1 (optional): Extended data analysis 
+
+This section can cover: 
+
+* Steps for reading and preprocessing the data
+
+* Descriptive data analyses and verification that you are analyzing the dat you intend to analyze
+
+* Inferential analyses
+
+* Important figures and tables  
+
+### Appendix 2 (required):  Session information and Code
+```{r session info}
+#-----session info------
+sessionInfo()
+getwd()
+```
+
+```{r code appendix, ref.label=knitr::all_labels(),echo=TRUE,eval=FALSE, tidy=TRUE, tidy.opts=list(width.cutoff=60), include=T}
+#---------code appendix------------
+```
+
+---
+
+# ENVH 556 Lab Report Presentation Guidelines
+
+1.	Suggested maximum length: 2 pages for text plus a maximum of 5 figures and/or tables. (Text length is based on text with 1.5 spacing, and no less than 11 point font)  
+2.	Text should be brief. Use the introduction and methods sections to provide background and context. Use the results and discussion sections to answer all the questions posed in the assignment. Make sure the document stands alone as a comprehensible document to the reader.  
+3.	All figures and tables need appropriately descriptive captions/titles. Pay attention to table formatting, including significant digits, labels, headings for rows/columns, and that all necessary information is included (e.g. in footnotes). Additional guidance on creating tables:  
+    a.	No vertical lines. Use horizontal lines to demarcate sections of a table (not every line)  
+    b.	No redundancies – omit columns with no variation in the data  
+    c.	Structure tables to facilitate the comparisons of interest. Note that it is easier to compare numbers that are close to each other and to make comparisons of numbers in columns.  
+4.	Figures and tables should be strategically selected to present your key analyses and findings.
+5.	Reference any papers cited. (References not included in the page limits)
+
+---
+
+## General Suggestions
+
+### What to include in almost every report
+
+1. Clearly state the underlying scientific question you hope to address
+2. Include a description of the experiments or observational study design with mention of how these are expected to answer the question (_a priori_ expectations about the results)
+      * If this report is a subset of the full project, note what part of the analysis is in this report
+3. Briefly summarize the results of the analysis
+4. Describe the conclusions to be drawn from the results and next steps
+5. Present the full analysis in the main report or in an appendix
+6. Wrap up with an appendix that includes at least a few administrative details
+7.  Ideally start with an extended abstract or executive summary that briefly covers the most important aspects of your work
+
+---
+
+### What can be written before analyzing data? 
+
+A surprising large amount of the report can be written before the detailed analysis has begun.
+
+You can use the `eval=FALSE` option to prevent the code from being run before you are ready
+
+Circulating drafts of the introduction plus data & methods sections before the data analysis begins can be very helpful and *save time*
+
+---
+
+### Strategies for incorporating R code
+
+* Precede each block of code (`chunk`) with a statement of the purpose of this code block
+
+* Include signposting in code blocks (use `#----NAME OF CODE BLOCK-----` at the beginning of the block) and comments inside the block to facilitate understanding of your work.  Optionally also name the chunks.
+
+* Try not to include blocks of code that are longer than 1/3 of a page.  
+
+* If a block of code processes data, include a few lines of data before and after to show how the processing worked.  (e.g., Use `head()` and/or `tail()` or `tidyverse` options).
+
+* Write functions for blocks of code that are reused extensively.
+      * Use descriptive function names  
+      
+* Use descriptive names for datasets and variables
+     * Name data frames and matices as well as their columns (and their rows, as appropriate)
+     * Refer to your entries by name, not number
+
+
+---
+
+### Tips for fostering clarity in team science
+
+* Does everyone on your team have a common understanding of the goals?
+
+* Make sure it is clear what negative and positive mean in a each specific context
+
+* Think about what is inferred from each plot you show
+    * Describe what allows you to make this inference
+    * Think about what the plot would look like if there were no structure in the data  
+    
+* Make sure it is clear what each chunk of code is meant to do
+
+---
+
+### Some ideas for sanity checks
+
+* How do you know you are analyzing the data you think you are analyzing?  
+     * Have you verified the sample size is correct at each data massaging step?
+     * How do you know data have been merged correctly?
+     
+* Have you clearly described the data?  
+    * What low-dimensional summaries of the data have you plotted?  Do they make sense?
+    
+* What do you expect to see if the data are purely noise?
+
+---
+
