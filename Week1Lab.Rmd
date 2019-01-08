@@ -9,10 +9,6 @@ output:
         number_sections: true
 ---
 
-<!--
-TODO:  Modify the loading of packages so ones loaded aren't reloaded.  Is this 
-fixed now given we are using cache?
--->
 ---
 
 Note:  The following three chunks should typically appear at the beginning of
@@ -67,7 +63,6 @@ if (!is.null(sessionInfo()$otherPkgs)) {
 }
 
 ```
-
 
 ```{r load.libraries.with.pacman, include=TRUE}
 #-----load.libraries.with.pacman--------------
@@ -133,9 +128,6 @@ are very useful for both data management and data analyses.
 
 Complete the following steps to set up the lab  
 
-<!--Note: need a new line for R Markdown to recognize the following is a 
-bulleted list -->
-
 * Start a new R project in R Studio.  
     + Note:  Put your project for this course (and lab) in a sensible directory.  
     + Create a subdirectory of that directory with a name such as `Datasets` and
@@ -147,14 +139,14 @@ bulleted list -->
       with code and text for this course, such as from the
       *LabReportGuidelines.Rmd* file.
 
-* In the R Markdown file you are using for this lab make sure you have your file paths set up.  
+* In the R Markdown file you are using for this lab make sure you have your file
+paths set up.
     + First assign your current path to a variable name (see *getwd* chunk).  
     + Then tell R where your data reside (see *datasets.path* chunk).  The 
       `dir.create()` command will make a directory if it doesn't exist.  The 
       `file.path()` command allows you to refer easily to paths across operating 
       systems.
     + See the following chunks to accomplish this:
-      <!--Note: to get this list to work correctly had to put ii) before the following R chunks-->
 ```{r getwd}
 #-----getwd--------
 ProjectPath <- getwd()
@@ -257,9 +249,9 @@ Here are some commands:
 + `summary(DEMS)` gives a basic summary of each variable
 + `describe(DEMS)` is another useful basic summary of the dataset, from the 
   Hmisc package ("a concise statistical description")
-+ `xtabs(~facilityno, data=DEMS)` Note: faciltyno is a factor, ordered by 
++ `xtabs(~facilityno, data=DEMS)` Note: `faciltyno` is a factor, ordered by 
   facility number
-+ `xtabs(~facilityid, data=DEMS)` Note: facilityid is a character variable, 
++ `xtabs(~facilityid, data=DEMS)` Note: `facilityid` is a character variable, 
   ordered by facility letter
 
 
@@ -286,8 +278,6 @@ xtabs( ~ facilityno, data = DEMS)
 The specifics of what you evaluate depend upon the context of the problem.  In
 our case we have published papers we can rely upon to determine whether our data
 are what we expect.  Here are some questions for the DEMS personal data:
-
-<!--Note:  Need a new line for R Markdown to recognize I'm starting a list-->
 
 * How many observations are in your dataset overall and by facility?  Do these
 numbers correspond to the originating datasets?  (You can check against the
@@ -387,12 +377,14 @@ can be more confident that your answer is correct.
 
 #### Make a histogram of ecdata. Add a density curve to the histogram.    
 
-(@) `ggplot2` (part of `tidyverse`)  has great tools for plotting.  First we show
-  a basic histogram.  Then we switch to the density scale and overlay a normal
-  density with the same mean and variance as the data.  Finally we  overlay a
-  density plot.
+(@) `ggplot2` (part of `tidyverse`)  has great tools for plotting.  First we
+    show a basic histogram.  Then we switch to the density scale and overlay a
+    normal density with the same mean and variance as the data.  Finally we 
+    overlay a density plot.
+    
     (a) See chunk comments and the notes following the chunk for option
         suggestions.
+    
     (b) `ggplot` gives warnings about omitted data and messages about better
         options to choose.  You can prevent these messages from showing up in 
         your rendered document by using the chunk option `warning=FALSE` and
@@ -418,8 +410,8 @@ p <- ggplot(data=DEMS, aes(ecdata, na.rm=TRUE)) +
 N <- sum(!is.na(DEMS$ecdata))
 
 # Divide the range 0-1000 into N equal increments
-x <- seq(0,1000, length.out=N) 
-df <- with(DEMS[!is.na(DEMS$ecdata),], 
+x <- seq(0, 1000, length.out=N) 
+df <- with(DEMS[!is.na(DEMS$ecdata), ], 
            data.frame(x, y = dnorm(x, mean(ecdata), sd(ecdata))))
 p + geom_line(data = df, aes(x = x, y = y), color = "red")
 
@@ -619,6 +611,7 @@ Report Write-ups*. TODO:  Add hyperlinks
          combination of `mutate` and `dplyr`.  You can use the `EnvStats` 
          package with `tapply` and `cbind`.  To get the AM, ASD, GM, GSD, N in 
          order:
+         
 ```{r table.with.GM+GSD}
 #----table.with.GM+GSD using tapply and cbind ----------
 #This uses facilityno, a factor variable
@@ -752,6 +745,7 @@ plot(density(DEMS$ecdata[!is.na(DEMS$ecdata)]))
 
 (a) `DEMS$ln_ecdata <- log(DEMS$ecdata)` creates the natural log-transformed
    variable in the DEMS data frame.
+   
 (b) `DEMS$log10_ecdata <- log10(DEMS$ecdata)` creates the base 10 log-transformed
    variable in the DEMS data frame.
 
