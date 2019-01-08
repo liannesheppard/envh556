@@ -35,7 +35,7 @@ in the output.  Ordinarily we would not show them.
 ##
 knitr::opts_chunk$set(
     echo = TRUE,
-    cache = TRUE,
+    cache = FALSE,
     cache.comments = FALSE,
     message = FALSE,
     warning = FALSE
@@ -174,7 +174,6 @@ DEMS <- readRDS(file.path(datapath, "DEMSCombinedPersonal.rds"))
 
 ```
 
-
 ## Check your data first!
 
 An essential part of any data analysis is making sure the data you are analyzing
@@ -186,9 +185,9 @@ have been read in correctly and get a basic understanding of their structure.
 Here are some basic questions you should ask every time you read in a new
 dataset:
 
-i) How many observations are in your dataset?  Does this number correspond to
-   the originating dataset?
-ii) What are the variable names in the file? How are they formatted?  
+* How many observations are in your dataset?  Does this number correspond to
+  the originating dataset?
+* What are the variable names in the file? How are they formatted?  
 
 #### Here are some commands that will allow you to answer these questions:
 
@@ -440,8 +439,8 @@ transform and plot the transformed data.
 
 ### Logarithmic transformations using `dplyr`:
 
-(@) `mutate( DEMS, ln_ecdata = log(ecdata) )` creates the natural log-transformed
-    variable in the DEMS data frame.
+(@) `mutate( DEMS, ln_ecdata = log(ecdata) )` creates the natural 
+    log-transformed variable in the DEMS data frame.
 (@) `mutate( DEMS, log10_ecdata = log10(ecdata) )` creates the base 10
     log-transformed variable in the DEMS data frame.
     
@@ -615,10 +614,10 @@ Report Write-ups*. TODO:  Add hyperlinks
 ```{r table.with.GM+GSD}
 #----table.with.GM+GSD using tapply and cbind ----------
 #This uses facilityno, a factor variable
-xbar <- tapply(DEMS$ecdata,DEMS$facilityno, mean,    na.rm=TRUE)
-sd   <- tapply(DEMS$ecdata,DEMS$facilityno, sd,      na.rm=TRUE)
-gm   <- tapply(DEMS$ecdata,DEMS$facilityno, geoMean, na.rm=TRUE)
-gsd  <- tapply(DEMS$ecdata,DEMS$facilityno, geoSD,   na.rm=TRUE)
+xbar <- tapply(DEMS$ecdata, DEMS$facilityno, mean,    na.rm=TRUE)
+sd   <- tapply(DEMS$ecdata, DEMS$facilityno, sd,      na.rm=TRUE)
+gm   <- tapply(DEMS$ecdata, DEMS$facilityno, geoMean, na.rm=TRUE)
+gsd  <- tapply(DEMS$ecdata, DEMS$facilityno, geoSD,   na.rm=TRUE)
 n    <- tapply(DEMS$ecdata[!is.na(DEMS$ecdata)],
                DEMS$facilityno[!is.na(DEMS$ecdata)], length)
 cbind(AM=xbar, SD=sd, GM=gm, GSD=gsd, N=n)
@@ -637,11 +636,11 @@ error.)
 ```{r UGtable.with.GM+GSD}
 #----UGtable.with.GM+GSD using tapply and cbind ----------
 # This uses facilityno, a factor variable
-DEMSu <- DEMS[DEMS$u_s=="u",]
-xbar  <- tapply(DEMSu$ecdata,DEMSu$facilityno, mean,    na.rm=TRUE)
-sd    <- tapply(DEMSu$ecdata,DEMSu$facilityno, sd,      na.rm=TRUE)
-gm    <- tapply(DEMSu$ecdata,DEMSu$facilityno, geoMean, na.rm=TRUE)
-gsd   <- tapply(DEMSu$ecdata,DEMSu$facilityno, geoSD,   na.rm=TRUE)
+DEMSu <- DEMS[DEMS$u_s == "u", ]
+xbar  <- tapply(DEMSu$ecdata, DEMSu$facilityno, mean,    na.rm=TRUE)
+sd    <- tapply(DEMSu$ecdata, DEMSu$facilityno, sd,      na.rm=TRUE)
+gm    <- tapply(DEMSu$ecdata, DEMSu$facilityno, geoMean, na.rm=TRUE)
+gsd   <- tapply(DEMSu$ecdata, DEMSu$facilityno, geoSD,   na.rm=TRUE)
 n     <- tapply(DEMSu$ecdata[!is.na(DEMSu$ecdata)],
                 DEMSu$facilityno[!is.na(DEMSu$ecdata)], length)
 cbind(AM=xbar, SD=sd, GM=gm, GSD=gsd, N=n)
@@ -779,6 +778,7 @@ of your work.
 # This allows reproducibility by documenting the version of R and every package
 # you used.
 sessionInfo()
+
 ```
 
 ```{r appendix, ref.label=knitr::all_labels(), echo=TRUE, eval=FALSE, include=TRUE}
