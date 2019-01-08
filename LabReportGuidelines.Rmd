@@ -111,11 +111,11 @@ This section can cover:
 
 ### Appendix 2 (required):  Session information and Code
 
-```{r session info}
+```{r session info, eval=FALSE}
 #-----session info------
+# Change to eval=TRUE in your report
 sessionInfo()
-#uncomment the following line for your reports
-#getwd()
+getwd()
 
 ```
 
