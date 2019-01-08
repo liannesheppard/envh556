@@ -16,7 +16,7 @@ Each homework assignment should be formatted as a lab report using R Markdown fo
 
 ---
 
-### Outline
+### Lab Report Outline
 
 1. Introduction
     * Background
@@ -110,14 +110,18 @@ This section can cover:
 * Important figures and tables  
 
 ### Appendix 2 (required):  Session information and Code
+
 ```{r session info}
 #-----session info------
 sessionInfo()
-getwd()
+#uncomment the following line for your reports
+#getwd()
+
 ```
 
 ```{r code appendix, ref.label=knitr::all_labels(),echo=TRUE,eval=FALSE, tidy=TRUE, tidy.opts=list(width.cutoff=60), include=T}
-#---------code appendix------------
+#---------code appendix-------
+
 ```
 
 ---
