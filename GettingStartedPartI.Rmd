@@ -134,12 +134,12 @@ window will pop up with the knitted document.  Every time you knit a document,
 in addition to showing you the preview in R, it will save the knitted document
 in the same location as the `.Rmd` file.
 
-You can run code line-by-line from the `.Rmd` document as you build it.  However,
-this runs in a different environment than the one used by `knitr`.  So you may
-have different errors in each.  It can be helpful to knit often.
+You can run code line-by-line from the `.Rmd` document as you build it.
+However, this runs in a different environment than the one used by `knitr`. So
+you may have different errors in each.  It can be helpful to knit often.
 
-There are also good resources right inside RStudio.  For instance, if you click 
-on the Help, you will find a R Markdown Quick Reference.  The Cheat Sheets 
+There are also good resources right inside RStudio. For instance, if you click
+on the Help, you will find a R Markdown Quick Reference. The Cheat Sheets
 section also has a R Markdown Cheat Sheet and a R Markdown Reference Guide.
 
 
@@ -153,8 +153,8 @@ will knit to.  You can change the text of the title, author, and date here any
 time.  These will show up at the  top of your knitted document.  You can also
 change the file type at any time.  For example, if I write `word_document`
 instead of `html_document`, I will get a Word file.  However, be aware that some
-commands are specific to certain document types, or just show up differently.
-It appears that `html_document` is the most flexible and least fussy type of
+commands are specific to certain document types, or just show up differently. It
+appears that `html_document` is the most flexible and least fussy type of
 output.
 
 Whenever you open a new `.Rmd` file and see the example, leave the header and 
@@ -164,9 +164,9 @@ delete the rest of the example below the last `---`.
 
 To put plain text into an R Markdown document, you don't need anything special.
 Text that is black in the `.Rmd` document is plain text in the knitted document.
-Blue text in the `.Rmd` indicates that it has been formatted in some way by using
-special characters (for example, the knitted text may be bold).  Part II of this
-document gives details on how to format text.
+Blue text in the `.Rmd` indicates that it has been formatted in some way by
+using special characters (for example, the knitted text may be bold).  Part II
+of this document gives details on how to format text.
 
 ## Chunks
 
@@ -180,6 +180,7 @@ complete R script for that analysis.  (The code appendix does this for you
 automatically; see below.)
 
 Here is an example code chunk to generate some data and calculate its mean:
+
 ```{r example_chunk}
 # -------example_chunk-----------
 # Code goes here; output appears below.  (Details about the code in this chunk
@@ -189,6 +190,7 @@ a <- rnorm(mean=0, sd=2, n=20)
 mean(a)
 
 ```
+
 There is more information on chunks in Part II.
 
 
@@ -210,23 +212,22 @@ forget how you calculated something)
 
 One way to ensure reproducibility is to use in-line code.  This incorporates R
 results directly within text.  To include code output in a sentence, we use the
-format of one backtick followed by "r ", a space, and then some R code, and ending with a second backtick.  
-For example, we can write: "The mean of the data is `r mean(a)`."  See Part II for
-details on inline code.
+format of one backtick followed by "r ", a space, and then some R code, and
+ending with a second backtick. For example, we can write: "The mean of the data
+is `r mean(a)`."  See Part II for details on inline code.
 
 In the remainder of this section, we suggest strategies that support
 reproducibility.
 
 ## Use projects and relative file paths within them
 
-An important principle is to keep your scripts, data files, and all other 
-inputs and outputs within a project folder.  Using an RStudio "project" 
-makes this easy, decreasing reliance on "setwd" commands in your scripts.  
-You would not refer to files outside of this project folder, but instead would 
-use subfolders (e.g., "data", "images", etc.) to organize your work within 
-your project.  Using project folders also works nicely with version control 
-(Git) as the project folder becomes your version control "repository" for 
-that project.
+An important principle is to keep your scripts, data files, and all other inputs
+and outputs within a project folder.  Using an RStudio "project" makes this
+easy, decreasing reliance on "setwd" commands in your scripts. You would not
+refer to files outside of this project folder, but instead would use subfolders
+(e.g., "data", "images", etc.) to organize your work within your project.  Using
+project folders also works nicely with version control (Git) as the project
+folder becomes your version control "repository" for that project.
 
 We will set up a new project in the first lab.
 
@@ -280,16 +281,16 @@ pacman::p_load(knitr, tidyverse)
 
 ```
 
-The first part installs `pacman` if it is missing, then the second part 
-installs and loads the other packages as needed. If you do this at the top 
-of your script for any packages needed later in your script, it makes it 
-really easy for people to see what packages your script depends on. This 
-approach will make it much more likely someone, particularly a new R user, 
-will be able to run your script and reproduce your results. Many new R 
-users get completely stuck if they run code that bombs simply because a 
-package has not been installed. And just putting in `install.packages()` 
-calls "just in case" will needlessly slow down your script (each and every 
-time it is run) if the packages have already been installed.
+The first part installs `pacman` if it is missing, then the second part installs
+and loads the other packages as needed. If you do this at the top of your script
+for any packages needed later in your script, it makes it really easy for people
+to see what packages your script depends on. This approach will make it much
+more likely someone, particularly a new R user, will be able to run your script
+and reproduce your results. Many new R users get completely stuck if they run
+code that bombs simply because a package has not been installed. And just
+putting in `install.packages()` calls "just in case" will needlessly slow down
+your script (each and every time it is run) if the packages have already been
+installed.
 
 ## Use relative file paths, not absolute file paths
 
@@ -338,7 +339,7 @@ when accessing files.  A working directory is the place that R will look for
 files if you don't give a file path.  R is always set to a certain working
 directory; you can check where that is like this:
 
-```{r getwd}
+```{r getwd, eval=FALSE}
 # -------getwd---------
 getwd()
 

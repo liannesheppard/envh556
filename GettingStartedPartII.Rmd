@@ -24,14 +24,13 @@ TODO:  These may belong in Part I??
 
 ```{r setup, eval=TRUE, include=FALSE}
 # ---------setup------
-
 # Set knitr options
 
 # Default .Rmd options
 #knitr::opts_chunk$set(echo = TRUE)
 
 # Some useful knitr options:
-knitr::opts_chunk$set(echo = TRUE, warning = FALSE, tidy=TRUE, 
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, tidy=FALSE, 
   tidy.opts=list(width.cutoff=80, blank=FALSE), cache=TRUE, messages=FALSE)
 
 # Set R option:  here we show only 2 digits when displaying
@@ -101,7 +100,8 @@ The three dashes give the same result:
 
 Finally, you can put comments in your .Rmd file that won't be visible in your
 ouptput.  For example, this text doesn't appear in the rendered document: (it
-appears twice in the .Rmd file; the second one is not enclosed in back quotes so it is hidden.)
+appears twice in the .Rmd file; the second one is not enclosed in back quotes so
+it is hidden.)
 
 `<!-- This is a text comment and won't appear in the output -->`
 
@@ -124,8 +124,8 @@ a butten labeled 'Run'; the drop-down menu from that has useful chunk commands.
 Below is the basic format of a chunk.  You can make new chunks by pressing
 'Ctrl' 'Alt' 'i' in Windows, or 'Cmd' 'Option' 'i' in Macs.  You can also just
 type out the symbols below (note that those are tick marks, not apostrophes!).
-If you read this and are still confused, you might check out
-[this help guide](http://kbroman.org/knitr_knutshell/pages/Rmarkdown.html) as well.
+If you read this and are still confused, you might check out [this help
+guide](http://kbroman.org/knitr_knutshell/pages/Rmarkdown.html) as well.
 
 It is good practice to name every chunk with a word following `r`, e.g. 
 `{r chunk_name_goes_here, and chunk options go after the comma, options separated by commas}`.  
@@ -133,10 +133,10 @@ It is good practice to name every chunk with a word following `r`, e.g.
 
 ```{r example_chunk}
 # -------example_chunk-----------
-
 # Code goes here; output appears below
 
-# By setting the seed, we follow the reproducible research practice that my random numbers are the same each time.
+# By setting the seed, we follow the reproducible research practice that my
+# random numbers are the same each time.
 set.seed(45)
 
 # Generate random numbers from a Normal distribution and save as a vector.
@@ -173,7 +173,6 @@ displayed.
 
 ```{r example_chunk_that_wont_be_shown, echo=FALSE}
 # ------example chunk that wont be shown-----
-
 # This code won't be shown, but it will be run and output will show up.
 mean(a)
 
@@ -184,7 +183,6 @@ mean(a)
 The following output won't be shown, but the code will still run in R.
 ```{r example_chunk_that_wont_show_output, results="hide"}
 # ----example chunk that wont show output------
-
 # This output won't be shown, but it will still run in R.
 mean(a)
 
@@ -215,7 +213,6 @@ However, the code will still run in R.
 
 ```{r example_chunk_hide_everything, include=FALSE}
 # ----example chunk hides everything----------
-
 # This would be how to do all your coding for which you don't want to show the
 # output in your lab report. All this code runs, but nothing shows up in your
 # knitted document. Any variable I create here will be 'remembered' for the rest
@@ -231,12 +228,13 @@ knit at all.  This chunk option is a temporary band-aid to help you record and
 understand the error; **do not** make all your chunks `error=TRUE` as a way of
 bypassing code issues.
 
-```{r example_chunk_accept_errors,error=TRUE}
-# -----example chunk accept errors----- Sometimes in a work-in-progress, you may
-# want a knitted copy of everything - even things that go wrong. This wouldn't
-# be a chunk option to use in a polished homework assignment. This is an error
-# because I haven't loaded the  titanic data in this document yet (regardless of
-# whether it's loaded in my RStudio right now)
+```{r example_chunk_accept_errors, error=TRUE}
+# -----example chunk accept errors-----
+# Sometimes in a work-in-progress, you may want a knitted copy of everything -
+# even things that go wrong. This wouldn't be a chunk option to use in a
+# polished homework assignment. This is an error because I haven't loaded the
+# titanic data in this document yet (regardless of whether it's loaded in my
+# RStudio right now)
 head(titanic) 
 mean(a)
 
@@ -244,7 +242,11 @@ mean(a)
 
 ## Naming chunks
 
-It is good practice to name your chunks as we have done in the examples above.  Further, if you put a comment ending with at least 4 dashes at the end of the first comment line, this shows up in the outline section of your document in RStudio AND makes it easier to read your code in the appendix.  A comment formatted this wasy looks like this: `#--example chunk name-----`
+It is good practice to name your chunks as we have done in the examples above.
+Further, if you put a comment ending with at least 4 dashes at the end of the
+first comment line, this shows up in the outline section of your document in
+RStudio AND makes it easier to read your code in the appendix.  A comment
+formatted this wasy looks like this: `#--example chunk name-----`
 
 ## Plots
 
@@ -253,6 +255,7 @@ To print a plot, you don't need any special chunk options.
 ```{r example_plot}
 # ----example plot----------
 hist(a)
+
 ```
 
 However, to hide a plot you need to use `include=FALSE`, which hides all code 
@@ -266,6 +269,7 @@ The following chunk is hidden, as is its output.
 # ---------example plot is hidden----------
 hist(a)
 # Still run in R, though!
+
 ```
 
 # In-line code
@@ -282,14 +286,13 @@ it follows several reproduciblity principles.  (See Part I for details.)
 In general, only use the in-line code format for printing out one or two
 numbers.  If you need a table or plot, that needs to come from a chunk.
 
-
-
 # Tables
 
-R Markdown has the ability to create nice tables (nice enough 
-to use for homework).  There are several different packages for creating 
-tables; these include `kable`, `stargazer`, and `xtable`.  `kable` is the simplest to use and we show examples in Lab 1.  If you wish to develop more sophisticated tables, explore these other packages.
-
+R Markdown has the ability to create nice tables (nice enough to use for
+homework).  There are several different packages for creating tables; these
+include `kable`, `stargazer`, and `xtable`.  `kable` is the simplest to use and
+we show examples in Lab 1.  If you wish to develop more sophisticated tables,
+explore these other packages.
 
 # Taking advantage of R Markdown's capabilities within the RStudio environment
 
@@ -298,12 +301,9 @@ which you can't use in a regular R script.
 
 * Run the current chunk: Ctrl+Shift+Enter (Windows) or Command+Option+c (Mac) 
 or press the green 'play button' in the upper-right hand corner of the chunk
-
 * Run the next chunk: Ctrl+Alt+n (Windows) or Command+Option+n (Mac)
-
 * Run all chunks above: Ctrl+Alt+p (Windows) or press the upside-down triangle 
 in the upper-right hand corner of the chunk
-
 * Run all chunks: Ctrl+Alt+r (Windows) or go through the 'Run' button dropdown 
 (see below)
 
@@ -319,18 +319,16 @@ to the right of the save button in the toolbar for the .Rmd panel.  It has
 will also check grammar, I would recommend knitting to a Word document and just 
 using the Word spell-checker.
 
-
-
 ## Tips on knitting to a PDF
 
-
-You may want to knit your R Markdown directly to a .pdf to turn in.  This is very easy; although sometimes you may need to 
-install an extra package.  To check whether your computer is already set 
-up to knit to pdf, try selecting the dropdown from the 'Knit' button and 
-choosing 'Knit to PDF' (or change your header, as described below).  If that 
-doesn't work, you'll have to install the `tinytex` package. You can do this within
-R if you use the [tinytex](https://yihui.name/tinytex/) package, 
-which is a minimal TeX package for R users.
+You may want to knit your R Markdown directly to a .pdf to turn in.  This is
+very easy; although sometimes you may need to install an extra package.  To
+check whether your computer is already set up to knit to pdf, try selecting the
+dropdown from the 'Knit' button and choosing 'Knit to PDF' (or change your
+header, as described below).  If that doesn't work, you'll have to install the
+`tinytex` package. You can do this within R if you use the
+[tinytex](https://yihui.name/tinytex/) package, which is a minimal TeX package
+for R users.
 
     install.packages('tinytex')
     tinytex::install_tinytex()
@@ -378,30 +376,27 @@ $\log(x_{Disease})=\alpha_0+\beta x_{Exposure}$
 
 or log($x_{Disease}$) = $\alpha_0$ + $\beta$ $x_{Exposure}$
 
-
-
 # Additional Resources
 
 * For a set of best practicess for writing code, follow the [Google style guide for writing R code](https://google.github.io/styleguide/Rguide.xml) 
-
-    
 * For more background on why and how to use R Markdown to create reproducible 
 scientific papers, see 
 [Michael Frank's YouTube video](https://www.youtube.com/watch?v=Nj9J5iCSMB0), 
 or the [html document it reviews](https://cdn.rawgit.com/mcfrank/openscience_tutorial/fec71433/rmarkdown_handout.html), 
 and the [R Markdown (.Rmd) document](https://github.com/mcfrank/openscience_tutorial/blob/master/rmarkdown_handout.Rmd) 
 that created it.
-
-* Try to find time to read more of the [R for Data Science](https://r4ds.had.co.nz/) book by Hadley Wickham and Garrett Grolemund.  In particular, the "Explore" section (chapters 2-8) gives an excellent overview of tools we will use in ENVH 556.
+* Try to find time to read more of the [R for Data
+Science](https://r4ds.had.co.nz/) book by Hadley Wickham and Garrett Grolemund.
+In particular, the "Explore" section (chapters 2-8) gives an excellent overview
+of tools we will use in ENVH 556.
     
-
 # Appendix
-
 
 ```{r session_info}
 #-----session_info----
 # Print the session information
 sessionInfo()
+
 ```
 
 
