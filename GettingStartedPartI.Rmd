@@ -388,16 +388,14 @@ code you used. The lab template for ENVH 556 provides you with some standard
 appendix code to use in every ENVH 556 document. The chunk options to accomplish
 this are:
 
-```    
-    ref.label=knitr::all_labels(),echo=TRUE,eval=FALSE, tidy=TRUE, 
-      tidy.opts=list(width.cutoff=60)
+```
+ref.label=knitr::all_labels(), echo=TRUE, eval=FALSE, include=TRUE
 ```
 
 For an example of how to use this, I added a code appendix at the very end of 
-this document (see last chunk at the end).    Note that you will still want to 
+this document (see last chunk at the end). Note that you will still want to ...
 
-
-## Documenting your code
+## Document your code
 
 We encourage you to adopt these best practices when comment your code to improve
 readability:
@@ -407,7 +405,8 @@ readability:
 * Insert comments immediately before the line(s) of code to which they apply.
 * Add spaces and blank lines as needed to separate code and comments.
 * Avoid "side-commenting", putting comments at the end of a line of code.
-* Comments should state what the code does, in the form of an "imperative".
+* Comments should state what the code does, in the form of an
+  [imperative](https://www.wordnik.com/words/imperative).
 
 Here is an example of these put into practice:
 
@@ -422,7 +421,8 @@ sd(temps)
 
 ```
 
-For more tips on formatting code, see [Google style guide for R code](https://google.github.io/styleguide/Rguide.xml)
+For more tips on formatting code, see [Google style guide for R
+code](https://google.github.io/styleguide/Rguide.xml).
 
 # R Markdown resources
 
