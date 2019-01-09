@@ -10,15 +10,6 @@ output:
 urlcolor: blue
 ---
 
-<!--
-TODO:  Make sure existing details are correct; add other tips as there is time.
-
-TODO:  These may belong in Part I??
-TODO: Add in principles of clearing the environment
-
--->
-
-
 ```{r setup, eval=TRUE, include=FALSE}
 # ---------setup------
 # Set knitr options
@@ -33,7 +24,8 @@ knitr::opts_chunk$set(echo = TRUE, warning = FALSE, tidy=FALSE,
 # Set R option:  here we show only 2 digits when displaying
 options(digits = 2)
 
-# Clear workspace of all objects and unload all extra (non-base) packages
+# Clear workspace of all objects and unload all extra (non-base) packages.
+# Since knitr creates a fresh environment, this is only here for development.
 rm(list = ls(all = TRUE))
 if (!is.null(sessionInfo()$otherPkgs)) {
     res <- suppressWarnings(
@@ -96,7 +88,7 @@ The three dashes give the same result:
 ---
 
 Finally, you can put comments in your `.Rmd` file that won't be visible in your
-ouptput.  For example, this text doesn't appear in the rendered document: (it
+output.  For example, this text doesn't appear in the rendered document: (it
 appears twice in the `.Rmd` file; the second one is not enclosed in back quotes
 so it is hidden.)
 
@@ -109,10 +101,10 @@ so it is hidden.)
 You can think of each chunk as a miniature R script.  Within a Markdown
 document, your code all needs to be in order (you can't print a plot after your
 first paragraph if you don't load the data set until paragraph three). You also
-can't use *anything* outside the Markdown document; you need to call
-`library()`, load data, etc. all within this Markdown document. This will become
-an issue when you try to knit the document, even if it worked while running code
-straight from the `.Rmd`.
+can't use *anything* outside the Markdown document; you need to load packages,
+load data, etc. all within this Markdown document. This will become an issue
+when you try to knit the document, even if it worked while running code straight
+from the `.Rmd`.
 
 There are lots of extra things you can do with chunks while running code
 straight from the `.Rmd`.  In the upper-right corner of RStudio's text editor
@@ -143,7 +135,7 @@ mean(a)
 
 ```
 
-The code and output above would not be acceptable in a homework writeup.  You
+The code and output above would not be acceptable in a homework write-up.  You
 can use chunk options to change how code and output appear in the knitted
 document (but chunk options don't affect anything when you are running code in
 the `.Rmd` document). Below, I'll give some examples of chunk options; check out
@@ -200,12 +192,12 @@ Or, equivalently, just use this one:
 For more information about `include=FALSE`, see: 
 https://yihui.name/en/2017/11/knitr-include-false/
 
-It is possible to hide errors and warnings in your knitted document.  **Do not** 
-leave the `message=FALSE` and `warning=FALSE` options turned on while you are 
-creating your document because they will hide important messages from R.  Just 
-add these when you are done coding; for example, using `library()` often creates 
-some messages which you need to hide.  In general, we *want* to see the messages 
-and warnings from R as we are coding.
+It is possible to hide errors and warnings in your knitted document.  **Do not**
+leave the `message=FALSE` and `warning=FALSE` options turned on while you are
+creating your document because they will hide important messages from R.  Just
+add these when you are done coding; for example, using `library()` or `p_load()`
+often creates some messages which you may wish to hide in your final document.
+In general, we *want* to see the messages and warnings from R as we are coding.
 
 The following chunk won't be shown and it creates output that won't be shown.  
 However, the code will still run in R.
@@ -245,7 +237,7 @@ It is good practice to name your chunks as we have done in the examples above.
 Further, if you put a comment ending with at least 4 dashes at the end of the
 first comment line, this shows up in the outline section of your document in
 RStudio AND makes it easier to read your code in the appendix.  A comment
-formatted this wasy looks like this: `#-----example chunk name-----`
+formatted this way looks like this: `#-----example chunk name-----`
 
 ## Plots
 
@@ -274,13 +266,13 @@ hist(a)
 # In-line code
 
 We saw above that output from chunks is usually not 'pretty' enough for refined
-reports.  To include code output in a sentence, we use this formatformat of one
-backtick followed by "r ", a space, and then some R code, and ending with a
-second backtick.   So we can write: The mean of the data is `r mean(a)`.
+reports.  To include code output in a sentence, we use this format of one
+back-tick followed by "r ", a space, and then some R code, and ending with a
+second back-tick.   So we can write: The mean of the data is `r mean(a)`.
 Ideally you pay attention to scientific reporting standards, for instance by
 rounding it to an appropriate number of significant figures: The mean is `r
 round(mean(a), 2)`.  This is much better than typing "The mean is 0.217" because
-it follows several reproduciblity principles.  (See Part I for details.)
+it follows several reproducibility principles.  (See Part I for details.)
 
 In general, only use the in-line code format for printing out one or two
 numbers.  If you need a table or plot, that needs to come from a chunk.
@@ -289,8 +281,8 @@ numbers.  If you need a table or plot, that needs to come from a chunk.
 
 R Markdown has the ability to create nice tables (nice enough to use for
 homework).  There are several different packages for creating tables; these
-include `kable`, `stargazer`, and `xtable`.  `kable` is the simplest to use and
-we show examples in Lab 1.  If you wish to develop more sophisticated tables,
+include `kable`, `stargazer`, and `xtable`. `kable` is the simplest to use and
+we show examples in Lab 1. If you wish to develop more sophisticated tables,
 explore these other packages.
 
 # Taking advantage of R Markdown's capabilities within the RStudio environment
@@ -303,10 +295,10 @@ or press the green 'play button' in the upper-right hand corner of the chunk
 * Run the next chunk: Ctrl+Alt+n (Windows) or Command+Option+n (Mac)
 * Run all chunks above: Ctrl+Alt+p (Windows) or press the upside-down triangle 
 in the upper-right hand corner of the chunk
-* Run all chunks: Ctrl+Alt+r (Windows) or go through the 'Run' button dropdown 
+* Run all chunks: Ctrl+Alt+r (Windows) or go through the 'Run' button drop-down 
 (see below)
 
-There are lots more running options if you select the dropdown of the 'Run'
+There are lots more running options if you select the drop-down of the 'Run'
 button on the right side of the toolbar for RStudio's text editor panel.  You
 can use the arrows to the left of the 'Run' button to help navigate your
 document, especially if you have a lot of text.
@@ -324,8 +316,8 @@ quotes, which will likely break your code.
 
 You may want to knit your R Markdown directly to a `.pdf` to turn in.  This is
 very easy; although sometimes you may need to install an extra package.  To
-check whether your computer is already set up to knit to pdf, try selecting the
-dropdown from the 'Knit' button and choosing 'Knit to PDF' (or change your
+check whether your computer is already set up to knit to `.pdf`, try selecting the
+drop-down from the 'Knit' button and choosing 'Knit to PDF' (or change your
 header, as described below).  If that doesn't work, you'll have to install the
 `tinytex` package. You can do this within R if you use the
 [tinytex](https://yihui.name/tinytex/) package, which is a minimal TeX package
@@ -366,7 +358,7 @@ to switch between `.html` and `.pdf` files.
 
 If you want to make your text clearer by using nicely formatted equations, you 
 can use the math language LaTeX to write greek letters and equations.  Below 
-are some examples that you can copy and paste, or just google it.  Be prepared 
+are some examples that you can copy and paste, or just Google it.  Be prepared 
 to have a little patience, because LaTeX is pretty picky.  This is *not* an 
 expectation for ENVH 556, it's just something extra for those of you who are 
 interested.  This is also an excuse to plug a 
@@ -430,7 +422,7 @@ The following objects are masked from ‘package:base’:
 If you want to use the function `count`, you may not get the one you intend, 
 as both of these packages contain `count`, but the function arguments are
 different. This could give you an error if your argument list did not match
-what was expected by the funtion. This situation is called a namespace conflict.
+what was expected by the function. This situation is called a namespace conflict.
 R includes tools to examine these conflicts.
 
 ```{r examine_namespace_conflict, eval=TRUE, echo=TRUE}
@@ -529,7 +521,7 @@ suppressWarnings(all_equal(reshape2::smiths, tidyr::smiths, convert = TRUE))
 ```
 
 
-Sometimes, the packages we use will load other packages as "dependences". We
+Sometimes, the packages we use will load other packages as "dependencies". We
 can't easily control which packages are loaded indirectly like this. Sometimes
 we end up loading packages which create namespace conflicts unknowingly. So, if
 you see strange errors when calling a function, especially those which refer to
@@ -541,12 +533,12 @@ Four best practices to apply are:
 * Try to standardize on common families of packages when possible.
 * Use the latest generation of packages from your chosen family of packages.
 * Only load the minimum number of packages into memory that you will need.
-* Explictly use package names when calling functions if you must in order to 
+* Explicitly use package names when calling functions if you must in order to 
   avoid namespace conflicts
 
 # Additional Resources
 
-* For a set of best practicess for writing code, follow the [Google style guide for writing R code](https://google.github.io/styleguide/Rguide.xml) 
+* For a set of best practices for writing code, follow the [Google style guide for writing R code](https://google.github.io/styleguide/Rguide.xml) 
 * For more background on why and how to use R Markdown to create reproducible 
 scientific papers, see 
 [Michael Frank's YouTube video](https://www.youtube.com/watch?v=Nj9J5iCSMB0), 
