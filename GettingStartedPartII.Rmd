@@ -410,7 +410,7 @@ pacman::p_load(plyr, dplyr)
 
 R may even warn you about the conflicts as the second package is loaded:
 
----
+```
 Attaching package: ‘dplyr’
 
 The following objects are masked from ‘package:plyr’:
@@ -424,7 +424,7 @@ The following objects are masked from ‘package:stats’:
 The following objects are masked from ‘package:base’:
 
     intersect, setdiff, setequal, union
----
+```
 
 If you want to use the function `count`, you may not get the one you intend, 
 as both of these packages contain `count`, but the function arguments are
