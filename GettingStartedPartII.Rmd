@@ -95,10 +95,10 @@ The three dashes give the same result:
 
 ---
 
-Finally, you can put comments in your .Rmd file that won't be visible in your
+Finally, you can put comments in your `.Rmd` file that won't be visible in your
 ouptput.  For example, this text doesn't appear in the rendered document: (it
-appears twice in the .Rmd file; the second one is not enclosed in back quotes so
-it is hidden.)
+appears twice in the `.Rmd` file; the second one is not enclosed in back quotes
+so it is hidden.)
 
 `<!-- This is a text comment and won't appear in the output -->`
 
@@ -108,15 +108,16 @@ it is hidden.)
 
 You can think of each chunk as a miniature R script.  Within a Markdown
 document, your code all needs to be in order (you can't print a plot after your
-first paragraph if you don't load the data set until paragraph three).  You also
+first paragraph if you don't load the data set until paragraph three). You also
 can't use *anything* outside the Markdown document; you need to call
-`library()`, load data, ect. all within this Mardown document.  This will become
+`library()`, load data, etc. all within this Markdown document. This will become
 an issue when you try to knit the document, even if it worked while running code
-straight from the .Rmd.
+straight from the `.Rmd`.
 
 There are lots of extra things you can do with chunks while running code
-straight from the .Rmd.  In the upper-right corner of your .Rmd panel, there is
-a butten labeled 'Run'; the drop-down menu from that has useful chunk commands.
+straight from the `.Rmd`.  In the upper-right corner of RStudio's text editor
+panel, there is a button labeled 'Run'; the drop-down menu from that has useful
+chunk commands.
 
 Below is the basic format of a chunk.  You can make new chunks by pressing
 'Ctrl' 'Alt' 'i' in Windows, or 'Cmd' 'Option' 'i' in Macs.  You can also just
@@ -145,8 +146,8 @@ mean(a)
 The code and output above would not be acceptable in a homework writeup.  You
 can use chunk options to change how code and output appear in the knitted
 document (but chunk options don't affect anything when you are running code in
-the .Rmd document).  Below, I'll give some examples of chunk options; check out
-the knitted document to see what each of them do.  Chunk options can be combined
+the `.Rmd` document). Below, I'll give some examples of chunk options; check out
+the knitted document to see what each of them do. Chunk options can be combined
 by separating them with commas.
 
 ## Chunk options
@@ -244,14 +245,14 @@ It is good practice to name your chunks as we have done in the examples above.
 Further, if you put a comment ending with at least 4 dashes at the end of the
 first comment line, this shows up in the outline section of your document in
 RStudio AND makes it easier to read your code in the appendix.  A comment
-formatted this wasy looks like this: `#--example chunk name-----`
+formatted this wasy looks like this: `#-----example chunk name-----`
 
 ## Plots
 
 To print a plot, you don't need any special chunk options.  
 
 ```{r example_plot}
-# ----example plot----------
+#-----example plot-----
 hist(a)
 
 ```
@@ -278,7 +279,7 @@ backtick followed by "r ", a space, and then some R code, and ending with a
 second backtick.   So we can write: The mean of the data is `r mean(a)`.
 Ideally you pay attention to scientific reporting standards, for instance by
 rounding it to an appropriate number of significant figures: The mean is `r
-round(mean(a),2)`.  This is much better than typing "The mean is 0.217" because
+round(mean(a), 2)`.  This is much better than typing "The mean is 0.217" because
 it follows several reproduciblity principles.  (See Part I for details.)
 
 In general, only use the in-line code format for printing out one or two
@@ -305,10 +306,10 @@ in the upper-right hand corner of the chunk
 * Run all chunks: Ctrl+Alt+r (Windows) or go through the 'Run' button dropdown 
 (see below)
 
-There are lots more running options if you select the dropdown of the 'Run' 
-button on the right side of the toolbar for the .Rmd panel.  You can use the 
-arrows to the left of the 'Run' button to help navigate your document, 
-especially if you have a lot of text.
+There are lots more running options if you select the dropdown of the 'Run'
+button on the right side of the toolbar for RStudio's text editor panel.  You
+can use the arrows to the left of the 'Run' button to help navigate your
+document, especially if you have a lot of text.
 
 RStudio's text editor also has a primitive spell-checker which is good at
 checking only regular text and not any code or special symbols.  To use it,
@@ -359,7 +360,7 @@ and there is also a [Mac version](https://medium.com/@sorenlind/create-pdf-repor
 This will walk you through what you need to install (it also goes through 
 installing R and RStudio, but you can just skip that).  Once everything is 
 installed, you can set your output to `pdf_document` instead of `html_document` 
-to switch between .html and .pdf files.
+to switch between `.html` and `.pdf` files.
 
 ## Using LaTeX
 
