@@ -457,14 +457,14 @@ We can avoid this conflict by only loading one package that contains the
 # Make sure the dataset is loaded
 data(iris)
 
-# plyr's count function expects the "vars" argument (argument #2) as a quoted 
-# character vector of variable names
+# plyr's count function expects the "vars" grouping argument (argument #2) as a 
+# quoted character vector of variable names
 plyr::count(iris, "Species")
 
 # If we use dplyr's count function in the same way, we get strange results
 dplyr::count(iris, "Species")
 
-# dplyr's count function expects the "wt" argument (argument #2) as an unquoted
+# dplyr's count function expects the (unnamed) grouping argument as an unquoted
 # variable name or a vector of data values
 dplyr::count(iris, Species)
 
