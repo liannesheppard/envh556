@@ -13,11 +13,8 @@ urlcolor: blue
 <!--
 TODO:  Make sure existing details are correct; add other tips as there is time.
 
-TODO: Talk about latest versions/eras of packages?
-
 TODO:  These may belong in Part I??
-    TODO: Add in principles of clearing the environment
-     TODO:  Add in commands to find namespace conflicts
+TODO: Add in principles of clearing the environment
 
 -->
 
@@ -31,7 +28,7 @@ TODO:  These may belong in Part I??
 
 # Some useful knitr options:
 knitr::opts_chunk$set(echo = TRUE, warning = FALSE, tidy=FALSE, 
-  tidy.opts=list(width.cutoff=80, blank=FALSE), cache=TRUE, messages=FALSE)
+  tidy.opts=list(width.cutoff=80, blank=FALSE), cache=FALSE, messages=FALSE)
 
 # Set R option:  here we show only 2 digits when displaying
 options(digits = 2)
@@ -44,7 +41,7 @@ if (!is.null(sessionInfo()$otherPkgs)) {
                detach, character.only=TRUE, unload=TRUE, force=TRUE))
 }
 
-# load key packages using pacman (see below for explanation)
+# Load packages using pacman (see below for explanation)
 my_repo <- 'http://cran.r-project.org'
 if (!require("pacman")) {install.packages("pacman", repos = my_repo)}
 
@@ -156,7 +153,7 @@ by separating them with commas.
 
 *eval=FALSE*  
 
-The following code won't be run
+The following code won't be run.
 
 ```{r code_chunk_that_wont_run, eval=FALSE, error=TRUE}
 # ------code chunk that won't run----
@@ -181,6 +178,7 @@ mean(a)
 *results="hide"*  
 
 The following output won't be shown, but the code will still run in R.
+
 ```{r example_chunk_that_wont_show_output, results="hide"}
 # ----example chunk that wont show output------
 # This output won't be shown, but it will still run in R.
@@ -312,16 +310,18 @@ button on the right side of the toolbar for the .Rmd panel.  You can use the
 arrows to the left of the 'Run' button to help navigate your document, 
 especially if you have a lot of text.
 
-R Markdown also has a primitive spell-checker which is good at checking only 
-regular text and not any code or special symbols.  To use it, press the button 
-to the right of the save button in the toolbar for the .Rmd panel.  It has 
-'ABC' and a green check mark.  If you want something more sophisticated which 
-will also check grammar, I would recommend knitting to a Word document and just 
-using the Word spell-checker.
+RStudio's text editor also has a primitive spell-checker which is good at
+checking only regular text and not any code or special symbols.  To use it,
+press the button to the right of the save button in the toolbar for the text
+editor panel.  It has 'ABC' and a green check mark.  If you want something more
+sophisticated which will also check grammar, I would recommend knitting to a
+Word document and just using the Word spell-checker. Just don't paste code from
+Word back into your text editor, as MS Word may modify characters such as
+quotes, which will likely break your code.
 
 ## Tips on knitting to a PDF
 
-You may want to knit your R Markdown directly to a .pdf to turn in.  This is
+You may want to knit your R Markdown directly to a `.pdf` to turn in.  This is
 very easy; although sometimes you may need to install an extra package.  To
 check whether your computer is already set up to knit to pdf, try selecting the
 dropdown from the 'Knit' button and choosing 'Knit to PDF' (or change your
@@ -330,11 +330,26 @@ header, as described below).  If that doesn't work, you'll have to install the
 [tinytex](https://yihui.name/tinytex/) package, which is a minimal TeX package
 for R users.
 
-    install.packages('tinytex')
-    tinytex::install_tinytex()
+```
+install.packages('tinytex', repos = 'http://cran.r-project.org')
+tinytex::install_tinytex()
+```
 
-You would only need to run these commands once. You would not include them in
-a regular R script, as doing so would needlessly repeat the installation.
+You would only need to run these commands once. You would not normally include 
+them in a regular R script, as doing so would needlessly repeat the 
+installation, unless you take special precautions, such as wrapping the code 
+in an `if` block as as shown below.
+
+```{r install_tinytex, eval=FALSE, echo=TRUE}
+#-----install tinytex-----
+if (!file.exists(Sys.which('texi2dvi'))) {
+    # This can take a long time to run
+    install.packages('tinytex', repos = 'http://cran.r-project.org')
+    tinytex::install_tinytex(force=TRUE)
+    if (tinytex:::is_tinytex() != TRUE) warning('tinytex failed to install!')
+}
+
+```
 
 If you need a more complete TeX package for other uses, you will need to 
 download and install more software, separately from R. For Windows users, 
@@ -376,6 +391,158 @@ $\log(x_{Disease})=\alpha_0+\beta x_{Exposure}$
 
 or log($x_{Disease}$) = $\alpha_0$ + $\beta$ $x_{Exposure}$
 
+# Package Namespace Conflicts
+
+Sometimes we need to load a package which will have function names which 
+conflict with packages we have already loaded. When you call that function, 
+R might run the function from one package when you intended it to be run from 
+another. You may get strange results or errors because of this. They can be
+difficult to solve because the true source of the conflict is not clear.
+
+For example, let's say you load the `plyr` package and then load the `dplyr` 
+package, as shown below.
+
+```{r load_plyr_and_dplyr, eval=TRUE, echo=TRUE}
+#-----load plyr and dplyr-----
+pacman::p_load(plyr, dplyr)
+
+```
+
+R may even warn you about the conflicts as the second package is loaded:
+
+---
+Attaching package: ‘dplyr’
+
+The following objects are masked from ‘package:plyr’:
+
+    arrange, count, desc, failwith, id, mutate, rename, summarise, summarize
+
+The following objects are masked from ‘package:stats’:
+
+    filter, lag
+
+The following objects are masked from ‘package:base’:
+
+    intersect, setdiff, setequal, union
+---
+
+If you want to use the function `count`, you may not get the one you intend, 
+as both of these packages contain `count`, but the function arguments are
+different. This could give you an error if your argument list did not match
+what was expected by the funtion. This situation is called a namespace conflict.
+R includes tools to examine these conflicts.
+
+```{r examine_namespace_conflict, eval=TRUE, echo=TRUE}
+#----examine namespace conflict-----
+
+# Find namespaces which contain "count"
+getAnywhere(count)$where
+
+# Find the expected arguments for plyr::count
+args(plyr::count)
+
+# Find the expected arguments for dplyr::count
+args(dplyr::count)
+
+```
+
+We can avoid this conflict by only loading one package that contains the
+`count` function, or by specifying the package when we call the function.
+
+```{r calling_functions_by_package_name, echo=TRUE, eval=TRUE}
+#-----calling functions by package name-----
+# Use plyr's count function and dplyr's count function to count the number of
+# observations by species in the iris dataset
+
+# Make sure the dataset is loaded
+data(iris)
+
+# plyr's count function expects the "vars" argument (argument #2) as a quoted 
+# character vector of variable names
+plyr::count(iris, "Species")
+
+# If we use dplyr's count function in the same way, we get strange results
+dplyr::count(iris, "Species")
+
+# dplyr's count function expects the "wt" argument (argument #2) as an unquoted
+# variable name or a vector of data values
+dplyr::count(iris, Species)
+
+```
+
+## A Note about Generations and Families of Packages
+
+We have used the `plyr` and `dplyr` packages above and have seen there was a
+conflict when we loaded both of them at once. As it turns out, `dplyr` is
+a package which was developed to take the place of `plyr`. So, why would we load
+both packages? One reason is that we may be accustomed to using the older
+package but also need new features of the later package. Another reason might 
+be that the newer package left out a feature we needed from the old one.
+
+If this situation sounds a little messy to you, it should. As you can imagine,
+we start to get into trouble when we use packages from different generations or
+families. If `dplyr` was meant to make `plyr` obsolete, then we should switch to
+`dplyr` and update our code to match `dplyr`'s syntax. `dplyr` is in the family
+of packages called "The Tidyverse" since they are developed by a common group 
+of developers and also since they share a common philosophy and vision.
+
+You can see the list of packages in the `tidyverse` family with the following
+command:
+
+```{r show_tidyverse_functions, echo=TRUE, eval=TRUE}
+#-----show tidyverse functions-----
+pacman::p_load(tidyverse)
+tidyverse::tidyverse_packages()
+
+```
+
+You will see `dplyr` in the list but not `plyr`. Similarly, `tidyr` has taken
+the place of `reshape2`. Fortunately in this case the functions in 
+`tidyr` have new names. Only a dataset is common to both packages. It contains
+the same data values, as you can confirm with the following code:
+
+```{r compare_reshape2_and_tidyr, echo=TRUE, eval=TRUE}
+#-----compare reshape2 and tidyr-----
+# Find the differences in the reshape2 and tidyr packages
+
+# Load packages
+pacman::p_load(reshape2, tidyr)
+
+# Show the functions in each package (commented out for brevity)
+#lsf.str("package:reshape2")
+#lsf.str("package:tidyr")
+
+# Find the objects which are in tidyr but not in reshape2
+ls("package:tidyr")[ls("package:tidyr") %in% ls("package:reshape2")]
+
+# Find the class of the "smiths" object in each package
+class(reshape2::smiths)
+class(tidyr::smiths)
+
+# See if the two versions of the "smith" dataset are identical
+identical(reshape2::smiths, tidyr::smiths)
+
+# See if the two versions of the "smith" dataset are otherwise equivalent
+suppressWarnings(all_equal(reshape2::smiths, tidyr::smiths, convert = TRUE))
+
+```
+
+
+Sometimes, the packages we use will load other packages as "dependences". We
+can't easily control which packages are loaded indirectly like this. Sometimes
+we end up loading packages which create namespace conflicts unknowingly. So, if
+you see strange errors when calling a function, especially those which refer to
+misuse of function arguments, think about examining potential namespace
+conflicts and explicitly calling the function from the intended package.
+
+Four best practices to apply are:
+
+* Try to standardize on common families of packages when possible.
+* Use the latest generation of packages from your chosen family of packages.
+* Only load the minimum number of packages into memory that you will need.
+* Explictly use package names when calling functions if you must in order to 
+  avoid namespace conflicts
+
 # Additional Resources
 
 * For a set of best practicess for writing code, follow the [Google style guide for writing R code](https://google.github.io/styleguide/Rguide.xml) 
@@ -389,7 +556,7 @@ that created it.
 Science](https://r4ds.had.co.nz/) book by Hadley Wickham and Garrett Grolemund.
 In particular, the "Explore" section (chapters 2-8) gives an excellent overview
 of tools we will use in ENVH 556.
-    
+
 # Appendix
 
 ```{r session_info}
