@@ -179,7 +179,7 @@ An essential part of any data analysis is making sure the data you are analyzing
 are as you expect.  Before you start any new data analysis, make sure your data
 have been read in correctly and get a basic understanding of their structure.
 
-###1. Check to make sure your data have been read in correctly 
+### Check to make sure your data have been read in correctly 
 
 Here are some basic questions you should ask every time you read in a new
 dataset:
@@ -237,7 +237,7 @@ select(DEMSt, facilityno, u_s, ecdata, nodata, no2data)
 
 ```
 
-### 2. Get some basic understanding of the data 
+### Get some basic understanding of the data 
 
 Here are some commands:
 
@@ -271,7 +271,7 @@ xtabs( ~ facilityno, data = DEMS)
 ```
 
 
-### 3. Verify your data correspond to what you expect 
+### Verify your data correspond to what you expect 
 
 The specifics of what you evaluate depend upon the context of the problem.  In
 our case we have published papers we can rely upon to determine whether our data
@@ -460,7 +460,7 @@ DEMS<-mutate(DEMS,
 
 ```
 
-## More plots:  Try out some scatterplots
+## More plots
 
 ### Overview of `ggplot` basics
 
@@ -504,7 +504,7 @@ Science](https://r4ds.had.co.nz/) book by Hadley Wickham and Garrett Grolemund.
 In particular, Chapter 1 gives a nice introductory overview and Chapter 22
 focuses on the details you need to facilitate good communication.
 
-### Now plot the relationship between NO (nodata)  and REC (ecdata). 
+### Scatterplots:  Now plot the relationship between NO (nodata)  and REC (ecdata). 
 
 `ggplot2` makes this easy:  
 
@@ -516,22 +516,22 @@ qplot(nodata, ecdata, data=DEMS)
 # Plot 2 is the same plot, now using standard ggplot notation
 ggplot(data = DEMS, aes(nodata, ecdata, na.rm = TRUE)) + geom_point()
 
-# Plot 3 adds a best fit line added and no 95% CI on the line (se=FALSE option).
-# We also add a title and axis labels
+# Plot 3 adds a best fit line added without its 95% CI (se=FALSE option). We
+# also add a title and axis labels
 ggplot(data = DEMS, aes(nodata, ecdata, na.rm = TRUE)) +
     geom_point() + stat_smooth(method = lm, se = FALSE) +
-    labs(title = "Scatterplot of the DEMS NO (ppm) vs. REC (ug/m3) data",  x =
-    "NO (ppm)",
-    y = "REC (ug/m3)")
+    labs(title = "Scatterplot of the DEMS NO (ppm) vs. REC (ug/m3) data",  
+         x = "NO (ppm)",
+         y = "REC (ug/m3)")
 
 # Plot 4 replaces the best fit line with a smooth loess curve added and its 95%
 # CI (the default smoother is gam for large datasets and loess when there are
 # less than 1,000 observations)
 ggplot(data = DEMS, aes(nodata, ecdata, na.rm = TRUE)) +
     geom_point() + stat_smooth(method = "loess") +
-    labs(title = "Scatterplot of the DEMS NO (ppm) vs. REC (ug/m3) data",  x =
-    "NO (ppm)",
-    y = "REC (ug/m3)") 
+    labs(title = "Scatterplot of the DEMS NO (ppm) vs. REC (ug/m3) data",
+        x = "NO (ppm)",
+        y = "REC (ug/m3)") 
 
 # Plot 5 adds different colors and smoothers for underground vs. surface data
 ggplot(data = DEMS, aes(nodata, ecdata, na.rm = TRUE)) +
@@ -604,11 +604,10 @@ Report Write-ups*. <!-- TODO:  Add hyperlinks -->
          NO and OC?  Make sure to document the change to the variables in your 
          lab write-up.
 
-    (b) Getting GM and/or GSD in a table in R:  I don't yet know how to get the
-         GM and GSD using `tidyverse`, though it should be possible using a
-         combination of `mutate` and `dplyr`.  You can use the `EnvStats` 
-         package with `tapply` and `cbind`.  To get the AM, ASD, GM, GSD, N in 
-         order:
+    (b) Getting GM and/or GSD in a table in R:  This lab doesn't show ow to get
+        the GM and GSD using `tidyverse`; it should be possible using `dplyr`,
+        perhaps with `mutate`.  You can use the `EnvStats` package with `tapply` and
+        `cbind`.  To get the AM, ASD, GM, GSD, N in order:
          
 ```{r table.with.GM+GSD}
 #----table.with.GM+GSD using tapply and cbind ----------
@@ -719,7 +718,7 @@ aggregate(DEMS[c("ecdata", "no2data", "nodata")],
 
 ```
 
-### A1.2 Base R option for a histogram of ecdata, also with a density curve added to the histogram. {-}
+### A1.2 Base R option for a histogram of ecdata with a density curve added to the histogram {-}
 
 To get a basic histogram, use `hist`.  For a density plot, use `plot()` with
 `density()`.  (You need to explicitly remove the missing values to use the
@@ -747,7 +746,7 @@ plot(density(DEMS$ecdata[!is.na(DEMS$ecdata)]))
 (b) `DEMS$log10_ecdata <- log10(DEMS$ecdata)` creates the base 10 log-transformed
    variable in the DEMS data frame.
 
-### A1.4 Base R option for a basic scatterplot and overlaid regression line: {-}
+### A1.4 Base R option for a basic scatterplot and overlaid regression line {-}
 
 ```{r scatterplot.in.baseR}
 #----------------scatterplot.in.baseR-------
@@ -766,7 +765,7 @@ scatter.smooth(DEMS$ecdata, DEMS$nodata)
 ```
 
 
-# Appendix 2: Code and sessioninfo {-}
+# Appendix 2: Code and SessionInfo {-}
 
 The next two chunks should be included in every R Markdown appendix so that you
 document your code and session information.  This supports the reproducibility
