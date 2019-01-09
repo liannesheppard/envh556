@@ -8,7 +8,30 @@ output: html_document
 <!--Parts of this document were taken from guidelines prepared by Keith Baggerly for SIBD -->
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+# Some useful knitr options:
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, tidy=FALSE, 
+  tidy.opts=list(width.cutoff=80, blank=FALSE), cache=FALSE, messages=FALSE)
+
+# Set R option:  here we show only 2 digits when displaying
+#options(digits = 2)
+
+# Clear workspace of all objects and unload all extra (non-base) packages
+rm(list = ls(all = TRUE))
+if (!is.null(sessionInfo()$otherPkgs)) {
+    res <- suppressWarnings(
+        lapply(paste('package:', names(sessionInfo()$otherPkgs), sep=""),
+               detach, character.only=TRUE, unload=TRUE, force=TRUE))
+}
+
+# Load key packages using pacman (see below for explanation)
+my_repo <- 'http://cran.r-project.org'
+if (!require("pacman")) {install.packages("pacman", repos = my_repo)}
+
+# Load the other packages, installing as needed
+# Key principle:  Only load the packages you will need
+pacman::p_load(knitr, tidyverse)
+
+
 ```
 
 ### Overview  
@@ -111,11 +134,10 @@ This section can cover:
 
 ### Appendix 2 (required):  Session information and Code
 
-```{r session info, eval=FALSE}
+```{r session info}
 #-----session info------
 # Change to eval=TRUE in your report
 sessionInfo()
-getwd()
 
 ```
 
