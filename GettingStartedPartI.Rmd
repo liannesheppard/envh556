@@ -10,8 +10,6 @@ output:
 urlcolor: blue
 ---
 
-
-
 ```{r setup, eval=TRUE, include=FALSE}
 # ---------setup------
 # Set knitr options
@@ -43,7 +41,6 @@ if (!require("pacman")) {install.packages("pacman", repos = my_repo)}
 pacman::p_load(knitr, readr, dplyr, ggplot2, formatR)
 
 ```
-
 
 # Why R Markdown and reproducible reports?
 
@@ -142,7 +139,6 @@ There are also good resources right inside RStudio. For instance, if you click
 on the Help, you will find a R Markdown Quick Reference. The Cheat Sheets
 section also has a R Markdown Cheat Sheet and a R Markdown Reference Guide.
 
-
 # Anatomy of a `.Rmd` file
 
 ## YAML header
@@ -192,7 +188,6 @@ mean(a)
 ```
 
 There is more information on chunks in Part II.
-
 
 # R Markdown strategies to enhance reproducibility
 
@@ -262,6 +257,7 @@ options](https://yihui.name/knitr/options/) or the [knitr
 Cheatsheet](https://cran.r-project.org/web/packages/knitr/vignettes/knitr-refcard.pdf).
 
 ### Install and load packages
+
 A key principle is to only load the packages you will need for your project.  
 To facilitate this, use the `packman` package in R instead of 
 `install.packages()` and `library()`.  This will allow your script to 
