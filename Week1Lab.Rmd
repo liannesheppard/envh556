@@ -190,7 +190,7 @@ if (!file.exists(DEMS.path)) {
 }
 
 # Output a warning message if the file cannot be found
-if (file.exists(DEMS.file)) {
+if (file.exists(DEMS.path)) {
     DEMS <- readRDS(file = DEMS.path)
 } else warning(paste("Can't find", DEMS.file, "!"))
 
