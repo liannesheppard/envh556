@@ -163,7 +163,7 @@ dir.create(datapath, showWarnings=FALSE, recursive = TRUE)
      + The data we will use have already been converted to an R dataset.  Make 
      sure the "DEMSCombinedPersonal.rds" dataset is in your Datasets directory 
      defined by `datapath`.
-```{r read.data, eval=TRUE}
+```{r read.data, eval=TRUE, error=TRUE}
 #-----read.data--------
 # Note:  for simplicity of typing in this lab we're calling the dataset DEMS,
 # even though it is only one of several DEMS datasets we will use in this
