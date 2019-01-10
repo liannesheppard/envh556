@@ -155,10 +155,9 @@ ProjectPath <- getwd()
    
 ```{r datasets.path}
 #------datasets.path--------
-dir.create(file.path(ProjectPath, "Datasets"), showWarnings=FALSE, 
-           recursive = TRUE)
 datapath <- file.path(ProjectPath, "Datasets")
-    
+dir.create(datapath, showWarnings=FALSE, recursive = TRUE)
+
 ```
 * Read in the data 
      + The data we will use have already been converted to an R dataset.  Make 
@@ -170,6 +169,30 @@ datapath <- file.path(ProjectPath, "Datasets")
 # even though it is only one of several DEMS datasets we will use in this
 # course.
 DEMS <- readRDS(file.path(datapath, "DEMSCombinedPersonal.rds"))
+
+```
+
+As an alternative, you can also read the data file from a web site:
+
+```{r read.data.from.a.web.site, eval=TRUE}
+#-----read.data.from.a.web.site--------
+# Download the data file from a web site if it is not already downloaded, then
+# read in the file
+
+DEMS.file <- "DEMSCombinedPersonal.rds"
+DEMS.path <- file.path(datapath, DEMS.file)
+
+# Only download the file if it's not already present
+if (!file.exists(DEMS.path)) {
+    url <- paste("https://staff.washington.edu/high/envh556/Datasets", 
+                 DEMS.file, sep = '/')
+    download.file(url = url, destfile = DEMS.path)
+}
+
+# Output a warning message if the file cannot be found
+if (file.exists(DEMS.file)) {
+    DEMS <- readRDS(file = DEMS.path)
+} else warning(paste("Can't find", DEMS.file, "!"))
 
 ```
 
