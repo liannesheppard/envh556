@@ -367,9 +367,9 @@ pplot.dat <- as.data.frame(cbind(y,x,rx,p_i,qy,qx))
 
 # some summary statistics to check while developing this (commented out)
 #summary(y)
-#paste("GM:  ", exp(ybar))
-#paste("GSD:  ",exp(sd(y)))
-#paste("AM:  ", exp(ybar+sd_y^2/2))
+paste("GM:  ", exp(ybar))
+paste("GSD:  ",exp(sd(y)))
+paste("AM:  ", exp(ybar+sd_y^2/2))
 #summary(x)
 #sd(x)
 
@@ -408,7 +408,7 @@ p <- ggplot(data=pplot.dat) +
                   minor_breaks=NULL) +
     coord_fixed() +
     labs(title="Sample log probability plot\nUsing simulated data",
-         x = "Concentration (units)",
+         x = "Concentration (native scale units)",
          y= "% of data less than") +
     theme_bw()
 p
