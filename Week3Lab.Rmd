@@ -1,0 +1,176 @@
+---
+title: 'Week 3 Lab:  Regression for Association'
+author: "Lianne Sheppard for ENVH 556"
+date: "12/11/2018; Updated `r format(Sys.time(), '%d %B, %Y')`"
+output: html_document
+---
+
+<!--Basic document set-up goes here  -->
+```{r setup, include=FALSE}
+#-------------r.setup-------------
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r load.libraries.pacman, echo=FALSE, include=FALSE, eval=TRUE}
+#----------------load.libraries.pacman
+# Load pacman into memory, installing as needed
+my_repo <- 'http://cran.r-project.org'
+if (!require("pacman")) {install.packages("pacman", repos = my_repo)}
+
+# Load the other packages, installing as needed.  Some reasons for packages:
+# knitr:  kable()
+# ggplot2: part of tidyverse
+# readr: part of tidyverse
+# dplyr: part of tidyverse
+# multcomp:  glht
+pacman::p_load(tidyverse, knitr, mutlcomp)  
+```
+
+```{r read.data, echo=FALSE}
+#-----------read.data-----------------
+#-getwd
+    ProjectPath <- getwd()
+#-dir.create    
+    dir.create(file.path(ProjectPath,"Datasets"),     showWarnings=FALSE, recursive = TRUE)
+    datapath<-file.path(ProjectPath,"Datasets")
+#-read.data
+snapshot<-readRDS(file.path(datapath,"allseasonsR.rds"))
+```
+
+TODO:  Perhaps make a binary variable or two for this lecture and lab??  
+
+
+# Purpose
+
+The purpose of this lab is to get practice using and reporting regression models with a focus on regression for association and some beginning work on regression for prediction.   We will use the snapshot data for this lab.
+
+# Getting Started
+
+This section gives some basic R commands for regression for association and the first steps for evaluating predictions.  
+
+* Summarizing *ln_nox* by season  
+TODO frequencies only and means and SDs by season
+```{r summarize.ln_nox}
+#-------------summarize.ln_nox
+# frequencies only
+summary(snapshot$seasonfac)
+
+# then means and SDs by season
+#TODO:  replace with tidyverse instead
+cbind( 
+    N=tapply(snapshot$ln_nox,snapshot$seasonfac,length),
+    mean=round(tapply(snapshot$ln_nox,snapshot$seasonfac,mean),2),
+    sd=round(tapply(snapshot$ln_nox,snapshot$seasonfac,sd),2))
+
+
+```
+
+* Commands for season-specific boxplots:
+```{r season-specific boxplots}
+# season-specific boxplots -------
+ggplot(snapshot, aes(x=seasonfac, y=ln_nox, fill=seasonfac)) +
+           geom_boxplot() +
+           labs(x="Season", y="ln(NOx) (ln(ppb)", color="Season", fill="Season")
+       
+```
+
+* Commands for regression: 
+
+```{r regression for association}
+# regression for association ------
+# Common model (Table 4), season-specific LUR
+
+summary( lm_summer <-
+    lm(ln_nox ~ D2A1 + A1_50 + A23_400 + Pop_5000 + D2C + Int_3000 + D2Comm,
+       data = snapshot,
+       subset = seasonfac=="1Summer"))
+summary( lm_fall <-
+    lm(ln_nox ~ D2A1 + A1_50 + A23_400 + Pop_5000 + D2C + Int_3000 + D2Comm,
+       data = snapshot,
+       subset = seasonfac=="2Fall"))
+summary( lm_winter <- 
+    lm(ln_nox ~ D2A1 + A1_50 + A23_400 + Pop_5000 + D2C + Int_3000 + D2Comm,
+       data = snapshot,
+       subset = seasonfac=="3Winter"))
+
+```
+
+* Making predictions:
+
+This gives seson-specific predictions in the dataset with all seasons.
+
+```{r predictions with dplyr}
+# predictions dplyr -----------
+# dplyr approach
+# this seems to be able to add just the part of the data that was fit in each model
+# however, we don't get the prediction intervals or SEs this way
+snap2 <- snapshot %>%  
+    add_residuals(lm_summer,"resids") %>%
+    add_predictions(lm_summer,"preds") %>%
+    add_residuals(lm_fall,"resids") %>%
+    add_predictions(lm_fall,"preds") %>%
+    add_residuals(lm_winter,"resids") %>%
+    add_predictions(lm_winter,"preds") 
+```
+
+Now we add prediction intervals:
+
+```{r}
+# prediction intervals--------
+# We produce season-specific prediction intervals, then merge them with the other seasons to produce the full dataset 
+# TODO:  (NEED to investigate merge vs a full cbind...)
+
+# first get the prediction interval for each season and bind it to the season-specific subset
+# NOTE:  We are assuming the two datasets are in the same order when we cbind!
+summer <- cbind(snapshot[snapshot$season==1,],predict(lm_summer,interval="prediction"))
+fall <- cbind(snapshot[snapshot$season==2,],predict(lm_fall,interval="prediction"))
+winter <- cbind(snapshot[snapshot$season==3,],predict(lm_winter,interval="prediction"))
+
+# then combine the dataset into one big one
+allseas <- rbind(summer, fall, winter)
+
+```
+
+TODO:  Update:  Prediction:  After you have fit a model, Stata retains estimates from that model.  You can use these on your data (or a new dataset you read in) to make predictions and estimate errors.
+
+
+# Practice Session
+This section covers basic practice to be completed during the lab.   We are going to use the snapshot data described in Mercer et al 2011 and discussed in class.   
+TODO:  FIX It can be found under this link on the class website.
+
+Perform the following tasks: 
+
+1.	Decide your project for this lab.  
+2.	Read in the snapshot data and get some basic understanding of its structure.  See the lecture `.Rmd` file for some options 
+3.	Summarize *ln_nox*, the outcome variable of interest     
+    a.	Summarize by season    
+    b.	Can you produce a nice summary figure of the data?  Should they be on the log or the native scale?  Is it useful to put multiple pollutants (NO, NOx, NO2) in the same figure?  
+4.	Replicate the models in Table 4 of Mercer et al, 2011.  (Only focus on the LUR model results.  We’ll talk about cross-validation in an upcoming week so recognize your R2 should be a bit bigger and your RMSE should be a bit smaller than the values in the paper.)  
+    a.	Compare your coefficient estimates and standard errors, as well as LUR R2 and sample size.  (FIX:?? Reported results have been rounded.)  
+    b.	Are all your terms parameterize the same as they are in the paper?  
+5.	Use the fall model to predict ln_nox in summer and vice versa.    
+    a.	Assess the quality of the predictions.  (Using the information from the lecture on regression for association, compute the R2, and plot the predictions and the prediction intervals.)  
+    b.	What have you learned?  Does this flipping of models across seasons make sense scientifically?  Why or why not?  
+
+
+# TODO:  UPDATE  Homework Exercises  
+
+1.	Describe the NOx variable.  Develop one figure and one table to best capture your data and then write a paragraph describing what these show.  (Doing both is for practice.  In a peer-reviewed paper you will ordinarily only show one of these.)  In the table, you may find it helpful to also include information on the covariates you use in your model(s).    
+2.	TODO:  Using the terminology given in lecture, briefly discuss the ?fall? season model results.  Include in your discussion an interpretation for at least two terms in the fall season model – one continuous and at least one binary term.   
+3.	TODO:  figure out an interaction model to include??  Based on the terminology given in lecture, briefly discuss the warm season model results for the interaction term.  Talk about the results for ADD.  
+4.	Discuss your findings for question 4.c. above.  
+5.	Make table(s) and/or figure(s) summarizing your results for practice exercise 5.  Discuss.  
+
+#Appendix
+
+```{r session.info}
+#-----------------session.info: beginning of Appendix -----------------
+#This allows reproducibility by documenting the version of R and every package you used.
+sessionInfo()
+```
+
+```{r appendix.code, ref.label=knitr::all_labels(), echo=TRUE, eval=FALSE, tidy=TRUE, tidy.opts=list(width.cutoff=60), include=T}
+
+```
+
+
