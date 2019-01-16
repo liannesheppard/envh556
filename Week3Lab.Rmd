@@ -2,7 +2,11 @@
 title: 'Week 3 Lab:  Regression for Association'
 author: "Lianne Sheppard for ENVH 556"
 date: "12/11/2018; Updated `r format(Sys.time(), '%d %B, %Y')`"
-output: html_document
+output: 
+    html_document:
+        toc: true
+        toc_depth: 3
+        number_sections: true
 ---
 
 <!--Basic document set-up goes here  -->
@@ -23,7 +27,8 @@ if (!require("pacman")) {install.packages("pacman", repos = my_repo)}
 # readr: part of tidyverse
 # dplyr: part of tidyverse
 # multcomp:  glht
-pacman::p_load(tidyverse, knitr, mutlcomp)  
+# modelr:  part of tidyverse and need for add_predictions and add_residuals
+pacman::p_load(tidyverse, knitr, mutlcomp, dplyr, modelr)  
 ```
 
 ```{r read.data, echo=FALSE}
@@ -35,10 +40,8 @@ pacman::p_load(tidyverse, knitr, mutlcomp)
     datapath<-file.path(ProjectPath,"Datasets")
 #-read.data
 snapshot<-readRDS(file.path(datapath,"allseasonsR.rds"))
+
 ```
-
-TODO:  Perhaps make a binary variable or two for this lecture and lab??  
-
 
 # Purpose
 
@@ -49,19 +52,27 @@ The purpose of this lab is to get practice using and reporting regression models
 This section gives some basic R commands for regression for association and the first steps for evaluating predictions.  
 
 * Summarizing *ln_nox* by season  
-TODO frequencies only and means and SDs by season
+
 ```{r summarize.ln_nox}
 #-------------summarize.ln_nox
 # frequencies only
 summary(snapshot$seasonfac)
 
 # then means and SDs by season
-#TODO:  replace with tidyverse instead
 cbind( 
     N=tapply(snapshot$ln_nox,snapshot$seasonfac,length),
     mean=round(tapply(snapshot$ln_nox,snapshot$seasonfac,mean),2),
     sd=round(tapply(snapshot$ln_nox,snapshot$seasonfac,sd),2))
 
+# tidyverse alternative presenting GM and GSD of NOx instead
+snapshot_summary <- snapshot %>%     
+    group_by(seasonfac) %>%
+    dplyr::summarize(
+    N = n(),
+    GM = round(exp(mean(ln_nox)), 2),
+    GSD = round(exp(sd(ln_nox)), 2)
+    ) 
+    snapshot_summary
 
 ```
 
@@ -117,8 +128,7 @@ Now we add prediction intervals:
 
 ```{r}
 # prediction intervals--------
-# We produce season-specific prediction intervals, then merge them with the other seasons to produce the full dataset 
-# TODO:  (NEED to investigate merge vs a full cbind...)
+# We produce season-specific prediction intervals, then combine them with the other seasons to produce the full dataset 
 
 # first get the prediction interval for each season and bind it to the season-specific subset
 # NOTE:  We are assuming the two datasets are in the same order when we cbind!
@@ -131,12 +141,34 @@ allseas <- rbind(summer, fall, winter)
 
 ```
 
-TODO:  Update:  Prediction:  After you have fit a model, Stata retains estimates from that model.  You can use these on your data (or a new dataset you read in) to make predictions and estimate errors.
+```{r out of sample predictions}
+# out of sample predictions--------
+# TODO:  TEST and check
+# We produce out of sample season-specific predictions intervals using the previous season to predit the next one.  (Note you should think carefully from a scientific perspective about what you want to do here.) 
 
+# first get the prediction interval for each season and bind it to the season-specific subset
+# NOTE:  We are assuming the two datasets are in the same order when we cbind!
+fall_preds_from_summer <- 
+    predict(lm_summer,
+            snapshot[snapshot$season==2,], 
+            interval="prediction")
+winter_preds_from_fall <- predict(lm_fall, 
+                snapshot[snapshot$season==3,], 
+                interval="prediction")
+summer_preds_from_winter <- 
+    predict(lm_winter, 
+            snapshot[snapshot$season==1,],
+            interval="prediction")
+
+# then combine the dataset into one big one
+allseas <- rbind(fall_preds_from_summer,
+                 winter_preds_from_fall,
+                 summer_preds_from_winter)
+
+```
 
 # Practice Session
-This section covers basic practice to be completed during the lab.   We are going to use the snapshot data described in Mercer et al 2011 and discussed in class.   
-TODO:  FIX It can be found under this link on the class website.
+This section covers basic practice to be completed during the lab.   We are going to use the snapshot data described in Mercer et al 2011 and discussed in class.   It is available in the data section of the class website.
 
 Perform the following tasks: 
 
@@ -146,20 +178,20 @@ Perform the following tasks:
     a.	Summarize by season    
     b.	Can you produce a nice summary figure of the data?  Should they be on the log or the native scale?  Is it useful to put multiple pollutants (NO, NOx, NO2) in the same figure?  
 4.	Replicate the models in Table 4 of Mercer et al, 2011.  (Only focus on the LUR model results.  We’ll talk about cross-validation in an upcoming week so recognize your R2 should be a bit bigger and your RMSE should be a bit smaller than the values in the paper.)  
-    a.	Compare your coefficient estimates and standard errors, as well as LUR R2 and sample size.  (FIX:?? Reported results have been rounded.)  
-    b.	Are all your terms parameterize the same as they are in the paper?  
+    a.	Compare your coefficient estimates and standard errors, as well as LUR R2 and sample size.  (Note:  You may need to consider rounding in your comparison.)  
+    b.	Are all your terms parameterized the same as they are in the paper?  
 5.	Use the fall model to predict ln_nox in summer and vice versa.    
     a.	Assess the quality of the predictions.  (Using the information from the lecture on regression for association, compute the R2, and plot the predictions and the prediction intervals.)  
     b.	What have you learned?  Does this flipping of models across seasons make sense scientifically?  Why or why not?  
 
 
-# TODO:  UPDATE  Homework Exercises  
+# Homework Exercises  
 
 1.	Describe the NOx variable.  Develop one figure and one table to best capture your data and then write a paragraph describing what these show.  (Doing both is for practice.  In a peer-reviewed paper you will ordinarily only show one of these.)  In the table, you may find it helpful to also include information on the covariates you use in your model(s).    
-2.	TODO:  Using the terminology given in lecture, briefly discuss the ?fall? season model results.  Include in your discussion an interpretation for at least two terms in the fall season model – one continuous and at least one binary term.   
-3.	TODO:  figure out an interaction model to include??  Based on the terminology given in lecture, briefly discuss the warm season model results for the interaction term.  Talk about the results for ADD.  
-4.	Discuss your findings for question 4.c. above.  
-5.	Make table(s) and/or figure(s) summarizing your results for practice exercise 5.  Discuss.  
+2.	Using the terminology given in lecture, briefly discuss the fall season model results.  Include in your discussion an interpretation for at least two terms in the fall season model.   
+3.	Focusing on the common models in Table 4 of Mercer et al, think about how to use the data from all seasons to get season-specific parameter estimates.   What terms do you need to incorporate the interactions?   
+    a.  Challenge question:  How is your interaction model different from fitting three separate season-specific models?
+4.	Make table(s) and/or figure(s) summarizing your results for practice exercise 5.  Discuss.  
 
 #Appendix
 

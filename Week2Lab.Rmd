@@ -418,13 +418,13 @@ p
 
 # Practice Session  
 
-1.	Plan to use an R project for this lab.  You probably will want to use one
-project for the entire ENVH556 course.
+1.	Plan to use an R project for this lab and make sure it is set up.  You
+probably will want to use one project for the entire ENVH556 course.
 2.	Read in the ‘DEMSCombinedPersonal’ R dataset and keep only measurements from
-jobs 110, 240, 410 and 600 among underground workers.  We have selected these
+jobs 110, 240, 410 and 600 among underground workers.  (We have selected these
 particular jobs for simplicity, but feel free to explore additional jobs or
-other categories of the data if you want to.  In order to avoid potential
-confusion later, also drop any observations that are missing ecdata.
+other categories of the data if you want to.)  In order to avoid potential
+confusion later, for this practice session we suggest you also drop any observations that are missing ecdata.
 3.	Describe REC (varname: `ecdata`)
 4.	Determine whether REC in this subset is lognormally distributed.  Explore
 using histograms, qqplots,  and statistical tests.
@@ -435,7 +435,7 @@ Assume data are lognormal (LN) and an OEL of 200 $\mu$g/m^3^ has been determined
 for REC.
 
     a)	Calculate the empiric and parametric exceedence probabilities along with
-    the 95% percentile +70th % CI.
+    the 95% percentile and 70th % CI.
     
     b)	Take a random sample of 50%, 25%, n=9 and n=5 samples and recalculate the
     GM, GSD, 95% percentile $\pm$ 70 percent confidence limit CI.
@@ -443,7 +443,7 @@ for REC.
 # Homework Exercises
 
 1) Consider the primary exposure measures of interest to the study, including
-REC, NO$_2$ and Organic Carbon.  Consider the full dataset, though you may choose to work with a reduced subset, such as the four selected underground jobs.
+REC, NO$_2$ and Organic Carbon.  Consider the full dataset, though you may choose to work with a reduced subset, such as the four selected underground jobs.  (Justify your choice as part of your lab write-up.)
     a) Describe the distribution, out of range and/or missing values.
     b) Determine the adequacy of the LN distribution for representing these using
 distribution plots and/or statistical tests.  
