@@ -443,18 +443,23 @@ for REC.
 # Homework Exercises
 
 1) Consider the primary exposure measures of interest to the study, including
-REC, NO$_2$ and Organic Carbon.  Consider the full dataset, though you may choose to work with a reduced subset, such as the four selected underground jobs.  (Justify your choice as part of your lab write-up.)
+REC, NO_2 and Organic Carbon.  Consider the full dataset, though you may choose to work with a reduced subset, such as the four selected underground jobs.  (Justify your choice as part of your lab write-up.)
     a) Describe the distribution, out of range and/or missing values.
     b) Determine the adequacy of the LN distribution for representing these using
 distribution plots and/or statistical tests.  
 2) Explore potential stratification variables (determinants such as facility, job, location).
     a) Do the stratified data improve the distributional characteristics?  Does it matter whether you restrict your attention to smaller subgroups of the data, e.g., underground only, specific facilities, specific jobs, or a combination of these?
+    
 3) Calculate the GM, Median, AM (method of moments) and AM (maximum likelihood)
 for REC.
     a) How do these quantities compare to each other?
     b) Can you determine any characteristics of the data which help explain the
 differences between these alternative measures of central tendency?
-4) Assuming an OEL for REC of 200 $\mu$g/m$^3$, calculate the exceedence
+    c) For at least one stratum that has data that aren't too far off from a
+    lognormal distribution, plot the log probability plot.  Read off the GM and
+    GSD from the log probabililty plot and compare these to values you estimate
+    directly from the data.
+4) Assuming an OEL for REC of 200 ug/m^3, calculate the exceedence
 probability for each mine (and/or job) using both empiric and parametric
 approaches.   In addition, calculate the 95 percentile of the distribution, and
 provide 70% confidence limits on these percentiles.
