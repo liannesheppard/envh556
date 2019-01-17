@@ -21,7 +21,8 @@ if (!require("pacman")) {install.packages("pacman", repos = my_repo)}
 # knitr:  kable()
 # tidyverse: multiple data science packages including ggplot, dplyr, readr
 # multcomp:  glht
-pacman::p_load(tidyverse, knitr, multcomp, dplyr,modelr)  
+# car:  linearHypothesis
+pacman::p_load(tidyverse, knitr, multcomp, dplyr, modelr, car)  
 ```
 
 ```{r read.data, echo=FALSE}
@@ -34,6 +35,10 @@ pacman::p_load(tidyverse, knitr, multcomp, dplyr,modelr)
 #-read.data
 snapshot<-readRDS(file.path(datapath,"allseasonsR.rds"))
 ```
+
+This is a companion document to the Week 3 lecture.  Each slide with R code is represented in this document.
+
+Note to students:  There are some details that should be cleaned up.
 
 ## Slide 10:  Simple regression scatterplot ln_nox on ln_no
 ```{r slide10}
@@ -76,20 +81,13 @@ confint(nox.fit)
 ```{r slide18}
 #----------------slide18-------------
 #Should be basic description of the factor variable.
-#season is the same variable as seasonfac, not as a factor and coded 0,1,2 rather than 1,2,3.  
+#season is the same variable as seasonfac, not as a factor and coded the same 1,2,3. Verify this:  
 summary(snapshot$seasonfac)
 summary(snapshot$season)
 table(snapshot$season)
 table(snapshot$seasonfac)
 table(snapshot$seasonfac,snapshot$season)
-#table(snapshot$FieldID,snapshot$seasonfac)
-#as_tibble(snapshot$seasonfac)
-#the following doesn't work.  Not sure why
-#Tables are confusing me!
-#snapshot %>% group_by(seasonfac) %>%
- #   summarize(N=n())
-        
-#season
+
 ```
 
 ##Slide 19
@@ -99,15 +97,19 @@ table(snapshot$seasonfac,snapshot$season)
 nox.aov<-lm(ln_nox~seasonfac, data=snapshot)
 anova(nox.aov)
 summary(nox.aov)  
+
 #model.matrix(nox.aov)
 margin.table(model.matrix(nox.aov),2)
+
 ```
 
 ## Slide 20:  add means of ln_nox by season
+
 ```{r slide20}
 #-----------slide 20-----------
 #Simple row of means of ln_nox by season
 round(tapply(snapshot$ln_nox,snapshot$seasonfac,mean),2)
+
 #full table of N, means & sd of ln_nox by season
 cbind( 
     N=tapply(snapshot$ln_nox,snapshot$seasonfac,length),
@@ -129,6 +131,7 @@ summary(nox.aov2)
 ```
 
 ## Slide 22:  Season-stratified analysis example:  means of ln_nox, ln_no by season
+
 ```{r slide 22}
 #-------slide22-------------------------
 # ln_nox
@@ -137,12 +140,14 @@ cbind(
     mean=round(tapply(snapshot$ln_nox,snapshot$seasonfac,mean),2),
     sd=round(tapply(snapshot$ln_nox,snapshot$seasonfac,sd),2)
     )
+
 # ln_no
 cbind( 
     N.ln_no=tapply(snapshot$ln_no,snapshot$seasonfac,length),
     mean=round(tapply(snapshot$ln_no,snapshot$seasonfac,mean),2),
     sd=round(tapply(snapshot$ln_no,snapshot$seasonfac,sd),2)
     )
+
 # ln_nox and ln_no
 cbind( 
     N.ln_nox=tapply(snapshot$ln_nox,snapshot$seasonfac,length),
@@ -157,6 +162,7 @@ cbind(
 
 
 ## Slide 23:  Scatterplot with 3 season-specific lines
+
 ```{r slide23}
 #-------------Slide 23---------------
 #ggplot with separate colors and lines by season
@@ -183,10 +189,12 @@ Summarize each seson-specific model
 summary(lm(ln_nox~ln_no,data=snapshot,subset=seasonfac=="1Summer"))
 summary(lm(ln_nox~ln_no,data=snapshot,subset=seasonfac=="2Fall"))
 summary(lm(ln_nox~ln_no,data=snapshot,subset=seasonfac=="3Winter"))
+
 ```
 
 
 ## Slide 25:  Season-adjusted regression
+
 ```{r slide25}
 #--------------slide 25----------------
 #season-adjusted regression
@@ -194,12 +202,13 @@ nox.fit.seasadj<-
     lm(ln_nox~ln_no+seasonfac,data=snapshot)
 summary(nox.fit.seasadj)
 confint(nox.fit.seasadj)
+
 ```
 
 
 ## Slide 27:  Be aware of coding -- season as cts variable
 
-Need to revise this to show only 2 seasons:  winter & fall (drop summer=1) and then discuss coding and coefficients, spilling over onto slide 28.  May need to add a slide to make this work
+
 ```{r}
 #------------Slide 27----------------------
 # Season as a continuous variable
@@ -222,18 +231,26 @@ snapshot_fw <- filter(snapshot_fw, season>1)
 ```
 
 ## Slide 29:  Interaction model
+
+Need to load the `car` package for the `linearHypothesis` command.  It masks at least one object from several other packages, so don't load if you don't need it.
+
 ```{r Slide 29}
 # Slide 29 --------
 # interaction model
 snap_int <- lm(ln_nox~ln_no*seasonfac,data=snapshot)
 summary(snap_int)
 
+# F test for significant interaction
+# Available in the car package (now loaded up front)
+linearHypothesis(snap_int, c("ln_no:seasonfac2Fall=0", "ln_no:seasonfac3Winter=0"), 
+                 test="F")
+
 ```
 
 
 ## Slide 30:  "lincom" coeficient estimates
 
-Note:  This can be done using the glht command from the multcomp package.  This will mask several objects from other packages including select from dplyr, and boxcox from EnvStats.
+Note:  This can be done using the `glht` command from the `multcomp` package.  This will mask several objects from other packages including `select` from `dplyr`, and `boxcox` from `EnvStats`.
 
 Here is an example: 
 ```
@@ -258,9 +275,10 @@ snapshot %>%
     ln_no_mean = mean(ln_no),
     ln_nox_mean = mean(ln_nox),
     ln_nox_sd = sd(ln_nox),
-    ln_nox_LCI = ln_nox_mean - ln_nox_sd / sqrt(N),
-    ln_nox_UCI = ln_nox_mean + ln_nox_sd / sqrt(N)
+    ln_nox_LCI = ln_nox_mean - 1.96*ln_nox_sd / sqrt(N),
+    ln_nox_UCI = ln_nox_mean + 1.96*ln_nox_sd / sqrt(N)
     )
+
 ```
 
 
@@ -309,7 +327,7 @@ ggplot(snapshot2,aes(preds,resids)) +
 ```
 
 
-## Slide 35:  Regression for prediction -- replicating ? Table of Mercer et al
+## Slide 35:  Regression for prediction -- starting to replicate Table 4 of Mercer et al Summer
 
 ```{r slide 35}
 # slide 35:  replicate the summer model in Table 4----
@@ -321,11 +339,15 @@ summer <- snapshot %>%
 # Then run the regression
 summer_mod <- lm(ln_nox ~ D2A1 + A1_50 + A23_400 + Pop_5000 + D2C + Int_3000 + D2Comm, data = summer)
 
+# Show the results
+summary(summer_mod)
 
 ```
 
 
 ## Slide 36:  Regression for prediction:  getting fitted values and SE of mean vs new value PLUS show R2=square of correlation
+
+TODO:  NOTE something is wrong here because the correlation is too high.  Should be about .85 to get the estimated R2 of .7252.  NEED to check why.
 
 ```{r Slide 36: fitted vals + resids}
 # Slide 36: Fitted values + resids----
@@ -335,9 +357,10 @@ summer2 <- summer %>%
     add_predictions(summer_mod,"preds")
 
 # and estimate the correlation
-r <- cor(snapshot2$preds,snapshot2$ln_nox)
+r <- cor(summer2$preds, summer2$ln_nox)
 insamp_R2 <- r^2
-paste("In sample R2:  ",insamp_R2,"correlation:  ",r)
+paste("In-sample R2:  ", insamp_R2)
+paste("correlation:  ", r)
 
 ```
 
