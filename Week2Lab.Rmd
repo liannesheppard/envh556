@@ -236,6 +236,8 @@ p + stat_qq() + stat_qq_line() +
 
 ##  Test the normality of a variable 
 
+The Shaprio-Wilk test evaluates the null hypothesis that the data are normally distributed against the alternative that they aren't.  Unfortunately, it is very easy to reject the null hypothesis using this test, particularly when the sample size is large.  See [this example using simulations](http://emilkirkegaard.dk/en/?p=4452) to get a feeling for the kinds of deviations from normality that give high and statistically significant Shaprio-Wilks tests.  The general advice in using this test is to not overinterpret it.  Look at the data visually and use your judgment about whether they are consistent with a normal distribution.  Ask youself whether it is just a few values at the tails that deviate, or are there other more importnat concerns.
+
 ```{r Shapiro-Wilk test}
 #------------Shapiro-Wilk test-----------
 #for normality of a variable
