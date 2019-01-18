@@ -53,6 +53,24 @@ TODO:  alternative ways to do cv??
 
 The purpose of this lab is to use principles of “out-of-sample” assessment to validate regression models.   We will use the snapshot data for model validation, run a cross-validation, and write a program to more easily repeat cross-validation procedures. You will use these tools to try to understand the bias-variance trade-off in these data.  
 
+# Lecture slide code
+
+## Slide 12:  In-sample assessment (fall)
+
+## Slide 14:  Out-of-sample assessment (fall applied to winter)
+
+## Slide 15:  Plots of in- vs. out-of-sample predictions
+
+## Slide 17:  MSE-Based R2 estimates (& code), in- and out-of-sample
+
+## Slide 18:  R command for AIC, BIC
+
+## Slide 20:  In- vs. out-of-sample prediction intervals
+
+## Slide 36:  Forward selection example
+
+
+
 # Getting Started
 
 This section gives some basic R commands for regression, prediction, and model validation.  We will also learn how to write loops and programs.  See the accompanying .do file for the code from this section along with a few more code samples and comments.
