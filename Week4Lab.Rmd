@@ -1,0 +1,282 @@
+---
+title: 'Week 4 Lab:  Regression for Prediction'
+author: "Lianne Sheppard for ENVH 556"
+date: "12/31/2018; Updated `r format(Sys.time(), '%d %B, %Y')`"
+output: 
+    html_document:
+        fig_caption: yes
+        toc: true
+        toc_depth: 3
+        number_sections: true
+---
+
+<!--Basic document set-up goes here  -->
+```{r setup, include=FALSE}
+#-------------r.setup-------------
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r load.libraries.pacman, echo=FALSE, include=FALSE, eval=TRUE}
+#----------------load.libraries.pacman
+# Load pacman into memory, installing as needed
+my_repo <- 'http://cran.r-project.org'
+if (!require("pacman")) {install.packages("pacman", repos = my_repo)}
+
+# Load the other packages, installing as needed.  Some reasons for packages:
+# knitr:  kable()
+# ggplot2: part of tidyverse
+# readr: part of tidyverse
+# dplyr: part of tidyverse
+# multcomp:  glht
+# modelr:  part of tidyverse and need for add_predictions and add_residuals
+# boot:  cv tools are available
+pacman::p_load(tidyverse, knitr, mutlcomp, dplyr, modelr)  
+```
+
+```{r read.data, echo=FALSE}
+#-----------read.data-----------------
+#-getwd
+    ProjectPath <- getwd()
+#-dir.create    
+    dir.create(file.path(ProjectPath,"Datasets"),     showWarnings=FALSE, recursive = TRUE)
+    datapath<-file.path(ProjectPath,"Datasets")
+#-read.data
+snapshot<-readRDS(file.path(datapath,"allseasonsR.rds"))
+
+```
+
+TODO:  put in lecture commands by slide
+TODO:  alternative ways to do cv??
+
+
+# Purpose
+
+The purpose of this lab is to use principles of “out-of-sample” assessment to validate regression models.   We will use the snapshot data for model validation, run a cross-validation, and write a program to more easily repeat cross-validation procedures. You will use these tools to try to understand the bias-variance trade-off in these data.  
+
+# Getting Started
+
+This section gives some basic R commands for regression, prediction, and model validation.  We will also learn how to write loops and programs.  See the accompanying .do file for the code from this section along with a few more code samples and comments.
+
+* Restrict data to one season:  (e.g. fall) `fall <- subset(allseasons, seasonnum==2)`
+
+### Commands for regression:  (see also Week 3 lab)
+`ADD` 
+* Table 4 winter LUR model and in-sample results display:
+`reg ln_nox D2A1 A1_50 A23_400 Pop_5000 D2C Int_3000 D2Comm 
+display "In-sample RMSE = " round(e(rmse),.0001)
+display "In-sample R2 = " round(e(r2),.001)`
+* predict y:
+`predict yhat`
+
+* Scatterplot of ln_nox vs. fitted ln_nox with 1:1 line:  Note:  predicted is on the y-axis here
+`twoway (scatter yhat ln_nox if seasonnum==2, ///
+sort xtitle("NOx in ln(ppb)") ///
+ytitle("Predicted ln(NOx)") ///
+title("Fall 2006") ///
+) /// this ")" ends the first plot
+(line ln_nox ln_nox if seasonnum==2)/// second plot
+, /// Commands relevant to both plots follow:
+legend(order(1 "Data" 2 "1:1 line") rows(2)) ///
+yscale(range(3.5 5.0)) xscale(range(3.5 5.0)) scale(1) aspectratio(1) `
+
+* Stepwise regression commands:
+    -forward selection with a lax entry criterion
+`sw, pe(.3): regress ln_nox Pop_* Int_* D2* A1_* A23_* ///
+if seasonnum==2`  
+
+    -backward selection with a strict removal criterion
+`sw, pr(.05): regress depvar indepvars if statement`   
+
+    -forward stepwise with a more lax removal than entry criterion; 
+TODO:  clarifying notes.  From Stata:  option "forward" works only when both pe and pr are specified
+`sw, pe(.05) pr(.1) forward: regress depvar indepvars if statement`
+
+    -backward stepwise with a more lax removal than entry criterion
+`sw, pe(.05) pr(.1): regress depvar indepvars if statement`
+
+    -TODO clarifying Note:  Selection procedures should keep or discard all categories.  use parentheses in Stata to force this:
+xi: sw, pr(.2): depvar x1 (i.categoricalx2) x3 x4
+
+* Commands for AIC & BIC:  
+`estimates stats          
+estat ic`
+*TODO:  drop?? After installing fitstat (type findit fitstat)
+`fitstat`
+* TODO:  verify Note:  In modeling finf and the infiltration data, none of these appear to be giving sensible results; still needs testing with the snapshot data.
+
+### Cross-validation code; not in a function:  TODO: decide if we should drop this 
+*Dividing the dataset into approx. 10 equal groups in random order:
+*Note: each time you run this you create a different grouping of data
+xtile group = uniform(), nq(10)
+
+*Writing a loop for cross-validation:  (You substitute in depvar and varlist)
+gen cv_fitted=.
+forvalues i=1/10 {
+*first do the regression on the training data
+qui regress depvar varlist if group != `i'
+*then predict on the test data
+qui predict cv_fittedi
+*then fill in the cv_fitted vector
+qui replace cv_fitted = cv_fittedi if group==`i'
+qui drop cv_fittedi
+}
+
+Summarizing prediction results from cross-validation or external datasets:
+*specific to the snapshot dataset:
+*calculating summary statistics from the cross-validation results:
+egen ln_nox_avg=mean(ln_nox)
+*the following is the MSE of the data
+*take the square root to get the RMSE
+egen MSEln_nox= mean((ln_nox-ln_nox_avg)^2)
+*the following is the MSE of the predictions:
+egen MSEests= mean((ln_nox-cv_fitted)^2)
+*MSE-based R2
+gen MSER2 = max((1 - MSEests/MSEln_nox),0)
+*the following shows the calculated variables 
+*    (as one line of Stata code)
+display MSEln_nox ",  MSE = " MSEests ",  MSE-based R2 =  " MSER2 
+display "RMSE =  " sqrt(MSEests)
+
+Writing programs in Stata:
+The following list gives some basic pointers.  For more information, read [U] 18 Programming Stata.  For full detail, see [P] Programming.
+•	Programs start with “program program_name” and end with “end”.
+•	You read a program into Stata (e.g. from a do-file), and then run it by typing program_name.
+•	Most programs are set up to take arguments.  
+o	These can be named (using the “args argnames” statement inside the program); they are always positional (and can be referred to as `1', `2', etc.).  Inside the program, there is an assumption made about the order of the arguments that are passed so you need to make sure you know and follow that order.  (See [U] 18.4 for more details.)  
+o	To run a program with arguments, type program_name argnames where typically argnames consists of variables already defined for Stata or new variables you will create inside the program.  
+o	Note that the arguments referred to with argnames that are internal to the program can (and often do) have different names than the ones passed to the program when you call it.  This is intentional as the variables inside the program are “local” to the program.
+•	Once a program has been read into Stata, it is stored in the internal memory for the rest of your session unless you tell Stata to remove it (with the program drop program_name statement).  Thus you have to remember to drop your program before reading in the updated version when you are debugging your program and you wish to test your update.
+•	Local macros:  Using local macros in programs is very helpful.  
+o	Local macros can be used inside and outside of programs; for details see [U] 18.3.1 Local macros.  For instance, local shortcut “var1 var2 var3” allows you to refer to `shortcut' instead of var1 var2 var3 in a Stata command or inside a program.
+o	Note on quotes and macro references:  Usually when referring to macros Stata wants to see a left and then a right single quote, e.g. `shortcut'.  MS Word doesn’t always get these right and when you copy your commands into Stata they can fail.  Inside the do-file editor, the left quote is on the upper left of the keyboard (`) and the right quote is with the double quote (').  If your program fails for unknown reasons, you might retype the quotes inside the do-file editor to make sure Stata is interpreting them correctly.
+•	Finding out about programs in memory:
+o	program dir lists the names of all programs stored in memory.
+o	program list program_name lists the contents of program_name.
+•	Some suggestions:
+o	Use version 11 to make sure your program is compatible with version 11, even if you run it on version 12, 13, or 14.  (Applies to any version of interest.) 
+o	Put comments in your program to help with understanding.  Comments in programs work just like comments outside programs.
+o	Use “display” statements in your code to help you with debugging.  You can always comment these out later.
+o	Decide if you want to return your results directly, or use the eclass or rclass to store them in.  (In the examples below, we use one of each.)
+•	Steps for reading, running, updating and rerunning programs:
+1.	Read in your program code (most easily by “do” from your do-file editor)
+2.	Run the program (most easily done by typing the program_name on the command line)
+3.	If the program returns an error or the wrong answer, drop it using program drop program_name.  (Most easily done by typing the command on the command line)
+4.	Update the code in the do-file editor
+5.	Return to step 1.  (For running and dropping the program after the first time, use the “page up” key (on a Mac it is fn + up arrow) to recall the command on the command line.)
+
+Sample program: statements for turning the CV calculations into a program:
+*do_cv:  program to do the CV on an arbitrary set of       *   independent vars in quotes:
+*works 1/18/15; updated 1/24/15
+*  Notes:
+*   1.  creates cvfitted inside; no longer need to drop 
+*     previously created variable that corresponds to this
+*   2.  before running the program, it is good practice to 
+*   		 use "capture program drop do_cv"; this removes
+*          the program from memory before rerunning code
+capture program drop do_cv
+program do_cv
+*program takes arguments:
+*     group=variable indexing CV groups (input)
+*        Note: this variable has integer values from 1 to k 
+*     depvar=outcome variable in regression (input)
+*     indepvar="set of indep vars in regression" (input)
+*        Note: use quotes when more than one indep var
+*     cvfitted=predicted values from the cross-validation 
+*             (output), to be set in the program
+version 11  
+args group depvar indepvar cvfitted 
+*Note:  `cvfitted' is passed in as a named variable, 
+*    values set in the program,
+*    and then the results are available when it is done.  
+*    If you have data in the variable you pass in, then the
+*        following capture
+*        statement will ensure it gets reinitiated again.
+capture drop `cvfitted'
+qui gen `cvfitted'=.
+*tempvars are used only inside the program
+tempvar k
+egen `k'=max(`group')
+* k is the number of CV groups; 
+* need to define max so the for loop reference behaves
+local maxk=`k'
+*****display " k = " `k' "; starting for loop now"
+forvalues i = 1(1)`maxk' {
+tempvar cv_fitted_`i'
+qui regress `depvar' `indepvar' if `group' != `i'
+*****display "regression for group " `i' " completed "
+qui predict `cv_fitted_`i''
+qui replace `cvfitted' = `cv_fitted_`i'' if `group'==`i'
+}
+end program
+
+* example: 
+do_cv cluster ln_nox "D2A1 A1_50 A23_400 Pop_5000 D2C Int_3000 D2Comm" cvfitted
+
+Sample program:  statements for estimating the MSE R2 from the CV predictions:
+*to run the debugging version edit so the "display" 
+*     commands are uncommented; these are shown below 
+*     with multiple ***** before the statement
+* use "capture program drop getMSE" to remove program from 
+*      memory when rerunning code
+program getMSE, rclass
+version 11
+args depvar cvfitted
+*   depvar is the y variable
+*   cvfitted is the yhat from CV
+*tempvars are used only inside the program
+tempvar y_avg MSEests MSEy ratio MSE_R2
+*	  MSER2 = R2 around 1:1 line, the intended result
+*get the average of y for use in the MSE of the data 
+egen `y_avg' = mean(`depvar')
+return scalar ybar = `y_avg'
+return scalar N = _N
+****display " ybar = " `y_avg'
+*
+*the following is the MSE of the data
+*take the square root to get the RMSE
+egen `MSEy'= mean((`depvar'-`y_avg')^2)
+return scalar MSEy = `MSEy'
+*****display "obtained MSEY"
+*
+*the following is the MSE of the predictions:
+egen `MSEests' = mean((`depvar'-`cvfitted')^2)
+return scalar MSEests = `MSEests'
+*****display "obtained MSEests"
+*
+return scalar RMSE = sqrt(`MSEests')
+******display "returned RMSE"
+*MSE-based R2
+gen `ratio' = 1-(`MSEests'/`MSEy')
+*****display "estimated ratio" `ratio'
+*
+gen `MSE_R2' = max(`ratio',0)
+*****display "estimated MSE_R2" `MSE_R2'
+return scalar MSER2 = `MSE_R2'
+*something is wrong with one or both of the following: 
+display " MSE R2 = " `MSE_R2'
+display " RMSE   = " sqrt(`MSEests')
+end program
+
+
+
+# Practice Session
+
+ADD
+
+# Homework Exercises  
+
+ ADD
+
+# Appendix
+
+```{r session.info}
+#-----------------session.info: beginning of Appendix -----------------
+#This allows reproducibility by documenting the version of R and every package you used.
+sessionInfo()
+```
+
+```{r appendix.code, ref.label=knitr::all_labels(), echo=TRUE, eval=FALSE, tidy=TRUE, tidy.opts=list(width.cutoff=60), include=T}
+
+```
+
+
