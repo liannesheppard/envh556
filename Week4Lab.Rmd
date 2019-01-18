@@ -17,7 +17,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ```{r load.libraries.pacman, echo=FALSE, include=FALSE, eval=TRUE}
-#----------------load.libraries.pacman
+#----------------load.libraries.pacman----
 # Load pacman into memory, installing as needed
 my_repo <- 'http://cran.r-project.org'
 if (!require("pacman")) {install.packages("pacman", repos = my_repo)}
@@ -30,7 +30,8 @@ if (!require("pacman")) {install.packages("pacman", repos = my_repo)}
 # multcomp:  glht
 # modelr:  part of tidyverse and need for add_predictions and add_residuals
 # boot:  cv tools are available
-pacman::p_load(tidyverse, knitr, mutlcomp, dplyr, modelr)  
+# Hmisc:  describe
+pacman::p_load(tidyverse, knitr, mutlcomp, dplyr, modelr, Hmisc)  
 ```
 
 ```{r read.data, echo=FALSE}
@@ -47,6 +48,7 @@ snapshot<-readRDS(file.path(datapath,"allseasonsR.rds"))
 
 TODO:  put in lecture commands by slide
 TODO:  alternative ways to do cv??
+TODO commands for AIC and BIC
 
 
 # Purpose
@@ -73,7 +75,7 @@ The purpose of this lab is to use principles of “out-of-sample” assessment t
 
 # Getting Started
 
-This section gives some basic R commands for regression, prediction, and model validation.  We will also learn how to write loops and programs.  See the accompanying .do file for the code from this section along with a few more code samples and comments.
+This section gives some basic R commands for regression, prediction, and model validation.  We will also learn how to write loops and programs.  
 
 * Restrict data to one season:  (e.g. fall) 
 ```{r fall subset}
@@ -94,6 +96,28 @@ summary( lm_fall <-
 
 ```
 
+
+```{r predictions with dplyr}
+# predictions dplyr -----------
+# dplyr approach
+# this seems to be able to add just the part of the data that was fit in each model -- not clear??  I think this should be done explicitly
+# however, we don't get the prediction intervals or SEs this way
+snap2 <- snapshot %>%  
+    add_residuals(lm_summer,"resids_sum") %>%
+    add_predictions(lm_summer,"preds_sum") %>%
+    add_residuals(lm_fall,"resids_fall") %>%
+    add_predictions(lm_fall,"preds_fall") %>%
+    add_residuals(lm_winter,"resids_win") %>%
+    add_predictions(lm_winter,"preds_win") 
+
+# Here's the plot that shows that the data are for all rows
+# (we can alse use decribe to tell)
+ggplot(data=snap2,aes(resids_fall,resids_sum)) +
++ geom_point() +
++ facet_wrap(~seasonfac)
+
+```
+
 Note that the fitted values are extracted from the regression and thus are always the in-sample fits from the same dataset.  To use the results of this model to predict to new observations, use the *predict()* function, not fitted.
 
 EDIT to show fitted:
@@ -101,6 +125,7 @@ EDIT to show fitted:
 summary(fall_m0)
 fitted_ln_nox <- fitted(fall_m0)
 ```
+
 OR use an updated version of this??
 ```{r second insample plot, fig.width=6, fig.height=5, echo=TRUE}
 ##not elegant to combine two variables for this plot, but it works! Note 1st variable is called "V1"
