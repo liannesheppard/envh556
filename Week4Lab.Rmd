@@ -46,49 +46,50 @@ snapshot<-readRDS(file.path(datapath,"allseasonsR.rds"))
 
 ```
 
-TODO:  put in lecture commands by slide
-TODO:  alternative ways to do cv??
+TODO:  Finish lecture slides
 TODO commands for AIC and BIC
+TODO:  ask Sun about stepwise code and strategies.  Her parsimonious model should have covered this
+TODO:  fix the do_CV function
+TODO:  Add code to randomly select groups
 
 
 # Purpose
 
 The purpose of this lab is to use principles of “out-of-sample” assessment to validate regression models.   We will use the snapshot data for model validation, run a cross-validation, and write a program to more easily repeat cross-validation procedures. You will use these tools to try to understand the bias-variance trade-off in these data.  
 
-# Lecture slide code
-
-## Slide 12:  In-sample assessment (fall)
-
-## Slide 14:  Out-of-sample assessment (fall applied to winter)
-
-## Slide 15:  Plots of in- vs. out-of-sample predictions
-
-## Slide 17:  MSE-Based R2 estimates (& code), in- and out-of-sample
-
-## Slide 18:  R command for AIC, BIC
-
-## Slide 20:  In- vs. out-of-sample prediction intervals
-
-## Slide 36:  Forward selection example
-
-
 
 # Getting Started
 
-This section gives some basic R commands for regression, prediction, and model validation.  We will also learn how to write loops and programs.  
+This section gives some basic R commands for regression, prediction, and model validation.  We will also learn how to write loops and programs. 
 
-* Restrict data to one season:  (e.g. fall) 
+Steps/ideas to cover:
+** Regression reminder + getting predictions
+** Regression-based R2
+* Forward stepwise regression
+* Manual cross-validation code
+* Writing functions (general ideas & principles)
+* CV function
+* Other CV tools we could consider
+
+## Set-up
+
+* Restrict data to one season:  (fall here) 
 ```{r fall subset}
 # fall subset ----
-fall <- subset(snapshot, season==2)
+# Traditional R approach
+#fall <- subset(snapshot, season==2)
+# Tidyverse approach
+fall <- filter(snapshot, season == 2)
 
 ```
 
 
-### Commands for regression:  (see also Week 3 lab)
+## Commands for regression, plotting, and computing prediction R2:  (see also Week 3 lab)
+
+Regression:  
 
 ```{r fall regression}
-# fall regression
+# fall regression, common model
 
 summary( lm_fall <-
     lm(ln_nox ~ D2A1 + A1_50 + A23_400 + Pop_5000 + D2C + Int_3000 + D2Comm,
@@ -96,226 +97,67 @@ summary( lm_fall <-
 
 ```
 
+Basic predictions, and plotting them:
 
-```{r predictions with dplyr}
-# predictions dplyr -----------
-# dplyr approach
-# this seems to be able to add just the part of the data that was fit in each model -- not clear??  I think this should be done explicitly
-# however, we don't get the prediction intervals or SEs this way
+```{r predictions with dplyr, fig.width=6, fig.height=5}
+# predictions with dplyr -----------
 snap2 <- snapshot %>%  
-    add_residuals(lm_summer,"resids_sum") %>%
-    add_predictions(lm_summer,"preds_sum") %>%
-    add_residuals(lm_fall,"resids_fall") %>%
-    add_predictions(lm_fall,"preds_fall") %>%
-    add_residuals(lm_winter,"resids_win") %>%
-    add_predictions(lm_winter,"preds_win") 
+    add_predictions(lm_fall,"preds_fall")  
 
-# Here's the plot that shows that the data are for all rows
-# (we can alse use decribe to tell)
-ggplot(data=snap2,aes(resids_fall,resids_sum)) +
-+ geom_point() +
-+ facet_wrap(~seasonfac)
+# Here's a plot that shows that the data are for all rows. (We can alse use
+# decribe from the Hmisc package.)
+ggplot(data = snap2, aes(preds_fall, ln_nox)) +
+    geom_point() +
+    coord_fixed() +
+    facet_wrap( ~ seasonfac) +
+    geom_abline(intercept = 0, slope = 1, color = "blue") +
+    geom_smooth(method = "lm", se = FALSE, color = "red") +
+    labs(title = "Fall model predictions vs. ln(NOx) \nby season", 
+         x = "Predicted ln(NOx) (ln(ppb))",
+         y = "Observed ln(NOx) (ln(ppb))",
+         caption = "Best fit line is red; 1:1 line is blue")
 
 ```
 
-Note that the fitted values are extracted from the regression and thus are always the in-sample fits from the same dataset.  To use the results of this model to predict to new observations, use the *predict()* function, not fitted.
+Correlations of predictions vs. observations by season:
 
-EDIT to show fitted:
-```{r lm summary and fitted from subset, echo=TRUE}
-summary(fall_m0)
-fitted_ln_nox <- fitted(fall_m0)
-```
-
-OR use an updated version of this??
-```{r second insample plot, fig.width=6, fig.height=5, echo=TRUE}
-##not elegant to combine two variables for this plot, but it works! Note 1st variable is called "V1"
-snapshot.fall.temp<-as.data.frame(cbind(snapshot.fall$ln_nox,fitted_ln_nox))
-insamp.scatterplot<- ggplot(snapshot.fall.temp, aes(x=V1, y=fitted_ln_nox, color = "rose")) + 
-  geom_point() + 
-  geom_abline(intercept = 0, slope = 1, color = "royalblue") + 
-  labs(title = "Plot of ln(NOx) and Fitted Values of ln(NOx) with 1:1 Line",
-       x = "NOx in ln(ppb)",  y = "Fitted Values of ln(NOx)")
-print(insamp.scatterplot)
-```
-
-
-### Create an in-sample Scatterplot of ln_nox Versus fitted_ln_nox
-
-ADD a ggplot of fitted??
-
-```{r predictions with dplyr}
-# predictions dplyr -----------
-# dplyr approach
-# however, we don't get the prediction intervals or SEs this way
-fall2 <- fall %>%  
-        add_residuals(lm_fall,"resids") %>%
-        add_predictions(lm_fall,"preds") %>%
+```{r season-specific correlations, eval = FALSE}
+# season-specific-correlations ------
+# TODO:  figure out why select isn't working
+pred_summary <- select(snap2,  c("ln_nox","preds_fall","ID","season")) %>%
+    group_by(season) %>%
+    summarize(
+        r = cor(ln_nox,preds_fall),
+        R2 = r^2)
+kable(pred_summary, digits = 2)
     
 ```
 
-From week 3 lab:
-```{r}
-# prediction intervals--------
-# We produce season-specific prediction intervals, then combine them with the other seasons to produce the full dataset 
+## Stepwise regression (forward selection)
 
-# first get the prediction interval for each season and bind it to the season-specific subset
-# NOTE:  We are assuming the two datasets are in the same order when we cbind!
-summer <- cbind(snapshot[snapshot$season==1,],predict(lm_summer,interval="prediction"))
-fall <- cbind(snapshot[snapshot$season==2,],predict(lm_fall,interval="prediction"))
-winter <- cbind(snapshot[snapshot$season==3,],predict(lm_winter,interval="prediction"))
+TODO:  Modify after input from Sun
+TODO:  remove extraneous stuff from this section
 
-# then combine the dataset into one big one
-allseas <- rbind(summer, fall, winter)
+The R function `step()` allows stepwise regression.  It has forward, backward, or stepwise regression search algorithms. Forward selection is a useful tool for ordering a sequence of models based on increasing complexity.  
 
-```
+The function `addterm()` from the `MASS` package allows the addition of the next best term to a model.
 
-From week 3 lab:
-```{r out of sample predictions}
-# out of sample predictions--------
-# TODO:  TEST and check
-# We produce out of sample season-specific predictions intervals using the previous season to predit the next one.  (Note you should think carefully from a scientific perspective about what you want to do here.) 
-
-# first get the prediction interval for each season and bind it to the season-specific subset
-# NOTE:  We are assuming the two datasets are in the same order when we cbind!
-fall_preds_from_summer <- 
-    predict(lm_summer,
-            snapshot[snapshot$season==2,], 
-            interval="prediction")
-winter_preds_from_fall <- predict(lm_fall, 
-                snapshot[snapshot$season==3,], 
-                interval="prediction")
-summer_preds_from_winter <- 
-    predict(lm_winter, 
-            snapshot[snapshot$season==1,],
-            interval="prediction")
-
-# then combine the dataset into one big one
-allseas <- rbind(fall_preds_from_summer,
-                 winter_preds_from_fall,
-                 summer_preds_from_winter)
-
-```
-
-ISLR book validation approach code:
-```{r}
-
-# need to adjust dataset, etc.  Gives out of sample predictions...
-train=sample(392,196)
-lm.fit=lm(mpg~horsepower,data=Auto,subset=train)
-attach(Auto)
-mean((mpg-predict(lm.fit,Auto))[-train]^2)
-```
-
-
-###Calculating CV based MSER2 and RMSE for Table 4 LUR model
-TODO:  evaluate/update
-```{r a manual CV}
-#create a NULL variable to store our CV predictions in
-CV.pred.store<-NULL
-for (i in 1:10){
-  # fit the CV linear model, omitting one cluster
-  CV.lm<-lm(ln_nox~D2A1 + A1_50 + A23_400 + Pop_5000 + D2C + Int_3000 +D2Comm,
-            data=subset(snapshot.fall,cluster!=i))
-  
-  #print(summary(CV.lm))
-  #predict on the omitted cluster (i.e. in the valudation dataset).  The following command gives the prediction (called "fit") and upper and lower prediction interval estimates 
-  CV.predict<-predict(CV.lm,subset(snapshot.fall,cluster==i),interval="prediction",level=0.95,type="response")
-  #Now store this along with the observation and cluster indication
-  CV.pred.store<-rbind(CV.pred.store,cbind(cluster=i,snapshot.fall[which(snapshot.fall$cluster==i),c("ln_nox","ID")],CV.predict))
- #name the first two variables.  Note the predicted ln_nox is called "fit" 
- colnames(CV.pred.store)[c(1,2)]<-c("cluster","ln_nox")
-
-## plot to see progressive fits; all plots have fitted on the x axis
-# CV.pred.store.step.plot<-as.data.frame(CV.pred.store,stringsAsFactors=F) 
-
-# ln_nox.CV.pred.step <- ggplot(CV.pred.store.step.plot, aes(x = fit, y = ln_nox)) + 
-#  theme_bw() +
-#  ggtitle(paste("Cross Validated Predictions of ln_nox_cluster 1:",i,sep="")) + ylab("Measured ln_nox (ppb)")+ xlab("Predicted ln_nox (ppb)")+
-#  geom_point(data=CV.pred.store.step.plot,
-#             aes(x=fit,y=ln_nox),size=3) +
-#  geom_line(data=CV.pred.store.step.plot,aes(x=ln_nox,y=ln_nox,color="1:1 line")) +
-#  geom_smooth(aes(x=fit,y=ln_nox,color="best fit"),method="lm",se=F)+
-#   scale_color_manual(name="",values=c("red","blue"))
-
-#labs(color="Cluster", linetype="1:1",shape="")
-
-#print(ln_nox.CV.pred.step)
-
-  
-}
-
-#convert the result to a data frame
-CV.pred.store<-as.data.frame(CV.pred.store,stringsAsFactors=F)
-# regress measured ln nox vs the CV-based yhat
-summary(lm(ln_nox~fit,data=CV.pred.store))
-#report the regression-based R2 from the CV:
-summary(lm(ln_nox~fit,data=CV.pred.store))$r.squared
-
-```
-
-
-```{r MSE-based R2 and RMSE by hand}
-
-#*specific to the snapshot dataset:
-#  *calculating summary statistics from the cross-validation results:
-# note: can bet some of these results also from the CV.pred.store object
-ln_nox_avg=mean(snapshot.fall$ln_nox)
-ln_nox_avg
-#subset method
-#*the following is the MSE of the data
-#*take the square root to get the RMSE
-MSE.ln_nox<-mean((snapshot.fall$ln_nox-ln_nox_avg)^2)
-MSE.ln_nox
-#*the following is the MSE of the predictions:
-MSE.pred<- mean( (CV.pred.store$ln_nox-CV.pred.store$fit)^2 )
-MSE.pred
-RMSE.pred<-sqrt(MSE.pred)
-#*MSE-based R2
-#gen MSER2 = max((1 - MSEests/MSEln_nox),0)
-MSER2<-max((1-MSE.pred/MSE.ln_nox),0)
-#*now show the calculated variables 
-CV.results.subset<-cbind(MSE.ln_nox,MSE.pred,MSER2,RMSE.pred)
-CV.results.subset
-```
-
-## Now write functions for cross-validation and code for MSE (practice session step 5)
-
-Need to write functions for:  CV, MSE.  The implementation below (in step 7b) doesn't use functions for CV and MSE, but the code is complete.
-
-## Plotting the CV results (practice session step 6)
-
-Here we make a scatterplot comparing ln_nox (the observed dependent variable) on the x-axis with the cross-validated predictions on the y-axis.  We add the 1:1 line to the plot. 
-
-Note:  Typically the measured data are shown on the x axis as they are the "known" data in this setting. If you decide you also want to show the best-fit line, you will need to put the predictions on the x-axis rather than the y-axis.
-
-```{r Plot the CV results from step 4, echo=TRUE}
-
-CV.pred.store.step.plot<-as.data.frame(CV.pred.store,stringsAsFactors=F) 
-
-ln_nox.CV.pred.step <- ggplot(CV.pred.store.step.plot, aes(y = fit, x = ln_nox)) + 
-  theme_bw() +
- ggtitle(paste("Plot of Cross Validated Predictions vs. Observations")) + xlab("Measured ln_nox (ln(ppb)")+ ylab("Predicted ln_nox (ln(ppb)")+
-  geom_point(data=CV.pred.store.step.plot,
-             aes(y=fit,x=ln_nox),size=3) +
-  geom_line(data=CV.pred.store.step.plot,aes(x=ln_nox,y=ln_nox,color="1:1 line")) + 
-    scale_color_manual(name="",values=c("red","blue"))
-print(ln_nox.CV.pred.step)
-
-```
-
-## Start working on the bias-variance trade-off analysis (practice session step 7)
-
-### Stepwise Procedures (for practice session step 7a)
-
-Stepwise regression algorithms are useful when explanatory variables to be included in a regression model are not predetermined, and selecting them forms part of the analysis (Source: [Variable Selection] (http://www.stat.columbia.edu/~martin/W2024/R10.pdf)). The R function *step()* with forward, backward, or stepwise regression search algorithm is useful when the number of explanatory variables is large. Forward selection is a useful tool for ordering a sequence of models based on increasing complexity.  We still need to learn how to relax the entry criteria so we can better use this tool to help us show the bias-variance trade-off.
+TODO:  We still need to learn how to relax the entry criteria so we can better use this tool to help us show the bias-variance trade-off.
 
 + **Stepwise Model Set-up**
-To run stepwise regressions, we need to define our smallest starting model (e.g., *null* model) and the largest possible model we will consider (e.g., *full* model). We, then, use the function *step()* to tell R to search through models lying between *null* and *full* (these define the scope). The options to *step* tell R what direction to go and how to add/drop terms.  The range of models searched is controlled by the scope argument.  The argument *steps* can be used to limit the number of models fit. The default number of steps is 1000.  The procedure choses using minimum AIC in a stepwise fashion.
-```{r stepwise set-up for fall snapshot, echo=TRUE}
-null <- lm(ln_nox ~ 1, data=snapshot.fall)
+First define the smallest starting model (e.g., *null* model) and the largest possible model we will consider (e.g., *full* model). These define the scope.  The function `step()` defines the direction of the model selection (we will only use forward selection), and the number of models fit (the default number of steps is 1000).  `step()` minimizes the AIC.  (This function is available in both base R and in the `MASS` package.)
+
+An alternative is `addterm()` in the `MASS` package.  This allows use of the F-test or a Chi-square test as alternatives.
+
+TODO:  Need to figure out how to modify the statistical significance criterion for these tests.
+
+```{r stepwise set-up for fall snapshot}
+# stepwise set-up for fall snapshot ------
+null <- lm(ln_nox ~ 1, data=fall)
 null
     
-#Note: need to figure out how to (simply) expand this to all the predictor variables in the dataset
+#TODO: figure out how to (simply) expand this to more/all of the predictor variables in the dataset
+#TODO:  ask Sun about her stepwise code
 full <- lm(ln_nox ~ Pop_5000 + D2Comm + D2A1 + D2Ryard + A1_10k + A23_15k + Pop_15000 + Pop_10000 + A1_750 + A23_50 + A23_10k + A1_3k + D2A3 + D2C + A1_300 + A23_5k + Int_300 + D2Rroad + D2Mport + A1_15k + A1_400 + Int_500 + Int_1000 + A23_1k + Pop_3000 + Pop_2500 + D2Lport + Int_3000, data=snapshot.fall)
 full
 ```   
@@ -331,24 +173,147 @@ step(null, scope=list(lower=null, upper=full), direction="forward")
 ```
 
 
-+ **Backward selection**
+## TODO:  fit in ISLR validation approach where belongs or DROP
 
-Since backward selection is through elimination, we start with the *full* model and specify *backward* direction.  (This apparently works without telling R the minimum model.)
-```{r backward selection on fall snapshot, echo=TRUE, eval=FALSE} 
-step(full, data=snapshot.fall, direction="backward")
+ISLR book validation approach code:
+```{r}
+
+# need to adjust dataset, etc.  Gives out of sample predictions...
+train=sample(392,196)
+lm.fit=lm(mpg~horsepower,data=Auto,subset=train)
+attach(Auto)
+mean((mpg-predict(lm.fit,Auto))[-train]^2)
 ```
 
 
-+ **Both Directions**
+## Manual cross-validation 
 
-This is performed by defining both the starting (e.g., *null* model) and range (e.g., *full* model), and specifying *both* as search direction.
-```{r stepwise example, echo=TRUE, eval=FALSE}
-step(null, scope = list(upper=full), data=snapshot.fall, direction="both")
+```{r a manual CV}
+# manual CV ------
+
+#create a variable to store CV predictions 
+CV.pred <- NULL
+
+# loop over the 10 clusters
+for (i in 1:10){
+    # define the current cluster variable as a logical vector
+    is.cluster <- fall$cluster == i
+    
+    # fit the linear model, omitting cluster i (training set)
+    CV.lm <-
+        lm(ln_nox ~ D2A1 + A1_50 + A23_400 +               Pop_5000 + D2C + Int_3000 + D2Comm,
+        data = fall[-is.cluster, ])
+  
+    # save the predictions and observations in CV.pred for the current cluster (test set)
+    CV.results <- fall %>%
+        add_predictions(CV.lm,"preds") %>%
+        filter(cluster == i) %>%
+        select(ID, cluster, ln_nox, preds)
+        
+    CV.pred <- rbind(CV.pred, CV.results)
+}
+
+# now get the MSE, RMSE, MSE-based R2
+# mean of observations
+ln_nox_avg <- mean(CV.pred$ln_nox)
+# MSE of predictions
+MSE.pred <- mean((CV.pred$ln_nox - CV.pred$preds)^2)
+# MSE of observations (for R2 denominator)
+MSE.obs <- mean((CV.pred$ln_nox - ln_nox_avg)^2)
+# print the results
+paste("RMSE:  ", sqrt(MSE.pred))
+paste("MSE-based R2:  ", 
+      max(1 - MSE.pred/MSE.obs, 0))
+     
 ```
 
 
+## Functions for cross-validation and code for MSE 
 
-### Repeated cross-validation for the bias-variance trade-off plot (for practice session step 7b)
+### Tips on writing functions
+
+TODO:  Add link to R4DS ch 15
+From R4DS chapter on functions, Chapter 15, the reason to write functions is to automate repetitive tasks and avoid copying and pasting.  This eliminates the need to update the code in multiple places when you make a change and reduces your chances of making mistakes.  A simple rule of thumb is to write a function whenever you have or will need at least three copies of a block of code.
+
+Here are the 3 steps to writing a function:
+
+1. Pick a name for the function.
+2.  List the inputs or *arguments* to the function inside the function call.
+3.  Put code to accomplish what you want in the body of the function.
+
+First we write a function to estimate the MSE.  We call it `getMSE`.  Here it is:
+
+```{r define getMSE}
+# define getMSE function -----
+# Function to get the MSE, RMSE, MSE-based R2
+getMSE <- function(obs,pred) {
+    # mean of obs
+    obs_avg <- mean(obs)
+    # MSE of obs (for R2 denominator)
+    MSE.obs <- mean((obs-obs_avg)^2)
+    # MSE of predictions
+    MSE.pred <- mean((obs - pred)^2)
+    result <- c(sqrt(MSE.pred),
+    max(1 - MSE.pred/MSE.obs, 0))
+    names(result) <-  c("RMSE", "R2(MSE-based)")
+    result
+}
+
+```
+
+Now test our function, using e.g. the manual CV we completed:
+```{r test getMSE}
+# test getMSE -----
+getMSE(CV.pred$ln_nox,CV.pred$preds)
+
+```
+
+Now convert our cross-validation to a function:
+TODO:  Get this to work and decide how fancy to allow it to be, e.g. w.r.t. what gets passed to lm().
+
+```{r CV function}
+# CV function -------
+do_CV <- function(obs, formula, group, dataset){
+    # TODO: should be able to extract obs from the formula
+    # obs is the outcome
+    # formula to pass to lm
+    # group is the grouping variable
+    # dataset is the data
+    # the function returns the dataset with a new variable called cvpreds, out-of-sample predictions   
+
+    # create a variable to store CV predictions 
+    CV.pred <- NULL
+    
+    # get the number of distict clusters 
+    k <- length(unique(group))
+    
+    # loop over all the clusters
+    for (i in 1:k){
+        # define the current group variable as a logical vector
+        is.group <- group == i
+    
+        # fit the linear model, omitting cluster i (training set)
+        CV.lm <-
+            lm(formula, data=dataset,
+            subset = -is.cluster)
+  
+        # save the predictions and observations in CV.pred for the current group (test set)
+         CV.results <- dataset %>%
+            add_predictions(CV.lm,"cvpreds") %>%
+            filter(group == i) 
+        
+        CV.pred <- rbind(CV.pred, CV.results)
+    }
+# return the dataset; note it will be ordered by group now
+CV.pred
+}
+```
+
+
+## Bias-variance trade-off analysis 
+
+
+### Repeated cross-validation for the bias-variance trade-off plot 
 
 Assignment Request:	Use the order of entry into the stepwise to sequentially complete the following computations.  For models with one up to the maximum number of selected variables:
 
@@ -357,8 +322,9 @@ Assignment Request:	Use the order of entry into the stepwise to sequentially com
         ii. Estimate predicted values using cross-validation.
         
         iii.  Compute out-of-sample RMSE and MSE-based R2 estimates.
-        
-Code below was kindly provided by David Scoville: (basic tests work; should review more)
+ 
+TODO:  UPDATE       
+Code below was kindly provided by David Scoville: (basic tests work; need to integrate)
 ```{r Model selection and CV, echo=TRUE}
 
 #empty<-lm(ln_nox ~ 1, data=snapshot.fall)
@@ -501,26 +467,25 @@ bvt.RMSE<-ggplot(errors,aes(x=as.numeric(mod.size),y=RMSE.pred.CV)) + geom_point
 ```
 
  
-## Using the repeated CV results to make a bias-variance trade-off plot (practice session step 7c)       
-Assignment Request:	In a table or figure(s), summarize the number of variables in each model along with the R2 and/or RMSE estimates from CV and the training data. If you choose to show your results in a plot, put the number of variables in the model on the x-axis vs. the R2 or RMSE estimates on the y-axis.  Distinguish the two kinds of estimates on your plot.  If you choose to show your results in a table, also include a column for the variable name of the variable added.
+## Bias-variance trade-off plot 
 
-See code in previous section, from David Scoville
-
+TODO:  Update.  See example above
 
 # Practice Session
 
 TODO:  Convert from Stata to R
 
-This section covers basic practice to be completed during the lab.   We are going to use the snapshot data described in Mercer et al 2011 and discussed in class.  It can be found on the class website.  Note that in this lab we are treating the errors are independent and identically distributed even though this assumption is not correct in these data.  (This is the same assumption typically made in LUR modeling.)
+This section covers basic practice to be completed during the lab.   We are going to use the snapshot data described in Mercer et al 2011, discussed in class, and used last week.  It can be found on the class website.  Note that in this lab we are treating the errors are independent and identically distributed even though this assumption is not correct in these data.  (This is the same assumption typically made in LUR modeling.)
+
 Perform the following tasks:
-1.	Start a log file and open a do-file editor
-2.	Explore the dataset a bit, focusing on one particular season.  Make sure you have some basic understanding of the outcome variable (ln_nox), the CV grouping variable (cluster), and the large number of covariates you can choose from.   In this lab you should restrict your analysis to one season (e.g. fall).  You can create a season-specific dataset with the command: keep if seasonnum==2
+1.	Determine the R project you will use.
+2.	Explore the dataset a bit, focusing on one particular season.  Make sure you have some basic understanding of the outcome variable (ln_nox), the CV grouping variable (cluster), and the large number of covariates you can choose from.   In this lab you should restrict your analysis to one season (e.g. winter).  
 3.	Fit the model for one of the seasons given in Table 4 of Mercer et al. Make note of these in-sample estimates of R2 and RMSE.
 4.	Try to manually cross-validate this model using the code given above.  Compare the CV R2 and RMSE to your in-sample estimates.  (Note:  Use the cluster variable in the dataset to define your CV groups.)
-5.	“Write your own” cross-validation program using the code given above and repeat your cross-validation analysis.  (If you use the same groups, you should get the same results in steps 3 and 4.)
+5.	Use the cross-validation function and repeat your cross-validation analysis.  (If you use the same groups, you should get the same results as in the previous step.)
 6.	Make a scatterplot comparing ln_nox (the observed dependent variable) on the x-axis with the cross-validated predictions on the y-axis.  Add the 1:1 line to your plot. (If you also want to show the best-fit line, you’ll need to put the predictions on the x-axis rather than the y-axis.)
 7.	Create your own version of the bias-variance trade-off plot shown in class using the following steps:
-a.	Do a forward stepwise regression of ln_nox on a set of plausible variables with a lax entry criterion (e.g. pe(.3)).   (You may restrict your attention to the list in the forward selection model example given above.)  Keep track of the order the variables were added.  
+a.	Do a forward stepwise regression of ln_nox on a set of plausible variables with a lax entry criterion (e.g. ADD).   (You may restrict your attention to the list in the forward selection model example given above.)  Keep track of the order the variables were added.  
 b.	Use the order of entry into the stepwise to sequentially complete the following computations.  For models with one up to the maximum number of selected variables:
 i.	Use the full dataset to obtain in-sample estimates of the RMSE and R2.
 ii.	Estimate predicted values using cross-validation.
@@ -547,12 +512,14 @@ c.	In a table or figure(s), summarize the number of variables in each model alon
 
 # Other resources to explore
 
+TODO:  Update and edit.  Load appropriate packages
+
 ## Cross Validation using the R packages (cvTools and/or caret)
 NOTE:  This has not been tested yet.  We need to determine whether this package gives the same results as our manual procedures, or not.  Also, the worked example below is randomly choosing CV groups, which is a very different approach from using the cluster variable.
 
 Of the three commonly used cross-validation methods (random subsampling, k-fold cross-validation and leave-one-out cross-validation), here we will focus on k-fold cross-validation. For more details on cross-validation, please refer to the **Lecture Notes** and <https://www.r-bloggers.com/cross-validation-for-predictive-analytics-using-r/>.
 
-In this section we will use tools and examples from *cvTools* package to write a program to cross-validate resutls from our linear model.
+The following uses tools and examples from *cvTools* package to write a program to cross-validate results from our linear model.
 
 Set seed for reproducibility
 ```{r echo=TRUE}
@@ -580,49 +547,6 @@ plot(cv_results, method = "density")
 
 
 
-`ADD` 
-* Table 4 winter LUR model and in-sample results display:
-`reg ln_nox D2A1 A1_50 A23_400 Pop_5000 D2C Int_3000 D2Comm 
-display "In-sample RMSE = " round(e(rmse),.0001)
-display "In-sample R2 = " round(e(r2),.001)`
-* predict y:
-`predict yhat`
-
-* Scatterplot of ln_nox vs. fitted ln_nox with 1:1 line:  Note:  predicted is on the y-axis here
-`twoway (scatter yhat ln_nox if seasonnum==2, ///
-sort xtitle("NOx in ln(ppb)") ///
-ytitle("Predicted ln(NOx)") ///
-title("Fall 2006") ///
-) /// this ")" ends the first plot
-(line ln_nox ln_nox if seasonnum==2)/// second plot
-, /// Commands relevant to both plots follow:
-legend(order(1 "Data" 2 "1:1 line") rows(2)) ///
-yscale(range(3.5 5.0)) xscale(range(3.5 5.0)) scale(1) aspectratio(1) `
-
-* Stepwise regression commands:
-    -forward selection with a lax entry criterion
-`sw, pe(.3): regress ln_nox Pop_* Int_* D2* A1_* A23_* ///
-if seasonnum==2`  
-
-    -backward selection with a strict removal criterion
-`sw, pr(.05): regress depvar indepvars if statement`   
-
-    -forward stepwise with a more lax removal than entry criterion; 
-TODO:  clarifying notes.  From Stata:  option "forward" works only when both pe and pr are specified
-`sw, pe(.05) pr(.1) forward: regress depvar indepvars if statement`
-
-    -backward stepwise with a more lax removal than entry criterion
-`sw, pe(.05) pr(.1): regress depvar indepvars if statement`
-
-    -TODO clarifying Note:  Selection procedures should keep or discard all categories.  use parentheses in Stata to force this:
-xi: sw, pr(.2): depvar x1 (i.categoricalx2) x3 x4
-
-* Commands for AIC & BIC:  
-`estimates stats          
-estat ic`
-*TODO:  drop?? After installing fitstat (type findit fitstat)
-`fitstat`
-* TODO:  verify Note:  In modeling finf and the infiltration data, none of these appear to be giving sensible results; still needs testing with the snapshot data.
 
 ### Cross-validation code; not in a function:  TODO: decide if we should drop this 
 
@@ -663,167 +587,6 @@ for(i in seq_len(k)) {
     
 ```
 
-*Dividing the dataset into approx. 10 equal groups in random order:
-*Note: each time you run this you create a different grouping of data
-xtile group = uniform(), nq(10)
-
-*Writing a loop for cross-validation:  (You substitute in depvar and varlist)
-gen cv_fitted=.
-forvalues i=1/10 {
-*first do the regression on the training data
-qui regress depvar varlist if group != `i'
-*then predict on the test data
-qui predict cv_fittedi
-*then fill in the cv_fitted vector
-qui replace cv_fitted = cv_fittedi if group==`i'
-qui drop cv_fittedi
-}
-
-Summarizing prediction results from cross-validation or external datasets:
-*specific to the snapshot dataset:
-*calculating summary statistics from the cross-validation results:
-egen ln_nox_avg=mean(ln_nox)
-*the following is the MSE of the data
-*take the square root to get the RMSE
-egen MSEln_nox= mean((ln_nox-ln_nox_avg)^2)
-*the following is the MSE of the predictions:
-egen MSEests= mean((ln_nox-cv_fitted)^2)
-*MSE-based R2
-gen MSER2 = max((1 - MSEests/MSEln_nox),0)
-*the following shows the calculated variables 
-*    (as one line of Stata code)
-display MSEln_nox ",  MSE = " MSEests ",  MSE-based R2 =  " MSER2 
-display "RMSE =  " sqrt(MSEests)
-
-Writing programs in Stata:
-The following list gives some basic pointers.  For more information, read [U] 18 Programming Stata.  For full detail, see [P] Programming.
-•	Programs start with “program program_name” and end with “end”.
-•	You read a program into Stata (e.g. from a do-file), and then run it by typing program_name.
-•	Most programs are set up to take arguments.  
-o	These can be named (using the “args argnames” statement inside the program); they are always positional (and can be referred to as `1', `2', etc.).  Inside the program, there is an assumption made about the order of the arguments that are passed so you need to make sure you know and follow that order.  (See [U] 18.4 for more details.)  
-o	To run a program with arguments, type program_name argnames where typically argnames consists of variables already defined for Stata or new variables you will create inside the program.  
-o	Note that the arguments referred to with argnames that are internal to the program can (and often do) have different names than the ones passed to the program when you call it.  This is intentional as the variables inside the program are “local” to the program.
-•	Once a program has been read into Stata, it is stored in the internal memory for the rest of your session unless you tell Stata to remove it (with the program drop program_name statement).  Thus you have to remember to drop your program before reading in the updated version when you are debugging your program and you wish to test your update.
-•	Local macros:  Using local macros in programs is very helpful.  
-o	Local macros can be used inside and outside of programs; for details see [U] 18.3.1 Local macros.  For instance, local shortcut “var1 var2 var3” allows you to refer to `shortcut' instead of var1 var2 var3 in a Stata command or inside a program.
-o	Note on quotes and macro references:  Usually when referring to macros Stata wants to see a left and then a right single quote, e.g. `shortcut'.  MS Word doesn’t always get these right and when you copy your commands into Stata they can fail.  Inside the do-file editor, the left quote is on the upper left of the keyboard (`) and the right quote is with the double quote (').  If your program fails for unknown reasons, you might retype the quotes inside the do-file editor to make sure Stata is interpreting them correctly.
-•	Finding out about programs in memory:
-o	program dir lists the names of all programs stored in memory.
-o	program list program_name lists the contents of program_name.
-•	Some suggestions:
-o	Use version 11 to make sure your program is compatible with version 11, even if you run it on version 12, 13, or 14.  (Applies to any version of interest.) 
-o	Put comments in your program to help with understanding.  Comments in programs work just like comments outside programs.
-o	Use “display” statements in your code to help you with debugging.  You can always comment these out later.
-o	Decide if you want to return your results directly, or use the eclass or rclass to store them in.  (In the examples below, we use one of each.)
-•	Steps for reading, running, updating and rerunning programs:
-1.	Read in your program code (most easily by “do” from your do-file editor)
-2.	Run the program (most easily done by typing the program_name on the command line)
-3.	If the program returns an error or the wrong answer, drop it using program drop program_name.  (Most easily done by typing the command on the command line)
-4.	Update the code in the do-file editor
-5.	Return to step 1.  (For running and dropping the program after the first time, use the “page up” key (on a Mac it is fn + up arrow) to recall the command on the command line.)
-
-Sample program: statements for turning the CV calculations into a program:
-*do_cv:  program to do the CV on an arbitrary set of       *   independent vars in quotes:
-*works 1/18/15; updated 1/24/15
-*  Notes:
-*   1.  creates cvfitted inside; no longer need to drop 
-*     previously created variable that corresponds to this
-*   2.  before running the program, it is good practice to 
-*   		 use "capture program drop do_cv"; this removes
-*          the program from memory before rerunning code
-capture program drop do_cv
-program do_cv
-*program takes arguments:
-*     group=variable indexing CV groups (input)
-*        Note: this variable has integer values from 1 to k 
-*     depvar=outcome variable in regression (input)
-*     indepvar="set of indep vars in regression" (input)
-*        Note: use quotes when more than one indep var
-*     cvfitted=predicted values from the cross-validation 
-*             (output), to be set in the program
-version 11  
-args group depvar indepvar cvfitted 
-*Note:  `cvfitted' is passed in as a named variable, 
-*    values set in the program,
-*    and then the results are available when it is done.  
-*    If you have data in the variable you pass in, then the
-*        following capture
-*        statement will ensure it gets reinitiated again.
-capture drop `cvfitted'
-qui gen `cvfitted'=.
-*tempvars are used only inside the program
-tempvar k
-egen `k'=max(`group')
-* k is the number of CV groups; 
-* need to define max so the for loop reference behaves
-local maxk=`k'
-*****display " k = " `k' "; starting for loop now"
-forvalues i = 1(1)`maxk' {
-tempvar cv_fitted_`i'
-qui regress `depvar' `indepvar' if `group' != `i'
-*****display "regression for group " `i' " completed "
-qui predict `cv_fitted_`i''
-qui replace `cvfitted' = `cv_fitted_`i'' if `group'==`i'
-}
-end program
-
-* example: 
-do_cv cluster ln_nox "D2A1 A1_50 A23_400 Pop_5000 D2C Int_3000 D2Comm" cvfitted
-
-Sample program:  statements for estimating the MSE R2 from the CV predictions:
-*to run the debugging version edit so the "display" 
-*     commands are uncommented; these are shown below 
-*     with multiple ***** before the statement
-* use "capture program drop getMSE" to remove program from 
-*      memory when rerunning code
-program getMSE, rclass
-version 11
-args depvar cvfitted
-*   depvar is the y variable
-*   cvfitted is the yhat from CV
-*tempvars are used only inside the program
-tempvar y_avg MSEests MSEy ratio MSE_R2
-*	  MSER2 = R2 around 1:1 line, the intended result
-*get the average of y for use in the MSE of the data 
-egen `y_avg' = mean(`depvar')
-return scalar ybar = `y_avg'
-return scalar N = _N
-****display " ybar = " `y_avg'
-*
-*the following is the MSE of the data
-*take the square root to get the RMSE
-egen `MSEy'= mean((`depvar'-`y_avg')^2)
-return scalar MSEy = `MSEy'
-*****display "obtained MSEY"
-*
-*the following is the MSE of the predictions:
-egen `MSEests' = mean((`depvar'-`cvfitted')^2)
-return scalar MSEests = `MSEests'
-*****display "obtained MSEests"
-*
-return scalar RMSE = sqrt(`MSEests')
-******display "returned RMSE"
-*MSE-based R2
-gen `ratio' = 1-(`MSEests'/`MSEy')
-*****display "estimated ratio" `ratio'
-*
-gen `MSE_R2' = max(`ratio',0)
-*****display "estimated MSE_R2" `MSE_R2'
-return scalar MSER2 = `MSE_R2'
-*something is wrong with one or both of the following: 
-display " MSE R2 = " `MSE_R2'
-display " RMSE   = " sqrt(`MSEests')
-end program
-
-
-
-# Practice Session
-
-ADD
-
-# Homework Exercises  
-
- ADD
 
 # Appendix
 

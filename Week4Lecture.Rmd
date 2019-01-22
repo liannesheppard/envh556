@@ -1,0 +1,218 @@
+---
+title: 'Week 4 Lecture:  Regression for Prediction'
+author: "Lianne Sheppard for ENVH 556"
+date: "1/17/2019; Updated `r format(Sys.time(), '%d %B, %Y')`"
+output: 
+    html_document:
+        fig_caption: yes
+        toc: true
+        toc_depth: 3
+        number_sections: true
+---
+
+<!--Basic document set-up goes here  -->
+```{r setup, include=FALSE}
+#-------------r.setup-------------
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r load.libraries.pacman, echo=FALSE, include=FALSE, eval=TRUE}
+#----------------load.libraries.pacman----
+# Load pacman into memory, installing as needed
+my_repo <- 'http://cran.r-project.org'
+if (!require("pacman")) {install.packages("pacman", repos = my_repo)}
+
+# Load the other packages, installing as needed.  Some reasons for packages:
+# knitr:  kable()
+# ggplot2: part of tidyverse
+# readr: part of tidyverse
+# dplyr: part of tidyverse
+# multcomp:  glht
+# modelr:  part of tidyverse and need for add_predictions and add_residuals
+# boot:  cv tools are available
+# Hmisc:  describe
+pacman::p_load(tidyverse, knitr, mutlcomp, dplyr, modelr, Hmisc)  
+```
+
+```{r read.data, echo=FALSE}
+#-----------read.data-----------------
+#-getwd
+    ProjectPath <- getwd()
+#-dir.create    
+    dir.create(file.path(ProjectPath,"Datasets"),     showWarnings=FALSE, recursive = TRUE)
+    datapath<-file.path(ProjectPath,"Datasets")
+#-read.data
+snapshot<-readRDS(file.path(datapath,"allseasonsR.rds"))
+
+```
+
+TODO:  Finish lecture slides
+TODO commands for AIC and BIC
+
+
+# Lecture slide code
+
+## Slide 12:  In-sample assessment (fall)
+
+```{r Slide 12 commands}
+# slide 12 commands:  in-sample assessment -----
+# Note:  need the dplyr:: before the select command.  
+lm_fall <-
+    lm(ln_nox ~ D2A1 + A1_50 + A23_400 + Pop_5000 + D2C + Int_3000 + D2Comm,
+       data = subset(snapshot, season == 2))
+
+# make predictions on the full dataset using the fall model
+snap2 <- snapshot %>%  
+    add_predictions(lm_fall,"preds_fall")  
+
+# regression of in-sample predictions vs. data
+summary(lm(ln_nox ~ preds_fall, 
+           data = subset(snap2, season == 2)))
+
+# now compare correlations
+dplyr::select(snap2,  c("ln_nox", "preds_fall", "ID", "season")) %>%
+    filter(season == 2) %>%
+    summarize(
+        r = cor(ln_nox, preds_fall),
+        R2 = r ^ 2)
+
+```
+
+
+## Slide 14:  Out-of-sample assessment (fall applied to winter)
+
+```{r slide 14, eval = FALSE}
+# slide 14:  out of sample assessment
+# regression of out-of-sample predictions vs. data (evaluate fall model in winter)
+# TODO:  Fix the select command
+summary(lm(ln_nox ~ preds_fall, 
+           data = subset(snap2, season == 3)))
+
+# now compare correlations
+dplyr::select(snap2,  c("ln_nox","preds_fall","ID","season")) %>%
+    filter(season == 3) %>%
+    summarize(
+        r = cor(ln_nox,preds_fall),
+        R2 = r^2)
+
+```
+
+
+## Slide 15:  Plots of in- vs. out-of-sample predictions with prediction intervals
+
+```{r slide 15}
+# slide 15: plots of in- and out-of-sample predictions------
+# No prediction intervals
+
+# plot:  in-sample
+#fall_results <- 
+    snap2 %>%
+    filter(season == 2) %>%
+    ggplot(aes(preds_fall, ln_nox)) +
+    geom_point() +
+    coord_fixed() +
+    geom_abline(intercept = 0, slope = 1, color = "blue") +
+    geom_smooth(method = "lm", se = FALSE, color = "red") +
+    labs(title = "In-sample: \nFall LA Results", 
+         x = "Predicted ln(NOx) (ln(ppb))",
+         y = "Observed ln(NOx) (ln(ppb))",
+         caption = "Best fit line is red; 1:1 line is blue")
+
+# now plot:  out-of-sample
+#winter_results <-
+    snap2 %>%
+    filter(season == 3) %>%
+    ggplot(aes(preds_fall, ln_nox)) +
+    geom_point() +
+    coord_fixed() +
+    geom_abline(intercept = 0, slope = 1, color = "blue") +
+    geom_smooth(method = "lm", se = FALSE, color = "red") +
+    labs(title = "Out-of-sample: \nWinter LA Results", 
+         x = "Predicted ln(NOx) (ln(ppb))",
+         y = "Observed ln(NOx) (ln(ppb))",
+         caption = "Best fit to these data line is red; \npredicted and 1:1 line is blue")
+    
+```
+
+## Slide 17:  MSE-Based R2 estimates (& code), in- and out-of-sample
+
+TODO
+
+## Slide 18:  R command for AIC, BIC
+
+```{r Slide 18:  AIC & BIC}
+# slide 18:  AIC & BIC
+# TODO:  Develop more??
+AIC(lm_fall)
+BIC(lm_fall)
+
+```
+
+
+## Slide 20:  In- vs. out-of-sample prediction intervals
+
+```{r prediction intervals}
+# estimate prediction intervals for all seasons -----
+preds_from_fall <- predict(lm_fall, 
+                snapshot, 
+                interval="prediction")
+
+# combine these with snapshot data
+# We're assuming data are in the same order when we cbind
+snap_fpred <- cbind(snapshot,preds_from_fall)
+
+# now plot:  in-sample
+#fall_results <- 
+    snap_fpred %>%
+    filter(season == 2) %>%
+    ggplot(aes(fit, ln_nox)) +
+    geom_point() +
+    coord_fixed() +
+    geom_abline(intercept = 0, slope = 1, color = "blue") +
+    geom_smooth(method = "lm", se = FALSE, color = "red") +
+        geom_ribbon(aes(ymin = lwr, ymax = upr),
+                fill = "blue", alpha = 0.2) +
+    labs(title = "In-sample: \nFall LA Results", 
+         x = "Predicted ln(NOx) (ln(ppb))",
+         y = "Observed ln(NOx) (ln(ppb))",
+         caption = "Best fit line is red; 1:1 line is blue")
+
+# now plot:  out-of-sample
+#winter_results <-
+    snap_fpred %>%
+    filter(season == 3) %>%
+    ggplot(aes(fit, ln_nox)) +
+    geom_point() +
+    coord_fixed() +
+    geom_abline(intercept = 0, slope = 1, color = "blue") +
+    geom_smooth(method = "lm", se = FALSE, color = "red") +
+        geom_ribbon(aes(ymin = lwr, ymax = upr),
+                fill = "blue", alpha = 0.2) +
+    labs(title = "Out-of-sample: \nWinter LA Results", 
+         x = "Predicted ln(NOx) (ln(ppb))",
+         y = "Observed ln(NOx) (ln(ppb))",
+         caption = "Best fit to these data line is red; \npredicted and 1:1 line is blue")
+    
+
+```
+
+
+## Slide 36:  Forward selection example
+
+TODO:  Get help from Sun
+
+
+
+# Appendix
+
+```{r session.info}
+#-----------------session.info: beginning of Appendix -----------------
+#This allows reproducibility by documenting the version of R and every package you used.
+sessionInfo()
+```
+
+```{r appendix.code, ref.label=knitr::all_labels(), echo=TRUE, eval=FALSE, tidy=TRUE, tidy.opts=list(width.cutoff=60), include=T}
+
+```
+
+

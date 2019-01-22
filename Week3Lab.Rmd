@@ -1,7 +1,7 @@
 ---
 title: 'Week 3 Lab:  Regression for Association'
 author: "Lianne Sheppard for ENVH 556"
-date: "12/11/2018; Updated `r format(Sys.time(), '%d %B, %Y')`"
+date: "1/15/2018; Updated `r format(Sys.time(), '%d %B, %Y')`"
 output: 
     html_document:
         toc: true
@@ -59,20 +59,20 @@ This section gives some basic R commands for regression for association and the 
 summary(snapshot$seasonfac)
 
 # then means and SDs by season
-cbind( 
-    N=tapply(snapshot$ln_nox,snapshot$seasonfac,length),
-    mean=round(tapply(snapshot$ln_nox,snapshot$seasonfac,mean),2),
-    sd=round(tapply(snapshot$ln_nox,snapshot$seasonfac,sd),2))
+#cbind( 
+#    N=tapply(snapshot$ln_nox,snapshot$seasonfac,length),
+#    mean=round(tapply(snapshot$ln_nox,snapshot$seasonfac,mean),2),
+ #   sd=round(tapply(snapshot$ln_nox,snapshot$seasonfac,sd),2))
 
 # tidyverse alternative presenting GM and GSD of NOx instead
 snapshot_summary <- snapshot %>%     
     group_by(seasonfac) %>%
     dplyr::summarize(
     N = n(),
-    GM = round(exp(mean(ln_nox)), 2),
-    GSD = round(exp(sd(ln_nox)), 2)
+    GM = exp(mean(ln_nox)),
+    GSD = exp(sd(ln_nox))
     ) 
-    snapshot_summary
+kable(snapshot_summary, digits=2)
 
 ```
 
@@ -113,41 +113,52 @@ This gives seson-specific predictions in the dataset with all seasons.
 ```{r predictions with dplyr}
 # predictions dplyr -----------
 # dplyr approach
-# this seems to be able to add just the part of the data that was fit in each model
+# this adds model-specifc predictions, both in-sample and out-of-sample
 # however, we don't get the prediction intervals or SEs this way
 snap2 <- snapshot %>%  
-    add_residuals(lm_summer,"resids") %>%
-    add_predictions(lm_summer,"preds") %>%
-    add_residuals(lm_fall,"resids") %>%
-    add_predictions(lm_fall,"preds") %>%
-    add_residuals(lm_winter,"resids") %>%
-    add_predictions(lm_winter,"preds") 
+    add_residuals(lm_summer,"resids_sum") %>%
+    add_predictions(lm_summer,"preds_sum") %>%
+    add_residuals(lm_fall,"resids_fall") %>%
+    add_predictions(lm_fall,"preds_fall") %>%
+    add_residuals(lm_winter,"resids_win") %>%
+    add_predictions(lm_winter,"preds_win")
+
 ```
 
 Now we add prediction intervals:
 
-```{r}
-# prediction intervals--------
-# We produce season-specific prediction intervals, then combine them with the other seasons to produce the full dataset 
-
-# first get the prediction interval for each season and bind it to the season-specific subset
+```{r in-sample prediction intervals}
+# in-sample prediction intervals--------
+# first get the prediction interval for each season and bind it to the
+# season-specific subset of the full dataset
 # NOTE:  We are assuming the two datasets are in the same order when we cbind!
+# It is good practice to check and not assume this is correct.
+# R gives a warning about the interpretation of these prediction intervals when
+# the data to generate the model are the same ones to do prediction.  This
+# warning does not appear when the predictions are out of sample (see next
+# chunk).
 summer <- cbind(snapshot[snapshot$season==1,],predict(lm_summer,interval="prediction"))
 fall <- cbind(snapshot[snapshot$season==2,],predict(lm_fall,interval="prediction"))
 winter <- cbind(snapshot[snapshot$season==3,],predict(lm_winter,interval="prediction"))
 
 # then combine the dataset into one big one
-allseas <- rbind(summer, fall, winter)
+allseas_in <- rbind(summer, fall, winter)
+
+# now use dplyr to rename the predictions (the predict function gives default
+# variable names)
+allseas_in <- dplyr::rename(as_tibble(allseas_in), pred_in = fit, lwr_in = lwr, upr_in = upr)
+
 
 ```
 
-```{r out of sample predictions}
-# out of sample predictions--------
-# TODO:  TEST and check
-# We produce out of sample season-specific predictions intervals using the previous season to predit the next one.  (Note you should think carefully from a scientific perspective about what you want to do here.) 
+```{r out-of-sample predictions}
+# out-of-sample predictions--------
+# This example produces out-of-sample season-specific prediction intervals using
+# the previous season to predict the next one.  (Note you should think carefully
+# from a scientific perspective about how to approach out-of-sample predictions
+# like these.)
 
-# first get the prediction interval for each season and bind it to the season-specific subset
-# NOTE:  We are assuming the two datasets are in the same order when we cbind!
+# get the prediction interval for each season 
 fall_preds_from_summer <- 
     predict(lm_summer,
             snapshot[snapshot$season==2,], 
@@ -161,23 +172,83 @@ summer_preds_from_winter <-
             interval="prediction")
 
 # then combine the dataset into one big one
-allseas <- rbind(fall_preds_from_summer,
-                 winter_preds_from_fall,
-                 summer_preds_from_winter)
+allseas_out <- rbind(summer_preds_from_winter,
+                     fall_preds_from_summer,
+                     winter_preds_from_fall)
+
+# now use dplyr to rename the predictions
+allseas_out <-
+    dplyr::rename(as_tibble(allseas_out),
+        pred_out = fit,
+        lwr_out = lwr,
+        upr_out = upr
+        )
+    
+# and bind it to the previous dataset
+# NOTE:  We assume the datasets are in the same order!
+allseas_both <- cbind(allseas_in, allseas_out)
+
+```
+
+Now evaluate the quality of the predictions.  This is based on correlation between the prediction and the outcome.  It is the R^2^ for the best fit line of the relationship between the predictions and the data (*ln_nox* here).  It does not account for the systematic bias in the predictions.  Next week we will learn how to compute R2 about the 1:1 line which also addresses the systematic bias of the predictions.
+
+```{r prediction assessment}
+# prediction assessment -----
+# summer in-sample
+paste("summer in-sample R2:  ", 
+      with( subset(allseas_both, season==1), 
+      cor(ln_nox, pred_in))^2) 
+
+# summer out-of-sample (from winter model)
+paste("summer out-of-sample R2 (from winter model):  ", 
+      with( subset(allseas_both, season==1), 
+      cor(ln_nox, pred_out))^2)
+
+```
+
+Let's look at what we mean by R^2^ about the best fit line by plotting the data we correlated above and incorporating the best fit lines.
+
+```{r}
+# plot the predictions vs. data for summer, both in-sample and out of sample
+# in-sample plot
+allseas_both %>%
+    filter(season==1) %>%
+    ggplot(aes(x=pred_in, y=ln_nox)) +
+    geom_point() +
+    coord_fixed() +
+    geom_abline(intercept = 0, slope = 1, color = "blue") +
+    geom_smooth(method = "lm", se = FALSE, color = "red") +
+    labs(title = "Summer model in-sample predictions vs. ln(NOx)", 
+         x = "In-sample predicted ln(NOx) (ln(ppb))",
+         y = "Observed ln(NOx) (ln(ppb))",
+         caption = "Best fit line is red; 1:1 line is blue")
+ 
+# out-of-sample plot (predictions from the winter model)
+allseas_both %>%
+    filter(season==1) %>%
+    ggplot(aes(x=pred_out, y=ln_nox)) +
+    geom_point() +
+    coord_fixed() +
+    geom_abline(intercept = 0, slope = 1, color = "blue") +
+    geom_smooth(method = "lm", se = FALSE, color = "red") +
+    labs(title = "Summer model out-of-sample predictions \n(from winter model) vs. ln(NOx)", 
+         x = "Out-of-sample predicted ln(NOx) (ln(ppb))",
+         y = "Observed ln(NOx) (ln(ppb))",
+         caption = "Best fit line is red; 1:1 line is blue")
 
 ```
 
 # Practice Session
-This section covers basic practice to be completed during the lab.   We are going to use the snapshot data described in Mercer et al 2011 and discussed in class.   It is available in the data section of the class website.
+This section covers basic practice to be completed during the lab.   
 
 Perform the following tasks: 
 
-1.	Decide your project for this lab.  
+1.	Set up/decide your project for this lab.  
 2.	Read in the snapshot data and get some basic understanding of its structure.  See the lecture `.Rmd` file for some options 
 3.	Summarize *ln_nox*, the outcome variable of interest     
     a.	Summarize by season    
     b.	Can you produce a nice summary figure of the data?  Should they be on the log or the native scale?  Is it useful to put multiple pollutants (NO, NOx, NO2) in the same figure?  
-4.	Replicate the models in Table 4 of Mercer et al, 2011.  (Only focus on the LUR model results.  We’ll talk about cross-validation in an upcoming week so recognize your R2 should be a bit bigger and your RMSE should be a bit smaller than the values in the paper.)  
+4.	Replicate the season-specific models in Table 4 of Mercer et al, 2011.  (Only focus on the LUR model results.  We’ll talk about cross-validation in an upcoming week so recognize your R2 should be a bit bigger and your RMSE should be a bit smaller than the values in the paper.)  
     a.	Compare your coefficient estimates and standard errors, as well as LUR R2 and sample size.  (Note:  You may need to consider rounding in your comparison.)  
     b.	Are all your terms parameterized the same as they are in the paper?  
 5.	Use the fall model to predict ln_nox in summer and vice versa.    
@@ -187,9 +258,9 @@ Perform the following tasks:
 
 # Homework Exercises  
 
-1.	Describe the NOx variable.  Develop one figure and one table to best capture your data and then write a paragraph describing what these show.  (Doing both is for practice.  In a peer-reviewed paper you will ordinarily only show one of these.)  In the table, you may find it helpful to also include information on the covariates you use in your model(s).    
-2.	Using the terminology given in lecture, briefly discuss the fall season model results.  Include in your discussion an interpretation for at least two terms in the fall season model.   
-3.	Focusing on the common models in Table 4 of Mercer et al, think about how to use the data from all seasons to get season-specific parameter estimates.   What terms do you need to incorporate the interactions?   
+1.	Describe the NOx variable.  Develop one figure and one table to best capture your data and then write a paragraph describing what these show.  (Doing both is for practice.  In a peer-reviewed paper you will ordinarily only show one of these.)  In the table, you may find it helpful to also include information on the covariates you use in your model(s) in this lab.    
+2.	Using the terminology given in lecture, briefly discuss the fall season common LUR model results.  Include in your discussion an interpretation for at least two terms in the fall season model.   
+3.	Focusing on the common models in Table 4 of Mercer et al, think about how to use the data from all seasons at once to get season-specific parameter estimates.   What terms do you need to incorporate the interactions?   
     a.  Challenge question:  How is your interaction model different from fitting three separate season-specific models?
 4.	Make table(s) and/or figure(s) summarizing your results for practice exercise 5.  Discuss.  
 
