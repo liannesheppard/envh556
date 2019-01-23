@@ -1,7 +1,7 @@
 ---
 title: "Week3Lecture"
 author: "Lianne"
-date: "12/29/2018"
+date: "Winter 2019; Updated `r format(Sys.time(), '%d %B, %Y')`"
 output: word_document
 ---
 
@@ -36,9 +36,7 @@ pacman::p_load(tidyverse, knitr, multcomp, dplyr, modelr, car)
 snapshot<-readRDS(file.path(datapath,"allseasonsR.rds"))
 ```
 
-This is a companion document to the Week 3 lecture.  Each slide with R code is represented in this document.
-
-Note to students:  There are some details that should be cleaned up.
+This is a companion document to the Week 3 lecture.  Each slide with R code is represented in this document.  (Eventually the lecture will be converted to slides using R Markdown.)
 
 ## Slide 10:  Simple regression scatterplot ln_nox on ln_no
 ```{r slide10}
@@ -80,8 +78,9 @@ confint(nox.fit)
 
 ```{r slide18}
 #----------------slide18-------------
-#Should be basic description of the factor variable.
-#season is the same variable as seasonfac, not as a factor and coded the same 1,2,3. Verify this:  
+# Should be basic description of the factor variable.
+# season is the same variable as seasonfac, not as a factor and coded the same
+# 1,2,3. Verify this by looking at the data:
 summary(snapshot$seasonfac)
 summary(snapshot$season)
 table(snapshot$season)
@@ -107,10 +106,11 @@ margin.table(model.matrix(nox.aov),2)
 
 ```{r slide20}
 #-----------slide 20-----------
-#Simple row of means of ln_nox by season
+# Simple row of means of ln_nox by season
 round(tapply(snapshot$ln_nox,snapshot$seasonfac,mean),2)
 
-#full table of N, means & sd of ln_nox by season
+# full table of N, means & sd of ln_nox by season.  (It is probably better to
+# use dplyr.)
 cbind( 
     N=tapply(snapshot$ln_nox,snapshot$seasonfac,length),
     mean=round(tapply(snapshot$ln_nox,snapshot$seasonfac,mean),2),
@@ -181,11 +181,11 @@ ggplot(data=snapshot,mapping=aes(ln_no,ln_nox)) +
 
 ## Slide 25:  Season-specific regression
 
-Summarize each seson-specific model
+Summarize each season-specific model
 
 ```{r}
 #-------------slide25------------------
-#season-specific regression
+# season-specific regression
 summary(lm(ln_nox~ln_no,data=snapshot,subset=seasonfac=="1Summer"))
 summary(lm(ln_nox~ln_no,data=snapshot,subset=seasonfac=="2Fall"))
 summary(lm(ln_nox~ln_no,data=snapshot,subset=seasonfac=="3Winter"))
@@ -197,7 +197,7 @@ summary(lm(ln_nox~ln_no,data=snapshot,subset=seasonfac=="3Winter"))
 
 ```{r slide25}
 #--------------slide 25----------------
-#season-adjusted regression
+# season-adjusted regression
 nox.fit.seasadj<-
     lm(ln_nox~ln_no+seasonfac,data=snapshot)
 summary(nox.fit.seasadj)
@@ -209,7 +209,7 @@ confint(nox.fit.seasadj)
 ## Slide 27:  Be aware of coding -- season as cts variable
 
 
-```{r}
+```{r slide 27}
 #------------Slide 27----------------------
 # Season as a continuous variable
 
@@ -220,15 +220,6 @@ summary(lm(ln_nox~ln_no+season,data=snapshot))
  
 ```
 
-```{r, echo=FALSE, eval=FALSE}
-### DONT THINK I NEED THIS ANY MORE
-# First create a subset of the data without summer (seasonfac=1; season=1)
-# Note: piping doesn't seem to work if the data frame isn't first converted to a
-# tibble, so need two steps for this
-snapshot_fw <- as_tibble(snapshot) 
-snapshot_fw <- filter(snapshot_fw, season>1)
-
-```
 
 ## Slide 29:  Interaction model
 
@@ -252,7 +243,7 @@ linearHypothesis(snap_int, c("ln_no:seasonfac2Fall=0", "ln_no:seasonfac3Winter=0
 
 Note:  This can be done using the `glht` command from the `multcomp` package.  This will mask several objects from other packages including `select` from `dplyr`, and `boxcox` from `EnvStats`.
 
-Here is an example: 
+Here is an example I found online: 
 ```
 # mod is the output of a lm
 # Extract the coefficient names (b0,b1,b2,b3)
@@ -265,9 +256,10 @@ mod.lh <- glht(mod, linfct = c("genderMale + genderMale:agehiTRUE = 0"))
 confint(mod.lh)
 
 ```
+
 ```{r find means}
 # find means -----
-# Note:  this does not require snapshot be a tibble
+# Note:  this does not require snapshot to be a tibble
 snapshot %>%
     group_by(seasonfac) %>%
     dplyr::summarize(
@@ -282,11 +274,12 @@ snapshot %>%
 ```
 
 
-```{r}
-# lincom type of example
+```{r slide 30: lincom example}
+# Slide 30: lincom type of example-----
 # Estimate the mean ln(NOx) when ln(NO) is 4
 # Get the names to work with (haven't figured out how to do it this way, but the names allow the matrix definition)
 names(coef(snap_int))
+
 # K is the matrix of contrasts of interest to create the linear combination of
 # the coefficients times the values in K.  First row is summer when ln_no is 4,
 # then same question for fall, then winter
@@ -294,20 +287,24 @@ K <- rbind(c(1,4,0,0,0,0),
            c(1,4,1,0,4,0),
            c(1,4,0,1,0,4))
 K
+
 # estimate the summer, fall, winter effects simultaneously
 season_effects <- glht(snap_int, linfct = K)
 summary(season_effects)
+
 # and get its CI
 confint(season_effects)
+
 ```
 
 ## Slide 32:  example residual analysis plots
 
-```{r Slide 32 detault residuals}
+```{r Slide 32 default residuals}
 # Slide 32 default residuals-------
 # IDRE example from https://stats.idre.ucla.edu/r/dae/robust-regression/
 opar <- par(mfrow = c(2,2), oma = c(0, 0, 1.1, 0))
 plot(snap_int, las = 1)
+
 ```
 
 ```{r a basic residual plot}
@@ -347,7 +344,7 @@ summary(summer_mod)
 
 ## Slide 36:  Regression for prediction:  getting fitted values and SE of mean vs new value PLUS show R2=square of correlation
 
-TODO:  NOTE something is wrong here because the correlation is too high.  Should be about .85 to get the estimated R2 of .7252.  NEED to check why.
+Resulting correlation should be about .85 to get the estimated R2 of .7252.  
 
 ```{r Slide 36: fitted vals + resids}
 # Slide 36: Fitted values + resids----
@@ -367,9 +364,9 @@ paste("correlation:  ", r)
 
 ## Slide 37:  Plot of regression with prediction interval, and add alongside the one with the CI
 
-```{r Plots w/ prediction intervals}
+```{r Slide 37: Plots w/ prediction intervals}
 # Slide 37: plots w/ prediction intervals----
-# in ggplot is is easy to get CIs of fitted lines but more work to get prediction intervals.  We show both here.
+# in ggplot it is easy to get CIs of fitted lines but more work to get prediction intervals.  We show both here.
 # Note:  add_predictions doesn't also add uncertainty of predictions
 # first get the prediction intervals
 # Note:  you can do this twice on the same dataset and get the same 4 variables
@@ -377,11 +374,13 @@ paste("correlation:  ", r)
 # vs. interval="prediction" you will get different values in the created
 # variables "lwr" and "upr" corresponding to the type of interval.  Note: you
 # can't use a dataframe with multiple variables with the same name.
+# 
 # predict creates the variables fit, lwr, upr
 summer2 <- cbind(summer2,predict(summer_mod,interval="prediction"))
 
 # get the plotting range
 summer_mod_range <- with(summer2, range(ln_nox, lwr, upr))
+
 # plot with 95% CI on the fitted line, uses default ggplot option
 ggplot(summer2,aes(fit,ln_nox)) +
     geom_point() +

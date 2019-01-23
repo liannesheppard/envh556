@@ -1,7 +1,7 @@
 ---
 title: 'Week 3 Lab:  Regression for Association'
 author: "Lianne Sheppard for ENVH 556"
-date: "12/11/2018; Updated `r format(Sys.time(), '%d %B, %Y')`"
+date: "Winter 2019; Updated `r format(Sys.time(), '%d %B, %Y')`"
 output: 
     html_document:
         toc: true
@@ -161,9 +161,69 @@ summer_preds_from_winter <-
             interval="prediction")
 
 # then combine the dataset into one big one
-allseas <- rbind(fall_preds_from_summer,
-                 winter_preds_from_fall,
-                 summer_preds_from_winter)
+allseas_out <- rbind(summer_preds_from_winter,
+                     fall_preds_from_summer,
+                     winter_preds_from_fall)
+
+# now use dplyr to rename the predictions
+allseas_out <-
+    dplyr::rename(as_tibble(allseas_out),
+        pred_out = fit,
+        lwr_out = lwr,
+        upr_out = upr
+        )
+    
+# and bind it to the previous dataset
+# NOTE:  We assume the datasets are in the same order!
+allseas_both <- cbind(allseas_in, allseas_out)
+
+```
+
+Now evaluate the quality of the predictions.  This is based on correlation between the prediction and the outcome.  It is the R^2^ for the best fit line of the relationship between the predictions and the data (*ln_nox* here).  It does not account for the systematic bias in the predictions.  Next week we will learn how to compute R^2^ about the 1:1 line which also addresses the systematic bias of the predictions.
+
+```{r prediction assessment}
+# prediction assessment -----
+# summer in-sample
+paste("summer in-sample R2:  ", 
+      with( subset(allseas_both, season==1), 
+      cor(ln_nox, pred_in))^2) 
+
+# summer out-of-sample (from winter model)
+paste("summer out-of-sample R2 (from winter model):  ", 
+      with( subset(allseas_both, season==1), 
+      cor(ln_nox, pred_out))^2)
+
+```
+
+Let's look at what we mean by R^2^ about the best fit line by plotting the data we correlated above and incorporating the best fit lines.
+
+```{r}
+# plot the predictions vs. data for summer, both in-sample and out of sample
+# in-sample plot
+allseas_both %>%
+    filter(season==1) %>%
+    ggplot(aes(x=pred_in, y=ln_nox)) +
+    geom_point() +
+    coord_fixed() +
+    geom_abline(intercept = 0, slope = 1, color = "blue") +
+    geom_smooth(method = "lm", se = FALSE, color = "red") +
+    labs(title = "Summer model in-sample predictions vs. ln(NOx)", 
+         x = "In-sample predicted ln(NOx) (ln(ppb))",
+         y = "Observed ln(NOx) (ln(ppb))",
+         caption = "Best fit line is red; 1:1 line is blue")
+ 
+# out-of-sample plot (predictions from the winter model)
+allseas_both %>%
+    filter(season==1) %>%
+    ggplot(aes(x=pred_out, y=ln_nox)) +
+    geom_point() +
+    coord_fixed() +
+    geom_abline(intercept = 0, slope = 1, color = "blue") +
+    geom_smooth(method = "lm", se = FALSE, color = "red") +
+    labs(title = "Summer model out-of-sample predictions \n(from winter model) vs. ln(NOx)", 
+         x = "Out-of-sample predicted ln(NOx) (ln(ppb))",
+         y = "Observed ln(NOx) (ln(ppb))",
+         caption = "Best fit line is red; 1:1 line is blue")
 
 ```
 
@@ -177,20 +237,20 @@ Perform the following tasks:
 3.	Summarize *ln_nox*, the outcome variable of interest     
     a.	Summarize by season    
     b.	Can you produce a nice summary figure of the data?  Should they be on the log or the native scale?  Is it useful to put multiple pollutants (NO, NOx, NO2) in the same figure?  
-4.	Replicate the models in Table 4 of Mercer et al, 2011.  (Only focus on the LUR model results.  We’ll talk about cross-validation in an upcoming week so recognize your R2 should be a bit bigger and your RMSE should be a bit smaller than the values in the paper.)  
-    a.	Compare your coefficient estimates and standard errors, as well as LUR R2 and sample size.  (Note:  You may need to consider rounding in your comparison.)  
+4.	Replicate the season-specific models in Table 4 of Mercer et al, 2011.  (Only focus on the LUR model results.  We’ll talk about cross-validation in an upcoming week so recognize your R^2^ should be a bit bigger and your RMSE should be a bit smaller than the values in the paper.)  
+    a.	Compare your coefficient estimates and standard errors, as well as LUR R^2^ and sample size.  (Note:  You may need to consider rounding in your comparison.)  
     b.	Are all your terms parameterized the same as they are in the paper?  
 5.	Use the fall model to predict ln_nox in summer and vice versa.    
-    a.	Assess the quality of the predictions.  (Using the information from the lecture on regression for association, compute the R2, and plot the predictions and the prediction intervals.)  
+    a.	Assess the quality of the predictions.  (Using the information from the lecture on regression for association, compute the R^2^, and plot the predictions and the prediction intervals.)  
     b.	What have you learned?  Does this flipping of models across seasons make sense scientifically?  Why or why not?  
 
 
 # Homework Exercises  
 
-1.	Describe the NOx variable.  Develop one figure and one table to best capture your data and then write a paragraph describing what these show.  (Doing both is for practice.  In a peer-reviewed paper you will ordinarily only show one of these.)  In the table, you may find it helpful to also include information on the covariates you use in your model(s).    
-2.	Using the terminology given in lecture, briefly discuss the fall season model results.  Include in your discussion an interpretation for at least two terms in the fall season model.   
-3.	Focusing on the common models in Table 4 of Mercer et al, think about how to use the data from all seasons to get season-specific parameter estimates.   What terms do you need to incorporate the interactions?   
-    a.  Challenge question:  How is your interaction model different from fitting three separate season-specific models?
+1.	Describe the NOx variable.  Develop one figure and one table to best capture your data and then write a paragraph describing what these show.  (Doing both is for practice.  In a peer-reviewed paper you will ordinarily only show one of these.)  In the table, you may find it helpful to also include information on the covariates you use in your model(s) in this lab.    
+2.	Using the terminology given in lecture, briefly discuss the fall season common LUR model results.  Include in your discussion an interpretation for at least two terms in the fall season model.   
+3.	Focusing on the common models in Table 4 of Mercer et al, think about how to use the data from all seasons at once to get season-specific parameter estimates.   What terms do you need to incorporate the interactions?   
+    a.  How is your interaction model different from fitting three separate season-specific models?
 4.	Make table(s) and/or figure(s) summarizing your results for practice exercise 5.  Discuss.  
 
 #Appendix
