@@ -1,7 +1,7 @@
 ---
 title: 'Week 4 Lab:  Regression for Prediction'
 author: "Lianne Sheppard for ENVH 556"
-date: "1/17/2019; Updated `r format(Sys.time(), '%d %B, %Y')`"
+date: "Winter 2019; Updated `r format(Sys.time(), '%d %B, %Y')`"
 output: 
     html_document:
         fig_caption: yes
@@ -15,6 +15,8 @@ output:
 #-------------r.setup-------------
 knitr::opts_chunk$set(echo = TRUE)
 ```
+
+TODO:  My interactive running of the following isn't working.  Error says "Error in readRDS(dest) : error reading from connection"  Probably because I'm not connected to the internet and at least one package isn't installed locally.
 
 ```{r load.libraries.pacman, echo=FALSE, include=FALSE, eval=TRUE}
 #----------------load.libraries.pacman----
@@ -47,10 +49,10 @@ snapshot<-readRDS(file.path(datapath,"allseasonsR.rds"))
 ```
 
 TODO:  Finish lecture slides
-TODO commands for AIC and BIC
-TODO:  ask Sun about stepwise code and strategies.  Her parsimonious model should have covered this
-TODO:  fix the do_CV function
 TODO:  Add code to randomly select groups
+TODO:  Work on the automating of the bias-variance plot
+TODO:  Learn about and try out kableExtra for tables (see Nancy's week 1 lab for an example)
+TODO:  install caret and cvTools for other cv approaches
 
 
 # Purpose
@@ -69,6 +71,7 @@ Steps/ideas to cover:
 * Manual cross-validation code
 * Writing functions (general ideas & principles)
 * CV function
+* Bias-variance plot
 * Other CV tools we could consider
 
 ## Set-up
@@ -78,18 +81,29 @@ Steps/ideas to cover:
 # fall subset ----
 # Traditional R approach
 #fall <- subset(snapshot, season==2)
+
 # Tidyverse approach
 fall <- filter(snapshot, season == 2)
 
 ```
 
+* Common model names, for later use
+```{r}
+# common model names -------
+covars_common <- c("D2A1", "A1_50", "A23_400",  "Pop_5000", "D2C", "Int_3000", "D2Comm")
+# facier way to do this, showing how to make paste0, grep, and/or grepl useful tool:
+# TODO:  code this
+#covars_common <- c(D2A1 + A1_50 + A23_400 + Pop_5000 + D2C + Int_3000 + D2Comm)
+```
 
-## Commands for regression, plotting, and computing prediction R2:  (see also Week 3 lab)
+## Commands for regression, producing AIC, plotting, and computing prediction R^2^
 
-Regression:  
+See also Week 3 lab for these tools and variations of applying them.
+
+* Regression:  
 
 ```{r fall regression}
-# fall regression, common model
+# fall regression, common model-----
 
 summary( lm_fall <-
     lm(ln_nox ~ D2A1 + A1_50 + A23_400 + Pop_5000 + D2C + Int_3000 + D2Comm,
@@ -97,12 +111,22 @@ summary( lm_fall <-
 
 ```
 
-Basic predictions, and plotting them:
+* AIC and BIC:  Note, you can provide these functions with multiple model objects to facilitate comparisons of AIC or BIC across models fit on the same data.
 
-```{r predictions with dplyr, fig.width=6, fig.height=5}
-# predictions with dplyr -----------
+```{r AIC and BIC}
+# AIC and BIC -------
+# AIC uses a default penalty of 2
+AIC(lm_fall)
+# BIC uses a penalty of log(n) where n is the number of observations in the dataset
+BIC(lm_fall)
+```
+
+* Extract predictions, and plot them:  (Note: the `fig.width` and `fig.height` options to a chunk give local definitions for the figure height and width.)
+
+```{r predictions with modelr, fig.width=6, fig.height=5}
+# predictions with model -----------
 snap2 <- snapshot %>%  
-    add_predictions(lm_fall,"preds_fall")  
+    modelr::add_predictions(lm_fall,"preds_fall")  
 
 # Here's a plot that shows that the data are for all rows. (We can alse use
 # decribe from the Hmisc package.)
@@ -119,74 +143,82 @@ ggplot(data = snap2, aes(preds_fall, ln_nox)) +
 
 ```
 
-Correlations of predictions vs. observations by season:
+*Correlations of predictions vs. observations by season:  (Note:  these are regression-based R^2^ estimates.)
 
 ```{r season-specific correlations, eval = FALSE}
 # season-specific-correlations ------
-# TODO:  figure out why select isn't working
-pred_summary <- select(snap2,  c("ln_nox","preds_fall","ID","season")) %>%
-    group_by(season) %>%
+pred_summary <- dplyr::select(snap2,  c("ln_nox","preds_fall","ID","season","seasonfac")) %>%
+    group_by(seasonfac) %>%
     summarize(
         r = cor(ln_nox,preds_fall),
         R2 = r^2)
+#TODO: Consider replacing with kableExtra
 kable(pred_summary, digits = 2)
     
 ```
 
-## Stepwise regression (forward selection)
-
-TODO:  Modify after input from Sun
-TODO:  remove extraneous stuff from this section
+## Commands for stepwise regression (forward selection)
 
 The R function `step()` allows stepwise regression.  It has forward, backward, or stepwise regression search algorithms. Forward selection is a useful tool for ordering a sequence of models based on increasing complexity.  
 
-The function `addterm()` from the `MASS` package allows the addition of the next best term to a model.
+Note:  The `step` function is available in both base R and in the `MASS` package.  While we won't use it in this lab, the function `addterm()` from the `MASS` package allows the addition of the next best term to a model.  This allows use of the F-test or a Chi-square test as alternatives. 
 
-TODO:  We still need to learn how to relax the entry criteria so we can better use this tool to help us show the bias-variance trade-off.
++ **Model Set-up**
+First define the smallest starting model (the *null* model) and the largest possible model we will consider (the *full* model). These define the scope.  The function `step()` has options to specify the direction of the model selection (we will only use forward selection or `direction = "forward"`), the amount of output (we'll use `trace = 0` to omit printing any output) and the number of models fit (the default number of models fit, or `steps`, is 1000).  `step()` minimizes the AIC and the option `k` controls the degree of penalty.  Since we don't want to stop early, we use `k = 0` which seems to not impose a stopping criterion.  More research is needed to understand exactly how the `k` option operates w.r.t. stopping the alorithm.
 
-+ **Stepwise Model Set-up**
-First define the smallest starting model (e.g., *null* model) and the largest possible model we will consider (e.g., *full* model). These define the scope.  The function `step()` defines the direction of the model selection (we will only use forward selection), and the number of models fit (the default number of steps is 1000).  `step()` minimizes the AIC.  (This function is available in both base R and in the `MASS` package.)
 
-An alternative is `addterm()` in the `MASS` package.  This allows use of the F-test or a Chi-square test as alternatives.
-
-TODO:  Need to figure out how to modify the statistical significance criterion for these tests.
-
-```{r stepwise set-up for fall snapshot}
-# stepwise set-up for fall snapshot ------
+```{r forward selection set-up for fall snapshot}
+# forward selection set-up for fall snapshot ------
+# define the smallest model of interest, an intercept only model here
 null <- lm(ln_nox ~ 1, data=fall)
-null
+#null
     
-#TODO: figure out how to (simply) expand this to more/all of the predictor variables in the dataset
-#TODO:  ask Sun about her stepwise code
-full <- lm(ln_nox ~ Pop_5000 + D2Comm + D2A1 + D2Ryard + A1_10k + A23_15k + Pop_15000 + Pop_10000 + A1_750 + A23_50 + A23_10k + A1_3k + D2A3 + D2C + A1_300 + A23_5k + Int_300 + D2Rroad + D2Mport + A1_15k + A1_400 + Int_500 + Int_1000 + A23_1k + Pop_3000 + Pop_2500 + D2Lport + Int_3000, data=snapshot.fall)
-full
-```   
+# create the larges possible model, a full model that includes all of the predictor variables in the dataset.  Steps:
+# 1: get the list of all the potential covariates of interest from the dataset:
+covars_all <- names(fall[12:74])
+# 2: now turn this into a formula for the full model in stepwise regression:
+full <- as.formula(paste("ln_nox ~ ", paste(covars_all, collapse= "+")))
+#full
 
+```   
 
 + **Forward Selection**
 
-The first model listed (the "object"), is the initial model of the search.  Here the scope gives the entire range of models.  It should work by only adding the full model since the null model is already given.  Still need to look up how to control how long this runs for before stopping.
+The first model listed in the command (the "object"), is the initial model used to start the search.  In forward regression we want to start with the smallest model of interest to us, here the intercept only model.  The scope gives the entire range of models by also incorporating the largest possible model.  
 
-Note: not showing results because the output is very long.
-```{r forward selection on fall snapshot, echo=TRUE, eval=FALSE}
-step(null, scope=list(lower=null, upper=full), direction="forward")
+```{r fitting forward selection}
+# forward selection model------
+# Note:  k=0 appears to put no restriction on the forward selection and doesn't
+# stop until the full model is incorporated. Using k=2 is comparable to AIC.
+# Using log(n), where n is the number of observations, is comparable to BIC.
+forwardreg_fall <- step(null, scope=list(lower=null, upper=full), trace = 0, direction="forward", k=0)
+
+# save the ordered list of names for later use, dropping the intercept
+covars_forward <- names(forwardreg_fall$coefficients)[-1]
+
+```
+
+```{r explore stepwise results, eval=FALSE}
+# explore results from forward stepwise-----
+# structure of the object
+str(forwardreg_fall)
+# class of the object
+class(forwardreg_fall)
+# gives the names of the coefficients for use in other work.  Should assign a name to it for later use.
+names(forwardreg_fall$coefficients)
+cat("AIC:  ", "\n")
+forwardreg_fall$anova$AIC
+cat("Deviance:  ", "\n")
+forwardreg_fall$anova$Deviance
+forwardreg_fall$anova$Step
+#forwardreg_fall$anova$Df
 ```
 
 
-## TODO:  fit in ISLR validation approach where belongs or DROP
+## Manual cross-validation and summarization
 
-ISLR book validation approach code:
-```{r}
-
-# need to adjust dataset, etc.  Gives out of sample predictions...
-train=sample(392,196)
-lm.fit=lm(mpg~horsepower,data=Auto,subset=train)
-attach(Auto)
-mean((mpg-predict(lm.fit,Auto))[-train]^2)
-```
-
-
-## Manual cross-validation 
+TODO:  expand ISLR and link to it
+Note:  We are summarzing the cross-validation results overall.  This is one valid way to do the summary.  Other approaches summarize the results in each cluster (or cross-validation group) separately and average these.  (See e.g. ISLR textbook.)
 
 ```{r a manual CV}
 # manual CV ------
@@ -199,17 +231,17 @@ for (i in 1:10){
     # define the current cluster variable as a logical vector
     is.cluster <- fall$cluster == i
     
-    # fit the linear model, omitting cluster i (training set)
+    # fit the linear model to the training set by omitting cluster i 
     CV.lm <-
         lm(ln_nox ~ D2A1 + A1_50 + A23_400 +               Pop_5000 + D2C + Int_3000 + D2Comm,
         data = fall[-is.cluster, ])
   
     # save the predictions and observations in CV.pred for the current cluster (test set)
     CV.results <- fall %>%
-        add_predictions(CV.lm,"preds") %>%
+        modelr::add_predictions(CV.lm,"preds") %>%
         filter(cluster == i) %>%
-        select(ID, cluster, ln_nox, preds)
-        
+        dplyr::select(ID, cluster, ln_nox, preds)
+    # bind the results together to get back the full dataset    
     CV.pred <- rbind(CV.pred, CV.results)
 }
 
@@ -221,31 +253,33 @@ MSE.pred <- mean((CV.pred$ln_nox - CV.pred$preds)^2)
 # MSE of observations (for R2 denominator)
 MSE.obs <- mean((CV.pred$ln_nox - ln_nox_avg)^2)
 # print the results
-paste("RMSE:  ", sqrt(MSE.pred))
+paste("RMSE:  ", round( sqrt(MSE.pred), 2))
 paste("MSE-based R2:  ", 
-      max(1 - MSE.pred/MSE.obs, 0))
+      round( max(1 - MSE.pred/MSE.obs, 0), 2))
      
 ```
 
 
-## Functions for cross-validation and code for MSE 
+## Functions for cross-validation and MSE 
 
 ### Tips on writing functions
 
-TODO:  Add link to R4DS ch 15
-From R4DS chapter on functions, Chapter 15, the reason to write functions is to automate repetitive tasks and avoid copying and pasting.  This eliminates the need to update the code in multiple places when you make a change and reduces your chances of making mistakes.  A simple rule of thumb is to write a function whenever you have or will need at least three copies of a block of code.
+TODO:  Add link to R4DS ch 15  
+TODO:  Get input from Brian on other recommendations and improvements to the general guidance (and presumably my functions).
 
-Here are the 3 steps to writing a function:
+From the *R for Data Science* (R4DS) chapter on functions, Chapter 15, the reason to write functions is to automate repetitive tasks and avoid copying and pasting.  This eliminates the need to update the code in multiple places when you make a change and reduces your chances of making mistakes.  A simple rule of thumb is to write a function whenever you have or will need at least three copies of a block of code.
+
+Here are the 3 basic steps to writing a function as described in R4DS:
 
 1. Pick a name for the function.
 2.  List the inputs or *arguments* to the function inside the function call.
 3.  Put code to accomplish what you want in the body of the function.
 
-First we write a function to estimate the MSE.  We call it `getMSE`.  Here it is:
+To start our learning process, first we write a function to estimate the MSE and MSE-based R^2^.  We call it `getMSE`.  Note that in addition to its name and arguments, there are key formatting details to follow.  In particular, pay attention to the arguments inside the parentheses in the function command, and the use of curly brackets. 
 
 ```{r define getMSE}
 # define getMSE function -----
-# Function to get the MSE, RMSE, MSE-based R2
+# This is a function to get the MSE, RMSE, MSE-based R2
 getMSE <- function(obs,pred) {
     # mean of obs
     obs_avg <- mean(obs)
@@ -261,7 +295,7 @@ getMSE <- function(obs,pred) {
 
 ```
 
-Now test our function, using e.g. the manual CV we completed:
+Now test our function, using the manual CV results we obtained:
 ```{r test getMSE}
 # test getMSE -----
 getMSE(CV.pred$ln_nox,CV.pred$preds)
@@ -269,16 +303,19 @@ getMSE(CV.pred$ln_nox,CV.pred$preds)
 ```
 
 Now convert our cross-validation to a function:
-TODO:  Get this to work and decide how fancy to allow it to be, e.g. w.r.t. what gets passed to lm().
+
+TODO:  Decide how fancy to allow it to be, e.g. w.r.t. what gets passed to lm().  
+TODO:  Get suggestions from Brian on how to write this better.
 
 ```{r CV function}
 # CV function -------
-do_CV <- function(obs, formula, group, dataset){
-    # TODO: should be able to extract obs from the formula
+do_CV <- function(obs, formula, group, data){
+    # TODO: probably need to also add the group variable to the dataset in case it is not already part of the dataset OR do like the manual CV and only output certain variables.  (However, then we risk not being able to do more with the results if we wish.)
+    # TODO: is it OK to use data as an argument here, or is it too confusing??
     # obs is the outcome
     # formula to pass to lm
     # group is the grouping variable
-    # dataset is the data
+    # data is the data frame
     # the function returns the dataset with a new variable called cvpreds, out-of-sample predictions   
 
     # create a variable to store CV predictions 
@@ -292,140 +329,108 @@ do_CV <- function(obs, formula, group, dataset){
         # define the current group variable as a logical vector
         is.group <- group == i
     
-        # fit the linear model, omitting cluster i (training set)
+        # fit the linear model to the training set by omitting cluster i 
         CV.lm <-
-            lm(formula, data=dataset,
+            lm(formula, data=data,
             subset = -is.cluster)
   
         # save the predictions and observations in CV.pred for the current group (test set)
-         CV.results <- dataset %>%
-            add_predictions(CV.lm,"cvpreds") %>%
+         CV.results <- data %>%
+            modelr::add_predictions(CV.lm,"cvpreds") %>%
             filter(group == i) 
         
         CV.pred <- rbind(CV.pred, CV.results)
     }
-# return the dataset; note it will be ordered by group now
+# return the dataset; note it will be ordered by group now (TODO:  decide whether this is a good feature or should be changed)
 CV.pred
 }
+
 ```
 
+```{r test do_CV}
+# test do_CV------
+
+# first create the formula from a vector of names
+common_model_formula <- as.formula(paste("ln_nox ~ ", paste(covars_common, collapse= "+")))
+
+# Note: the do_CV function only works if the group variable is a vector and not part of a dataset.
+# TODO: get rid of the above feature if straightforward
+# should also append the grouping variable to the output dataset for cases when it isn't part of the input dataset
+temp <- do_CV(ln_nox, common_model_formula, group = fall$cluster, data = fall)
+
+```
+
+```{r check CV results}
+# check CV results -------
+# now check the results from the CV function
+# Summarize with getMSE
+getMSE(temp$ln_nox, temp$cvpreds)
+
+# now look at the scatterplot, observations on the x axis as we typically do for considering out-of-sample predictions
+ggplot(data = temp, aes(ln_nox, cvpreds)) +
+    geom_point() +
+    coord_fixed() +
+    geom_abline(intercept = 0, slope = 1, color = "blue") +
+    labs(title = "Fall model predictions vs. ln(NOx) \nCross-validated", 
+         x = "Observed ln(NOx) (ln(ppb))",
+         y = "Predicted ln(NOx) (ln(ppb))",
+         caption = "1:1 line is blue")
+
+```
 
 ## Bias-variance trade-off analysis 
 
-
-### Repeated cross-validation for the bias-variance trade-off plot 
-
-Assignment Request:	Use the order of entry into the stepwise to sequentially complete the following computations.  For models with one up to the maximum number of selected variables:
-
-        i.  Use the full dataset to obtain in-sample estimates of the RMSE and R2.
-        
-        ii. Estimate predicted values using cross-validation.
-        
-        iii.  Compute out-of-sample RMSE and MSE-based R2 estimates.
+Assignment Request:	Use the order of entry into the stepwise to sequentially complete the following computations.  For models with one up to the maximum number of selected variables:  
+        i.  Use the full dataset to obtain in-sample estimates of the RMSE and R2.  
+        ii. Estimate predicted values using cross-validation.  
+        iii.  Compute out-of-sample RMSE and MSE-based R2 estimates.  
  
-TODO:  UPDATE       
-Code below was kindly provided by David Scoville: (basic tests work; need to integrate)
+Steps to coding this:
+* compute/retrieve the vector of names output from the forward selection model
+* loop over the maximum number of covariates from forward selection
+* create a formula that is the linear combination of the first i terms of the forward selection model
+* summarize the in-sample prediction MSE and R2
+* cross-validate this and summarize the out-of-sample MSE and R2
+* store the key set of results, plus the number of covariates in the model and possibly the variable added to use in plotting
+* use ggplot to make the bias-variance trade-off plot
+
+TODO:  UPDATE --- ran out of time to work on this on my plane ride ....      
 ```{r Model selection and CV, echo=TRUE}
+# Model selection and CV
+# Credit:  The initial version of this code was kindly provided by David Scoville
+# TODO:  NOT yet tested or evaluated
 
-#empty<-lm(ln_nox ~ 1, data=snapshot.fall)
+#get the length of the vector of names from forward selection
+n_covars <- length(covars_forward)
 
-#full<-Pop_5000 + D2Comm + D2A1 + D2Ryard + A1_10k + A23_15k + Pop_15000 + Pop_10000 + A1_750 + A23_50 + A23_10k + A1_3k + D2A3 + D2C + A1_300 + A23_5k + Int_300 + D2Rroad + D2Mport + A1_15k + A1_400 + Int_500 + Int_1000 + A23_1k + Pop_3000 + Pop_2500 + D2Lport + Int_3000,data=snapshot.fall)
+# set up an object to store the results in 
+results_store <- NULL
 
-#addterm(empty, scope=full, test="F",trace=T)
-
-full2<-c("Pop_5000" , "D2Comm" , "D2A1" , "D2Ryard" , "A1_10k" , "A23_15k" , "Pop_15000" , "Pop_10000" , "A1_750" , "A23_50" , "A23_10k" , "A1_3k" , "D2A3" , "D2C" , "A1_300" , "A23_5k" , "Int_300" , "D2Rroad" , "D2Mport" , "A1_15k" , "A1_400" , "Int_500" , "Int_1000" , "A23_1k" , "Pop_3000" , "Pop_2500" , "D2Lport", "Int_3000")
-
-all.models.CV.perf<-vector("list",length=28)
-all.models.in.perf<-vector("list",length=28)
-
-model.terms<-"ln_nox"
-for (i in 1:length(full2)) {
-
-  #keep updating model.terms for each added model
-model.terms<-c(model.terms,full2[i])
-  #defines the variables to be fit for this iteration i
-model.vars<-snapshot.fall[,model.terms]
-  #created a dataset that also has the cluster variable included
-model.vars.cluster<-cbind(snapshot.fall$cluster,model.vars)
-  #name the cluster column
-colnames(model.vars.cluster)[1]<-"cluster"
-  #fit this model on the entire dataset
-new.mod<-lm(ln_nox ~ .,data=model.vars.cluster[,2:dim(model.vars.cluster)[2]])
-#print(new.mod)
-  #extract the MSE from the results:
-  # not sure what the following does; substitute the commands after to get the in-sample MSE, etc in the expected format
-    #new.mod.perf<-c(mse(new.mod)[2,])
-MSE.newmod<-mean(new.mod$residuals^2)
-RMSE.newmod<-sqrt(MSE.newmod)
-R2.newmod<-summary(new.mod)$r.squared
-
-all.models.in.perf[[i]]<-c(MSE.newmod,RMSE.newmod,R2.newmod)
-names(all.models.in.perf[[i]])<-c("MSE.newmod","RMSE.newmod","R2.newmod")
-
-CV.pred.store.snap<-NULL
-    for (j in 1:10) {
-      model.vars.cluster.reg<-subset(model.vars.cluster,cluster!=j)
-      model.vars.cluster.pred<-subset(model.vars.cluster,cluster==j)
-      
-      
-          CV.lm<-lm(ln_nox ~ .,data=model.vars.cluster.reg[,2:dim(model.vars.cluster.reg)[2]])
-            
-            #print(summary(CV.lm))
-          
-          CV.predict<-predict(CV.lm,model.vars.cluster.pred[,2:dim(model.vars.cluster.pred)[2]],
-            interval="prediction",
-            level=0.95,type="response")
-          
-          CV.pred.store.snap<-rbind(CV.pred.store.snap,cbind(
-            snapshot.fall[which(snapshot.fall$cluster==j),c("cluster","ln_nox")],CV.predict))
-          
-          colnames(CV.pred.store.snap)[c(1,2)]<-c("cluster","ln_nox")
-      
+# loop over n_covars
+for (i in 1:n_covars) {
+    # formula, updated to add a term each time
+    fmla <- as.formula(paste("ln_nox ~ 1 + ", paste(covars_all[1:i], collapse= "+"))) 
+    
+    # in-sample model and estimates
+    in_model <- lm(formula, data = fall) 
+    in_MSE <- summary(in_model$sigma)
+    in_R2 <- summary(in_model$r.squared)
+    
+    # out-of sample model and estimates
+    out_ests <- do_CV(ln_nox, fmla, fall$cluster, data = fall)
+    out_results <- getMSE(out_ests$ln_nox, out_ests$cvpreds)
+    out_MSE <- out_results[1]
+    out_R2 <- out_results[2]
+    
+    # store the results in results_store
+    results_store <- cbind(results_store, c(i, covars_all[i], in_MSE, in_R2, out_MSE, out_R2))
     }
-  
-MSE.pred.CV<-mean((CV.pred.store.snap[,"ln_nox"]-CV.pred.store.snap[,"fit"])^2)
-MSE.pred.CV
-RMSE.pred.CV<-sqrt(MSE.pred.CV)
-#*MSE-based R2
-#gen MSER2 = max((1 - MSEests/MSEln_nox),0)
-MSER2.CV<-max((1-MSE.pred.CV/MSE.ln_nox),0)
-#*the following shows the calculated variables 
-#*    (as one line of Stata code)
-#display MSEln_nox ",  MSE = " MSEests ",  MSE-based R2 =  " MSER2 
-#display "RMSE =  " sqrt(MSEests)
-#switched order in last two from what David did
-CV.results.subset<-cbind(MSE.ln_nox,MSE.pred.CV,RMSE.pred.CV,MSER2.CV)
-
-#CV.results.subset
-
-all.models.CV.perf[[i]]<-CV.results.subset
-#added names, in new order
-#names(all.models.CV.perf[[i]])<-c("MSE.ln_nox","MSE.pred.CV","RMSE.pred.CV","MSER2.CV")
-
-}
 
 
-errors.CV<-matrix(unlist(all.models.CV.perf),ncol=4,byrow=T)
-
-errors.in<-matrix(unlist(all.models.in.perf),ncol=3,byrow=T)
-#7x28 matrix, I think
-errors<-cbind(errors.CV,errors.in)
-errors<-as.data.frame(errors)
-colnames(errors)<-c(colnames(all.models.CV.perf[[1]]),names(all.models.in.perf[[1]]))
-errors$mod.size<-row.names(errors)
-
-errors.CV.plot<-errors.CV[,3:4]
-colnames(errors.CV.plot)<-c("RMSE","R2")
-errors.in.plot<-errors.in[,c(2,3)]
-colnames(errors.in.plot)<-c("RMSE","R2")
+#START HERE -- add ggplot; much of the following should be redone or dropped
 
 
-errors.plot.R2<-c(errors.CV.plot[,"R2"],errors.in.plot[,"R2"])
-errors.plot.R2<-as.data.frame(errors.plot.R2)
-errors.plot.R2$mod.size<-rep(row.names(errors),2)
-errors.plot.R2$type<-c(rep("MSE based (CV)",28),rep("Regression Based (in sample)",28))
-colnames(errors.plot.R2)[1]<-"R2"
-
+# David's code for ggplot; needs to be revised
 # plots with both model based (in sample) R2 and CV generated MSER2
 
 plot.R2<-ggplot(errors.plot.R2,aes(x=as.numeric(mod.size),y=R2,color=type)) + geom_point() + geom_smooth(se=F) +
@@ -466,14 +471,10 @@ bvt.RMSE<-ggplot(errors,aes(x=as.numeric(mod.size),y=RMSE.pred.CV)) + geom_point
 
 ```
 
- 
-## Bias-variance trade-off plot 
-
-TODO:  Update.  See example above
-
 # Practice Session
 
-TODO:  Convert from Stata to R
+TODO:  Any Stata left to remove??
+TODO:  Address ADD below
 
 This section covers basic practice to be completed during the lab.   We are going to use the snapshot data described in Mercer et al 2011, discussed in class, and used last week.  It can be found on the class website.  Note that in this lab we are treating the errors are independent and identically distributed even though this assumption is not correct in these data.  (This is the same assumption typically made in LUR modeling.)
 
@@ -512,7 +513,7 @@ c.	In a table or figure(s), summarize the number of variables in each model alon
 
 # Other resources to explore
 
-TODO:  Update and edit.  Load appropriate packages
+TODO:  Update and edit.  Load appropriate packages. Remove extraneous ideas.
 
 ## Cross Validation using the R packages (cvTools and/or caret)
 NOTE:  This has not been tested yet.  We need to determine whether this package gives the same results as our manual procedures, or not.  Also, the worked example below is randomly choosing CV groups, which is a very different approach from using the cluster variable.
@@ -548,11 +549,15 @@ plot(cv_results, method = "density")
 
 
 
-### Cross-validation code; not in a function:  TODO: decide if we should drop this 
+### Cross-validation code from other packages
+
+TODO: decide if we should drop this 
 
 The `caret` package has code for k-fold cross-validation, as does the `boot` package.  and the `cvTools` package.  Not sure which to prioritize.
 
 #### CV code from stackoverflow; uses a nnet
+
+TODO:  probably drop
 
 ```{r}
 set.seed(450)

@@ -1,7 +1,7 @@
 ---
 title: 'Week 4 Lecture:  Regression for Prediction'
 author: "Lianne Sheppard for ENVH 556"
-date: "1/17/2019; Updated `r format(Sys.time(), '%d %B, %Y')`"
+date: "Winter 2019; Updated `r format(Sys.time(), '%d %B, %Y')`"
 output: 
     html_document:
         fig_caption: yes
@@ -70,12 +70,15 @@ summary(lm(ln_nox ~ preds_fall,
            data = subset(snap2, season == 2)))
 
 # now compare correlations
-dplyr::select(snap2,  c("ln_nox", "preds_fall", "ID", "season")) %>%
+fallMSE_from_fall <-
+    dplyr::select(snap2,  
+                  c("ln_nox", "preds_fall", "ID", "season")) %>%
     filter(season == 2) %>%
-    summarize(
-        r = cor(ln_nox, preds_fall),
-        R2 = r ^ 2)
+    summarize(r = cor(ln_nox, preds_fall),
+    R2 = r ^ 2)
 
+cat( "In-sample R2 of predictions from fall model, predicted in fall:  ", paste(round(fallMSE_from_fall[2], 2)) ) 
+    
 ```
 
 
@@ -84,17 +87,20 @@ dplyr::select(snap2,  c("ln_nox", "preds_fall", "ID", "season")) %>%
 ```{r slide 14, eval = FALSE}
 # slide 14:  out of sample assessment
 # regression of out-of-sample predictions vs. data (evaluate fall model in winter)
-# TODO:  Fix the select command
 summary(lm(ln_nox ~ preds_fall, 
            data = subset(snap2, season == 3)))
 
 # now compare correlations
-dplyr::select(snap2,  c("ln_nox","preds_fall","ID","season")) %>%
+winterMSE_from_fall <-
+    dplyr::select(snap2,  
+                  c("ln_nox", "preds_fall", "ID", "season")) %>%
     filter(season == 3) %>%
-    summarize(
-        r = cor(ln_nox,preds_fall),
-        R2 = r^2)
+    summarize(r = cor(ln_nox, preds_fall),
+    R2 = r ^ 2)
 
+cat("Out of sample R2 of predictions from fall model, predicted in winter:  ",
+    paste(round(winterMSE_from_fall[2], 2)))
+    
 ```
 
 
@@ -142,7 +148,8 @@ TODO
 
 ```{r Slide 18:  AIC & BIC}
 # slide 18:  AIC & BIC
-# TODO:  Develop more??
+# The smaller the AIC, the better the model fit.
+# Note:  AIC is negative, so smaller AIC has a bigger absolute value
 AIC(lm_fall)
 BIC(lm_fall)
 
