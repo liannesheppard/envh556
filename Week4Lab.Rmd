@@ -48,11 +48,11 @@ snapshot<-readRDS(file.path(datapath,"allseasonsR.rds"))
 
 ```
 
-TODO:  Finish lecture slides
-TODO:  Add code to randomly select groups
-TODO:  Work on the automating of the bias-variance plot
+TODO:  Finish lecture slides (separate document)
+TODO:  FIX do_CV!!!!!!!!!
+TODO:  Finish the bias-variance plot
 TODO:  Learn about and try out kableExtra for tables (see Nancy's week 1 lab for an example)
-TODO:  install caret and cvTools for other cv approaches
+TODO:  install and test caret and cvTools for other cv approaches OR DROP
 
 
 # Purpose
@@ -88,12 +88,10 @@ fall <- filter(snapshot, season == 2)
 ```
 
 * Common model names, for later use
-```{r}
+```{r common model names}
 # common model names -------
 covars_common <- c("D2A1", "A1_50", "A23_400",  "Pop_5000", "D2C", "Int_3000", "D2Comm")
-# facier way to do this, showing how to make paste0, grep, and/or grepl useful tool:
-# TODO:  code this
-#covars_common <- c(D2A1 + A1_50 + A23_400 + Pop_5000 + D2C + Int_3000 + D2Comm)
+
 ```
 
 ## Commands for regression, producing AIC, plotting, and computing prediction R^2^
@@ -217,8 +215,8 @@ forwardreg_fall$anova$Step
 
 ## Manual cross-validation and summarization
 
-TODO:  expand ISLR and link to it
 Note:  We are summarzing the cross-validation results overall.  This is one valid way to do the summary.  Other approaches summarize the results in each cluster (or cross-validation group) separately and average these.  (See e.g. ISLR textbook.)
+TODO:  Link to ISLR textbook
 
 ```{r a manual CV}
 # manual CV ------
@@ -304,14 +302,16 @@ getMSE(CV.pred$ln_nox,CV.pred$preds)
 
 Now convert our cross-validation to a function:
 
+TODO:  FIX ERRORS in do_CV:  it doesn't find `is.group`
 TODO:  Decide how fancy to allow it to be, e.g. w.r.t. what gets passed to lm().  
+TODO:  See other comments in the test chunk below
 TODO:  Get suggestions from Brian on how to write this better.
 
 ```{r CV function}
 # CV function -------
 do_CV <- function(obs, formula, group, data){
     # TODO: probably need to also add the group variable to the dataset in case it is not already part of the dataset OR do like the manual CV and only output certain variables.  (However, then we risk not being able to do more with the results if we wish.)
-    # TODO: is it OK to use data as an argument here, or is it too confusing??
+    # TODO: is it OK to use `data` as an argument here, or is it too confusing??
     # obs is the outcome
     # formula to pass to lm
     # group is the grouping variable
@@ -319,8 +319,12 @@ do_CV <- function(obs, formula, group, data){
     # the function returns the dataset with a new variable called cvpreds, out-of-sample predictions   
 
     # create a variable to store CV predictions 
-    CV.pred <- NULL
-    
+    #CV.pred <- NULL
+    # This version appends the new variable to the input data frame
+    CV.pred <- data.frame(data,
+                          cvpreds =
+                          numeric(dim(data)[1]))
+                          
     # get the number of distict clusters 
     k <- length(unique(group))
     
@@ -332,16 +336,14 @@ do_CV <- function(obs, formula, group, data){
         # fit the linear model to the training set by omitting cluster i 
         CV.lm <-
             lm(formula, data=data,
-            subset = -is.cluster)
+            subset = -is.group)
   
         # save the predictions and observations in CV.pred for the current group (test set)
-         CV.results <- data %>%
-            modelr::add_predictions(CV.lm,"cvpreds") %>%
-            filter(group == i) 
-        
-        CV.pred <- rbind(CV.pred, CV.results)
+        tempCV <- data %>%
+            modelr::add_predictions(CV.lm,"cvpreds") 
+        CV.pred$cvpreds[is.group] <- tempCV$cvpreds[is.group]
     }
-# return the dataset; note it will be ordered by group now (TODO:  decide whether this is a good feature or should be changed)
+# return the dataset
 CV.pred
 }
 
@@ -355,7 +357,7 @@ common_model_formula <- as.formula(paste("ln_nox ~ ", paste(covars_common, colla
 
 # Note: the do_CV function only works if the group variable is a vector and not part of a dataset.
 # TODO: get rid of the above feature if straightforward
-# should also append the grouping variable to the output dataset for cases when it isn't part of the input dataset
+# should either append the grouping variable to the output dataset for cases when it isn't part of the input dataset, or require that it is a variable in the dataset
 temp <- do_CV(ln_nox, common_model_formula, group = fall$cluster, data = fall)
 
 ```
@@ -378,6 +380,22 @@ ggplot(data = temp, aes(ln_nox, cvpreds)) +
 
 ```
 
+## Create 10 CV groups in random order
+
+```{r generate groups}
+# generate groups --------
+# set the seed to make reproducible
+set.seed(283)
+
+# first generate a vector with values 1:10 with as many observations as the dataset
+CVgrp <- rep(1:10, length.out = dim(fall)[1])
+
+# now give it a random order
+# replace = FALSE just reorders the variable
+CVgrp <- sample(CVgrp, replace = FALSE)
+
+```
+
 ## Bias-variance trade-off analysis 
 
 Assignment Request:	Use the order of entry into the stepwise to sequentially complete the following computations.  For models with one up to the maximum number of selected variables:  
@@ -394,86 +412,69 @@ Steps to coding this:
 * store the key set of results, plus the number of covariates in the model and possibly the variable added to use in plotting
 * use ggplot to make the bias-variance trade-off plot
 
-TODO:  UPDATE --- ran out of time to work on this on my plane ride ....      
-```{r Model selection and CV, echo=TRUE}
-# Model selection and CV
-# Credit:  The initial version of this code was kindly provided by David Scoville
-# TODO:  NOT yet tested or evaluated
+TODO:  UPDATE --- this code seems to work, but the do_CV isn't giving the right results
+
+```{r Model order and CV, echo=TRUE}
+# Model order and CV
 
 #get the length of the vector of names from forward selection
 n_covars <- length(covars_forward)
 
 # set up an object to store the results in 
-results_store <- NULL
-
+res <- data.frame(n_pred = numeric(n_covars), covar = character(n_covars), in_MSE = numeric(n_covars), in_R2 = numeric(n_covars), out_MSE = numeric(n_covars), out_R2 = numeric(n_covars), stringsAsFactors = FALSE)
+    
 # loop over n_covars
 for (i in 1:n_covars) {
+    # assign first few variables
+    res$n_pred[i] <- i
+    res$covar[i] <- covars_forward[i]
+    
     # formula, updated to add a term each time
-    fmla <- as.formula(paste("ln_nox ~ 1 + ", paste(covars_all[1:i], collapse= "+"))) 
+    fmla <- as.formula(paste("ln_nox ~ 1 + ", paste(covars_forward[1:i], collapse = "+"))) 
     
     # in-sample model and estimates
-    in_model <- lm(formula, data = fall) 
-    in_MSE <- summary(in_model$sigma)
-    in_R2 <- summary(in_model$r.squared)
+    in_model <- lm(fmla, data = fall) 
+    res$in_MSE[i] <- summary(in_model)$sigma
+    res$in_R2[i] <- summary(in_model)$r.squared
     
     # out-of sample model and estimates
     out_ests <- do_CV(ln_nox, fmla, fall$cluster, data = fall)
     out_results <- getMSE(out_ests$ln_nox, out_ests$cvpreds)
-    out_MSE <- out_results[1]
-    out_R2 <- out_results[2]
+    res$out_MSE[i] <- out_results[1]
+    res$out_R2[i] <- out_results[2]
     
-    # store the results in results_store
-    results_store <- cbind(results_store, c(i, covars_all[i], in_MSE, in_R2, out_MSE, out_R2))
     }
 
+# the data frame res should have all pieces for ggplot
+
+
+```
 
 #START HERE -- add ggplot; much of the following should be redone or dropped
 
+```{r plot bias-var plot, eval=FALSE}
 
 # David's code for ggplot; needs to be revised
 # plots with both model based (in sample) R2 and CV generated MSER2
 
-plot.R2<-ggplot(errors.plot.R2,aes(x=as.numeric(mod.size),y=R2,color=type)) + geom_point() + geom_smooth(se=F) +
- xlab("Model Complexity (# of terms)") + ylab(bquote(bold(R^2)))+
-scale_x_continuous(breaks=c(seq(0,30,5))) + theme_bw() + theme(axis.text=element_text(face="bold"),axis.title=element_text(face="bold")) + scale_color_discrete(name="Source",guide = guide_legend(reverse=TRUE))
+plot.R2 <- ggplot(results_store) +
+    geom_point(aes(x=i, y=in_R2, color="blue")) +         geom_smooth(aes(x=i, y=in_R2, color="blue"), se=F) +
+    geom_point(aes(x=i, y=out_R2, color="red")) +         geom_smooth(aes(x=i, y=out_R2, color="red"), se=F) +
+    xlab("Model Complexity (# of terms)") + 
+    ylab(bquote(bold(R^2))) +
+    scale_x_continuous(breaks=c(seq(0,63,5))) +
+    theme_bw() 
+#+ theme(axis.text=element_text(face="bold"),axis.title=element_text(face="bold")) + scale_color_discrete(name="Source",guide = guide_legend(reverse=TRUE))
 
 print(plot.R2)
 
-errors.plot.RMSE<-c(errors.CV.plot[,"RMSE"],errors.in.plot[,"RMSE"])
-errors.plot.RMSE<-as.data.frame(errors.plot.RMSE)
-errors.plot.RMSE$mod.size<-rep(row.names(errors),2)
-errors.plot.RMSE$type<-c(rep("Cross Validation",28),rep("In Sample",28))
-colnames(errors.plot.RMSE)[1]<-"RMSE"
 
 # plots with RMSE for both insample and CV
-
-plot.RMSE<-ggplot(errors.plot.RMSE,aes(x=as.numeric(mod.size),y=RMSE,color=type)) + geom_point() + geom_smooth(se=F) +
- xlab("Model Complexity (# of terms)") + ylab("RMSE")+
-scale_x_continuous(breaks=c(seq(0,30,5))) + theme_bw() + theme(axis.text=element_text(face="bold"),axis.title=element_text(face="bold")) + scale_color_discrete(name="Source")
-
-print(plot.RMSE)
-
-
-#plot of just CV based MSE based R2
-bvt.MSER2<-ggplot(errors,aes(x=as.numeric(mod.size),y=MSER2.CV)) + geom_point() + geom_smooth(se=F) +
- xlab("Model Complexity (# of terms)") + ylab(bquote(bold(R^2)))+
-scale_x_continuous(breaks=c(seq(0,30,5))) + theme_bw() + theme(axis.text=element_text(face="bold"),axis.title=element_text(face="bold")) 
-
-#bvt.MSER2
-
-#plot of just CV RMSE
-bvt.RMSE<-ggplot(errors,aes(x=as.numeric(mod.size),y=RMSE.pred.CV)) + geom_point() +geom_smooth(se=F) +xlab("Model Complexity (# of terms)") + ylab("RMSE") +scale_x_continuous(breaks=c(seq(0,30,5))) +theme_bw() + theme(axis.text=element_text(face="bold"),axis.title=element_text(face="bold")) 
-
-#bvt.RMSE
-
-
-
 
 ```
 
 # Practice Session
 
-TODO:  Any Stata left to remove??
 TODO:  Address ADD below
 
 This section covers basic practice to be completed during the lab.   We are going to use the snapshot data described in Mercer et al 2011, discussed in class, and used last week.  It can be found on the class website.  Note that in this lab we are treating the errors are independent and identically distributed even though this assumption is not correct in these data.  (This is the same assumption typically made in LUR modeling.)
@@ -511,7 +512,7 @@ c.	In a table or figure(s), summarize the number of variables in each model alon
 
 
 
-# Other resources to explore
+# Appendix 1:  Other resources to explore
 
 TODO:  Update and edit.  Load appropriate packages. Remove extraneous ideas.
 
@@ -555,45 +556,9 @@ TODO: decide if we should drop this
 
 The `caret` package has code for k-fold cross-validation, as does the `boot` package.  and the `cvTools` package.  Not sure which to prioritize.
 
-#### CV code from stackoverflow; uses a nnet
-
-TODO:  probably drop
-
-```{r}
-set.seed(450)
-cv.error <- NULL
-k <- 10
-
-library(plyr) 
-pbar <- create_progress_bar('text')
-pbar$init(k)
-
-## Assign samples to K folds initially
-index <- sample(letters[seq_len(k)], nrow(data), replace=TRUE)
-for(i in seq_len(k)) {
-    ## Make all samples assigned current letter the test set
-    test_ind <- index == letters[[k]]
-    test.cv <- scaled[test_ind, ]
-    ## All other samples are assigned to the training set
-    train.cv <- scaled[!test_ind, ]
-
-    ## It is bad practice to use T instead of TRUE, 
-    ## since T is not a reserved variable, and can be overwritten
-    nn <- neuralnet(f,data=train.cv,hidden=c(5,2),linear.output=TRUE)
-
-    pr.nn <- compute(nn,test.cv[,1:13])
-    pr.nn <- pr.nn$net.result*(max(data$medv)-min(data$medv))+min(data$medv)
-
-    test.cv.r <- (test.cv$medv) * (max(data$medv) - min(data$medv)) + min(data$medv)
-
-    cv.error[i] <- sum((test.cv.r - pr.nn) ^ 2) / nrow(test.cv)
-       pbar$step()
-}
-    
-```
 
 
-# Appendix
+# Appendix 2
 
 ```{r session.info}
 #-----------------session.info: beginning of Appendix -----------------
