@@ -19,10 +19,6 @@ editor_options:
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-TODO:  My interactive running of the following isn't working.  Error says "Error
-in readRDS(dest) : error reading from connection"  Probably because I'm not
-connected to the internet and at least one package isn't installed locally.
-
 ```{r load.libraries.pacman, echo=FALSE, include=FALSE, eval=TRUE}
 #----------------load.libraries.pacman----
 # Load pacman into memory, installing as needed
@@ -41,16 +37,25 @@ if (!require("pacman")) {install.packages("pacman", repos = my_repo)}
 pacman::p_load(tidyverse, knitr, multcomp, dplyr, modelr, Hmisc)  
 ```
 
-```{r read.data, echo=FALSE}
-#-----------read.data-----------------
-#-getwd
-    ProjectPath <- getwd()
-#-dir.create    
-    dir.create(file.path(ProjectPath,"Datasets"), 
-               showWarnings=FALSE, recursive = TRUE)
-    datapath<-file.path(ProjectPath,"Datasets")
-#-read.data
-snapshot<-readRDS(file.path(datapath,"allseasonsR.rds"))
+```{r read.data.from.a.web.site, eval=TRUE, echo=FALSE}
+#-----read.data.from.a.web.site--------
+# Download the data file from a web site if it is not already downloaded, then
+# read in the file
+
+snapshot.file <- "allseasonsR.rds"
+snapshot.path <- file.path(datapath, snapshot.file)
+
+# Only download the file if it's not already present
+if (!file.exists(snapshot.path)) {
+    url <- paste("https://staff.washington.edu/high/envh556/Datasets", 
+                 snapshot.file, sep = '/')
+    download.file(url = url, destfile = snapshot.path)
+}
+
+# Output a warning message if the file cannot be found
+if (file.exists(snapshot.path)) {
+    snapshot <- readRDS(file = snapshot.path)
+} else warning(paste("Can't find", snapshot.file, "!"))
 
 ```
 
@@ -59,7 +64,6 @@ TODO:  Finish the bias-variance plot
 TODO:  Learn about and try out kableExtra for tables (see Nancy's week 1 lab for
 an example) 
 TODO:  install and test caret and cvTools for other cv approaches OR DROP 
-
 
 # Purpose
 
