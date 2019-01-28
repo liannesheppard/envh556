@@ -43,6 +43,8 @@ pacman::p_load(tidyverse, knitr, multcomp, dplyr, modelr, Hmisc)
 # read in the file
 
 datapath <- "Datasets"
+dir.create(datapath, showWarnings=FALSE, recursive = TRUE)
+
 snapshot.file <- "allseasonsR.rds"
 snapshot.path <- file.path(datapath, snapshot.file)
 
