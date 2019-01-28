@@ -42,6 +42,7 @@ pacman::p_load(tidyverse, knitr, multcomp, dplyr, modelr, Hmisc)
 # Download the data file from a web site if it is not already downloaded, then
 # read in the file
 
+datapath <- "Datasets"
 snapshot.file <- "allseasonsR.rds"
 snapshot.path <- file.path(datapath, snapshot.file)
 
