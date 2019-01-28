@@ -13,32 +13,15 @@ editor_options:
 ---
 
 <!--Basic document set-up goes here  -->
-```{r clear.workspace, eval=FALSE, echo=TRUE}
-#---------clear.workspace------------
-# Clear the environment without clearing knitr
-#
-# This chunk is useful for code development because it simulates the knitr
-# environment. Run it as a code chunk when testing. When knitr is run, it uses a
-# fresh, clean environment, so we set eval=FALSE to disable this chunk when
-# rendering.
-
-# Clear workspace of all objects and unload all extra (non-base) packages
-rm(list = ls(all = TRUE))
-if (!is.null(sessionInfo()$otherPkgs)) {
-    res <- suppressWarnings(
-        lapply(paste('package:', names(sessionInfo()$otherPkgs), sep=""),
-               detach, character.only=TRUE, unload=TRUE, force=TRUE))
-   
-}
-
-```
 
 ```{r setup, include=FALSE}
 #-------------r.setup-------------
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-TODO:  My interactive running of the following isn't working.  Error says "Error in readRDS(dest) : error reading from connection"  Probably because I'm not connected to the internet and at least one package isn't installed locally.
+TODO:  My interactive running of the following isn't working.  Error says "Error
+in readRDS(dest) : error reading from connection"  Probably because I'm not
+connected to the internet and at least one package isn't installed locally.
 
 ```{r load.libraries.pacman, echo=FALSE, include=FALSE, eval=TRUE}
 #----------------load.libraries.pacman----
@@ -70,11 +53,11 @@ snapshot<-readRDS(file.path(datapath,"allseasonsR.rds"))
 
 ```
 
-TODO:  Finish lecture slides (separate document)
-TODO:  FIX do_CV!!!!!!!!!
-TODO:  Finish the bias-variance plot
-TODO:  Learn about and try out kableExtra for tables (see Nancy's week 1 lab for an example)
-TODO:  install and test caret and cvTools for other cv approaches OR DROP
+TODO:  Finish lecture slides (separate document) 
+TODO:  Finish the bias-variance plot 
+TODO:  Learn about and try out kableExtra for tables (see Nancy's week 1 lab for
+an example) 
+TODO:  install and test caret and cvTools for other cv approaches OR DROP 
 
 
 # Purpose
@@ -327,7 +310,6 @@ getMSE(CV.pred$ln_nox,CV.pred$preds)
 
 Now convert our cross-validation to a function:
 
-TODO:  FIX ERRORS in do_CV:  it doesn't find `is.group`
 TODO:  Decide how fancy to allow it to be, e.g. w.r.t. what gets passed to lm().  
 TODO:  See other comments in the test chunk below
 TODO:  Get suggestions from Brian on how to write this better.
@@ -350,9 +332,7 @@ do_CV <- function(obs, formula, group, data) {
     # create a variable to store CV predictions 
     #CV.pred <- NULL
     # This version appends the new variable to the input data frame
-    CV.pred <- data.frame(data,
-                          cvpreds =
-                          numeric(dim(data)[1]))
+    CV.pred <- data.frame(data, cvpreds = numeric(dim(data)[1]))
                           
     # get the number of distict clusters 
     k <- length(unique(group))
@@ -361,9 +341,12 @@ do_CV <- function(obs, formula, group, data) {
     for (i in 1:k){
         # define the current group variable as a logical vector
         is.group <- group == i
-    
-        # fit the linear model to the training set by omitting cluster i 
-        CV.lm <- lm(formula, data=data, subset = !is.group)
+        
+        # subset the data  by omitting cluster i to create the training set
+        training <- data[!is.group, ]
+        
+        # fit the linear model to the training set
+        CV.lm <- lm(formula = formula, data = training)
   
         # save the predictions and observations in CV.pred for the current group
         # (test set)
