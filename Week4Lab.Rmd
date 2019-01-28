@@ -316,16 +316,15 @@ TODO:  Get suggestions from Brian on how to write this better.
 
 ```{r CV function}
 # CV function -------
-do_CV <- function(obs, formula, group, data) {
+do_CV <- function(data, group, formula) {
     # TODO: probably need to also add the group variable to the dataset in case
     # it is not already part of the dataset OR do like the manual CV and only
     # output certain variables.  (However, then we risk not being able to do
     # more with the results if we wish.)
     # TODO: is it OK to use `data` as an argument here, or is it too confusing??
-    # obs is the outcome
-    # formula to pass to lm
-    # group is the grouping variable
     # data is the data frame
+    # group is the grouping variable
+    # formula to pass to lm
     # the function returns the dataset with a new variable called cvpreds,
     # out-of-sample predictions
 
@@ -342,7 +341,7 @@ do_CV <- function(obs, formula, group, data) {
         # define the current group variable as a logical vector
         is.group <- group == i
         
-        # subset the data  by omitting cluster i to create the training set
+        # subset the data to create the training set by omitting cluster i
         training <- data[!is.group, ]
         
         # fit the linear model to the training set
@@ -371,10 +370,7 @@ common_model_formula <-
 # TODO: get rid of the above feature if straightforward should either append the
 # grouping variable to the output dataset for cases when it isn't part of the
 # input dataset, or require that it is a variable in the dataset
-temp <- do_CV(obs = CV.pred$ln_nox, 
-              formula = common_model_formula, 
-              group = fall$cluster, 
-              data = fall)
+temp <- do_CV(data = fall, group = fall$cluster, formula = common_model_formula)
 
 ```
 
@@ -454,7 +450,7 @@ for (i in 1:n_covars) {
     res$in_R2[i] <- summary(in_model)$r.squared
     
     # out-of sample model and estimates
-    out_ests <- do_CV(ln_nox, fmla, fall$cluster, data = fall)
+    out_ests <- do_CV(fall, fall$cluster, fmla)
     out_results <- getMSE(out_ests$ln_nox, out_ests$cvpreds)
     res$out_MSE[i] <- out_results[1]
     res$out_R2[i] <- out_results[2]
