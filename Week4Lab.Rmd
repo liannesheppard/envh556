@@ -162,7 +162,7 @@ ggplot(data = snap2, aes(preds_fall, ln_nox)) +
 
 ```
 
-*Correlations of predictions vs. observations by season:  (Note:  these are regression-based R^2^ estimates.)
+* Correlations of predictions vs. observations by season:  (Note:  these are regression-based R^2^ estimates.)
 
 ```{r season-specific correlations, eval = FALSE}
 # season-specific-correlations ------
