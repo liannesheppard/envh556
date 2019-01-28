@@ -578,17 +578,17 @@ your plot. (If you also want to show the best-fit line, you’ll need to put the
 predictions on the x-axis rather than the y-axis.)
 7. Create your own version of the bias-variance trade-off plot shown in class
 using the following steps:
-a. Do a forward stepwise regression of ln_nox on a set of plausible variables
+    a. Do a forward stepwise regression of ln_nox on a set of plausible variables
 with a lax entry criterion (e.g. ADD).  (You may restrict your attention to the
 list in the forward selection model example given above.)  Keep track of the
 order the variables were added.
-b. Use the order of entry into the stepwise to sequentially complete the
+    b. Use the order of entry into the stepwise to sequentially complete the
 following computations.  For models with one up to the maximum number of
 selected variables:
-    i. Use the full dataset to obtain in-sample estimates of the RMSE and R2.
-    ii. Estimate predicted values using cross-validation.
-    iii. Compute out-of-sample RMSE and MSE-based R2 estimates.
-c. In a table or figure(s), summarize the number of variables in each model
+        i. Use the full dataset to obtain in-sample estimates of the RMSE and R2.
+        ii. Estimate predicted values using cross-validation.
+        iii. Compute out-of-sample RMSE and MSE-based R2 estimates.
+    c. In a table or figure(s), summarize the number of variables in each model
 along with the R2 and/or RMSE estimates from CV and the training data.  If you
 choose to show your results in a plot, put the number of variables in the model
 on the x-axis vs. the R2 or RMSE estimates on the y-axis.  Distinguish the two
