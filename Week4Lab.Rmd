@@ -8,9 +8,31 @@ output:
         toc: true
         toc_depth: 3
         number_sections: true
+editor_options: 
+  chunk_output_type: console
 ---
 
 <!--Basic document set-up goes here  -->
+```{r clear.workspace, eval=FALSE, echo=TRUE}
+#---------clear.workspace------------
+# Clear the environment without clearing knitr
+#
+# This chunk is useful for code development because it simulates the knitr
+# environment. Run it as a code chunk when testing. When knitr is run, it uses a
+# fresh, clean environment, so we set eval=FALSE to disable this chunk when
+# rendering.
+
+# Clear workspace of all objects and unload all extra (non-base) packages
+rm(list = ls(all = TRUE))
+if (!is.null(sessionInfo()$otherPkgs)) {
+    res <- suppressWarnings(
+        lapply(paste('package:', names(sessionInfo()$otherPkgs), sep=""),
+               detach, character.only=TRUE, unload=TRUE, force=TRUE))
+   
+}
+
+```
+
 ```{r setup, include=FALSE}
 #-------------r.setup-------------
 knitr::opts_chunk$set(echo = TRUE)
@@ -33,7 +55,7 @@ if (!require("pacman")) {install.packages("pacman", repos = my_repo)}
 # modelr:  part of tidyverse and need for add_predictions and add_residuals
 # boot:  cv tools are available
 # Hmisc:  describe
-pacman::p_load(tidyverse, knitr, mutlcomp, dplyr, modelr, Hmisc)  
+pacman::p_load(tidyverse, knitr, multcomp, dplyr, modelr, Hmisc)  
 ```
 
 ```{r read.data, echo=FALSE}
@@ -145,12 +167,13 @@ ggplot(data = snap2, aes(preds_fall, ln_nox)) +
 
 ```{r season-specific correlations, eval = FALSE}
 # season-specific-correlations ------
-pred_summary <- dplyr::select(snap2,  c("ln_nox","preds_fall","ID","season","seasonfac")) %>%
+pred_summary <-
+    dplyr::select(snap2,  
+                  c("ln_nox", "preds_fall", "ID", "season", "seasonfac")) %>%
     group_by(seasonfac) %>%
-    summarize(
-        r = cor(ln_nox,preds_fall),
-        R2 = r^2)
-#TODO: Consider replacing with kableExtra
+    dplyr::summarize(r = cor(ln_nox, preds_fall),
+    R2 = r ^ 2)
+    #TODO: Consider replacing with kableExtra
 kable(pred_summary, digits = 2)
     
 ```
@@ -171,7 +194,9 @@ First define the smallest starting model (the *null* model) and the largest poss
 null <- lm(ln_nox ~ 1, data=fall)
 #null
     
-# create the larges possible model, a full model that includes all of the predictor variables in the dataset.  Steps:
+# create the larges possible model, a full model that includes all of the
+# predictor variables in the dataset. 
+# Steps:
 # 1: get the list of all the potential covariates of interest from the dataset:
 covars_all <- names(fall[12:74])
 # 2: now turn this into a formula for the full model in stepwise regression:
@@ -309,14 +334,18 @@ TODO:  Get suggestions from Brian on how to write this better.
 
 ```{r CV function}
 # CV function -------
-do_CV <- function(obs, formula, group, data){
-    # TODO: probably need to also add the group variable to the dataset in case it is not already part of the dataset OR do like the manual CV and only output certain variables.  (However, then we risk not being able to do more with the results if we wish.)
+do_CV <- function(obs, formula, group, data) {
+    # TODO: probably need to also add the group variable to the dataset in case
+    # it is not already part of the dataset OR do like the manual CV and only
+    # output certain variables.  (However, then we risk not being able to do
+    # more with the results if we wish.)
     # TODO: is it OK to use `data` as an argument here, or is it too confusing??
     # obs is the outcome
     # formula to pass to lm
     # group is the grouping variable
     # data is the data frame
-    # the function returns the dataset with a new variable called cvpreds, out-of-sample predictions   
+    # the function returns the dataset with a new variable called cvpreds,
+    # out-of-sample predictions
 
     # create a variable to store CV predictions 
     #CV.pred <- NULL
@@ -334,17 +363,15 @@ do_CV <- function(obs, formula, group, data){
         is.group <- group == i
     
         # fit the linear model to the training set by omitting cluster i 
-        CV.lm <-
-            lm(formula, data=data,
-            subset = -is.group)
+        CV.lm <- lm(formula, data=data, subset = !is.group)
   
-        # save the predictions and observations in CV.pred for the current group (test set)
-        tempCV <- data %>%
-            modelr::add_predictions(CV.lm,"cvpreds") 
+        # save the predictions and observations in CV.pred for the current group
+        # (test set)
+        tempCV <- data %>% modelr::add_predictions(CV.lm, "cvpreds") 
         CV.pred$cvpreds[is.group] <- tempCV$cvpreds[is.group]
     }
-# return the dataset
-CV.pred
+    # return the dataset
+    CV.pred
 }
 
 ```
@@ -353,12 +380,18 @@ CV.pred
 # test do_CV------
 
 # first create the formula from a vector of names
-common_model_formula <- as.formula(paste("ln_nox ~ ", paste(covars_common, collapse= "+")))
+common_model_formula <-
+    as.formula(paste("ln_nox ~ ", paste(covars_common, collapse = "+")))
 
-# Note: the do_CV function only works if the group variable is a vector and not part of a dataset.
-# TODO: get rid of the above feature if straightforward
-# should either append the grouping variable to the output dataset for cases when it isn't part of the input dataset, or require that it is a variable in the dataset
-temp <- do_CV(ln_nox, common_model_formula, group = fall$cluster, data = fall)
+# Note: the do_CV function only works if the group variable is a vector and not
+# part of a dataset. 
+# TODO: get rid of the above feature if straightforward should either append the
+# grouping variable to the output dataset for cases when it isn't part of the
+# input dataset, or require that it is a variable in the dataset
+temp <- do_CV(obs = CV.pred$ln_nox, 
+              formula = common_model_formula, 
+              group = fall$cluster, 
+              data = fall)
 
 ```
 
