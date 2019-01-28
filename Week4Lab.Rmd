@@ -558,47 +558,46 @@ even though this assumption is not correct in these data.  (This is the same
 assumption typically made in LUR modeling.)
 
 Perform the following tasks:
-1.	Determine the R project you will use.
-2.	Explore the dataset a bit, focusing on one particular season.  Make sure you
+
+1. Determine the R project you will use.
+2. Explore the dataset a bit, focusing on one particular season.  Make sure you
 have some basic understanding of the outcome variable (ln_nox), the CV grouping
 variable (cluster), and the large number of covariates you can choose from.   In
 this lab you should restrict your analysis to one season (e.g. winter).
-3.	Fit the model for one of the seasons given in Table 4 of Mercer et al. Make
+3. Fit the model for one of the seasons given in Table 4 of Mercer et al. Make
 note of these in-sample estimates of R2 and RMSE.
-4.	Try to manually cross-validate this model using the code given above.
+4. Try to manually cross-validate this model using the code given above.
 Compare the CV R2 and RMSE to your in-sample estimates.  (Note:  Use the cluster
 variable in the dataset to define your CV groups.)
-5.	Use the cross-validation function and repeat your cross-validation analysis.
+5. Use the cross-validation function and repeat your cross-validation analysis.
 (If you use the same groups, you should get the same results as in the previous
 step.)
-6.	Make a scatterplot comparing ln_nox (the observed dependent variable) on the
+6. Make a scatterplot comparing ln_nox (the observed dependent variable) on the
 x-axis with the cross-validated predictions on the y-axis.  Add the 1:1 line to
 your plot. (If you also want to show the best-fit line, you’ll need to put the
 predictions on the x-axis rather than the y-axis.)
-7.	Create your own version of the bias-variance trade-off plot shown in class
+7. Create your own version of the bias-variance trade-off plot shown in class
 using the following steps:
-a.	Do a forward stepwise regression of ln_nox on a set of plausible variables
-with a lax entry criterion (e.g. ADD).   (You may restrict your attention to the
+a. Do a forward stepwise regression of ln_nox on a set of plausible variables
+with a lax entry criterion (e.g. ADD).  (You may restrict your attention to the
 list in the forward selection model example given above.)  Keep track of the
 order the variables were added.
-b.	Use the order of entry into the stepwise to sequentially complete the
+b. Use the order of entry into the stepwise to sequentially complete the
 following computations.  For models with one up to the maximum number of
 selected variables:
-i.	Use the full dataset to obtain in-sample estimates of the RMSE and R2.
-ii.	Estimate predicted values using cross-validation.
-iii.	Compute out-of-sample RMSE and MSE-based R2 estimates.
-c.	In a table or figure(s), summarize the number of variables in each model
-along with the R2 and/or RMSE estimates from CV and the training data.   If you
+    i. Use the full dataset to obtain in-sample estimates of the RMSE and R2.
+    ii. Estimate predicted values using cross-validation.
+    iii. Compute out-of-sample RMSE and MSE-based R2 estimates.
+c. In a table or figure(s), summarize the number of variables in each model
+along with the R2 and/or RMSE estimates from CV and the training data.  If you
 choose to show your results in a plot, put the number of variables in the model
 on the x-axis vs. the R2 or RMSE estimates on the y-axis.  Distinguish the two
 kinds of estimates on your plot.  If you choose to show your results in a table,
 also include a column for the variable name of the variable added.
 
-
-
 # Homework Exercises
 
-1.	Write a brief summary of the purpose of the lab and your approach.  Then present your results:
+1. Write a brief summary of the purpose of the lab and your approach.  Then present your results:
 
     a.  Describe the results (with appropriate displays in table(s) and/or
     figures(s)), and
@@ -607,7 +606,7 @@ also include a column for the variable name of the variable added.
     training data alone and after cross-validation. In your discussion, comment
     on how your in-sample and cross-validated MSE-based R2 estimates compare.
     
-2.	**Extra credit**. Present one or both of the following results in your write-up:
+2. **Extra credit**. Present one or both of the following results in your write-up:
 
     a.  Repeat the exercise using randomly defined CV groups that ignore the
     gradient clusters.
