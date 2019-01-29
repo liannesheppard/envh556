@@ -11,6 +11,26 @@ output:
 ---
 
 <!--Basic document set-up goes here  -->
+```{r clear.workspace, eval=FALSE, echo=TRUE}
+#---------clear.workspace------------
+# Clear the environment without clearing knitr
+#
+# This chunk is useful for code development because it simulates the knitr
+# environment. Run it as a code chunk when testing. When knitr is run, it uses a
+# fresh, clean environment, so we set eval=FALSE to disable this chunk when
+# rendering.
+
+# Clear workspace of all objects and unload all extra (non-base) packages
+rm(list = ls(all = TRUE))
+if (!is.null(sessionInfo()$otherPkgs)) {
+    res <- suppressWarnings(
+        lapply(paste('package:', names(sessionInfo()$otherPkgs), sep=""),
+               detach, character.only=TRUE, unload=TRUE, force=TRUE))
+   
+}
+
+```
+
 ```{r setup, include=FALSE}
 #-------------r.setup-------------
 knitr::opts_chunk$set(echo = TRUE)
@@ -46,11 +66,7 @@ snapshot<-readRDS(file.path(datapath,"allseasonsR.rds"))
 
 ```
 
-TODO:  Finish lecture slides
-TODO commands for AIC and BIC
-
-
-# Lecture slide code
+# Week 4 Lecture slides R code
 
 ## Slide 12:  In-sample assessment (fall)
 
@@ -63,7 +79,7 @@ lm_fall <-
 
 # make predictions on the full dataset using the fall model
 snap2 <- snapshot %>%  
-    add_predictions(lm_fall,"preds_fall")  
+    modelr::add_predictions(lm_fall,"preds_fall")  
 
 # regression of in-sample predictions vs. data
 summary(lm(ln_nox ~ preds_fall, 
@@ -74,8 +90,8 @@ fallMSE_from_fall <-
     dplyr::select(snap2,  
                   c("ln_nox", "preds_fall", "ID", "season")) %>%
     filter(season == 2) %>%
-    summarize(r = cor(ln_nox, preds_fall),
-    R2 = r ^ 2)
+    dplyr::summarize(r = cor(ln_nox, preds_fall),  
+              R2 = r^2)
 
 cat( "In-sample R2 of predictions from fall model, predicted in fall:  ", paste(round(fallMSE_from_fall[2], 2)) ) 
     
@@ -84,8 +100,8 @@ cat( "In-sample R2 of predictions from fall model, predicted in fall:  ", paste(
 
 ## Slide 14:  Out-of-sample assessment (fall applied to winter)
 
-```{r slide 14, eval = FALSE}
-# slide 14:  out of sample assessment
+```{r slide 14}
+# slide 14:  out of sample assessment-----
 # regression of out-of-sample predictions vs. data (evaluate fall model in winter)
 summary(lm(ln_nox ~ preds_fall, 
            data = subset(snap2, season == 3)))
@@ -95,7 +111,7 @@ winterMSE_from_fall <-
     dplyr::select(snap2,  
                   c("ln_nox", "preds_fall", "ID", "season")) %>%
     filter(season == 3) %>%
-    summarize(r = cor(ln_nox, preds_fall),
+    dplyr::summarize(r = cor(ln_nox, preds_fall),
     R2 = r ^ 2)
 
 cat("Out of sample R2 of predictions from fall model, predicted in winter:  ",
@@ -142,7 +158,38 @@ cat("Out of sample R2 of predictions from fall model, predicted in winter:  ",
 
 ## Slide 17:  MSE-Based R2 estimates (& code), in- and out-of-sample
 
-TODO
+*Correlations of predictions vs. observations by season:  (Note:  these are regression-based R^2^ estimates.)
+
+```{r season-specific reg-based correlations, eval = FALSE}
+# season-specific regression-based correlations ------
+pred_summary <-
+    dplyr::select(snap2,  
+                  c("ln_nox", "preds_fall", "ID", "season", "seasonfac")) %>%
+    group_by(seasonfac) %>%
+    dplyr::summarize(r = cor(ln_nox, preds_fall),
+    R2 = r ^ 2)
+
+kable(pred_summary, digits = 2)
+    
+```
+
+*MSE-based R^2^s by season:  (Note:  these are MSE-based R^2^ estimates.)
+
+```{r season-specific MSE-based correlations, eval = FALSE}
+# season-specific MSE-based correlations ------
+pred_summary <-
+    dplyr::select(snap2,  
+                  c("ln_nox", "preds_fall", "ID", "season", "seasonfac")) %>%
+    group_by(seasonfac) %>%
+    dplyr::summarize(ln_nox_avg = mean(ln_nox),
+                     MSE_nox = mean((ln_nox - ln_nox_avg)^2),
+                     MSE_pred = mean((ln_nox - preds_fall)^2),
+                     MSE_R2 = max(1 - MSE_pred/MSE_nox, 0)  
+    )
+
+kable(pred_summary, digits = 2)
+    
+```
 
 ## Slide 18:  R command for AIC, BIC
 
@@ -206,7 +253,51 @@ snap_fpred <- cbind(snapshot,preds_from_fall)
 
 ## Slide 36:  Forward selection example
 
-TODO:  Get help from Sun
+```{r fall subset}
+# fall subset ----
+# Traditional base R approach
+#fall <- subset(snapshot, season==2)
+
+# Tidyverse approach
+fall <- filter(snapshot, season == 2)
+
+```
+
+
+```{r forward selection set-up for fall snapshot}
+# forward selection set-up for fall snapshot ------
+# define the smallest model of interest, an intercept only model here
+null <- lm(ln_nox ~ 1, data=fall)
+#null
+    
+# create the largest possible model, a full model that includes all of the
+# predictor variables in the dataset.
+# Steps:
+# 1: get the list of all the potential covariates of interest from the dataset:
+covars_all <- names(fall[12:74])
+
+# 2: now turn this into a formula for the full model in stepwise regression:
+full <- as.formula(paste("ln_nox ~ ", paste(covars_all, collapse= "+")))
+#full
+
+```   
+
+
+```{r fitting forward selection}
+# forward selection model------
+# Note:  k=0 appears to put no restriction on the forward selection and doesn't
+# stop until the full model is incorporated. Using k=2 is comparable to AIC.
+# Using log(n), where n is the number of observations, is comparable to BIC.
+forwardreg_fall <- step(null, scope=list(lower=null, upper=full), trace = 0, direction="forward", k=0)
+
+# save the ordered list of names for later use, dropping the intercept
+covars_forward <- names(forwardreg_fall$coefficients)[-1]
+
+# print the ordered list of covariates
+covars_forward
+
+```
+
 
 
 
