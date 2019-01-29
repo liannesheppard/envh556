@@ -351,10 +351,10 @@ Here is a list of twelve best practices for writing functions:
    user can safely omit providing values for those arguments if they prefer to 
    use the defaults you have defined for them.
 6. Use argument names as consistently as possible. Refer to functions you 
-   commonly use for examples of consitely named arguments.
+   commonly use for examples of consistently named arguments.
 7. The function should return a single value or object (e.g., a vector, 
    dataframe, list, etc.).
-8. Use the return() function at the end of the function to return this object 
+8. Use the return() function at the end of your function to return this object 
    explicitly. Otherwise, the value of the last expression of the function will 
    be returned implicitly. You will see both methods in practice, but the use 
    of return() is preferred as it makes it very clear what is being returned.
