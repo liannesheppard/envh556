@@ -332,13 +332,43 @@ copies of a block of code.
 Here are the 3 basic steps to writing a function as described in *R4DS*:
 
 1. Pick a name for the function.
-2.  List the inputs or *arguments* to the function inside the function call.
-3.  Put code to accomplish what you want in the body of the function.
+2. List the inputs or *arguments* to the function inside the function call.
+3. Put code to accomplish what you want in the body of the function.
 
-Here is a list of best practices for writing functions:  
+Here is a list of twelve best practices for writing functions:  
 
-TODO: Brian to ADD here or restructure as he wishes
-
+1. Use a function when you need to repeat a block of code, instead of simply 
+   copying and pasting the same block of code. I.e. "do not repeat yourself".
+2. If the code would need to be slightly different with each execution, 
+   allow for those differences in the function's argument (parameter) list.
+3. All inputs needed for the function should be in the argument list. Do not
+   refer to variables within the function which are defined outside of it, but
+   were not included in the parameter list. I.e., "make no assumptions".
+4. Define default values in the argument list if it makes sense to do so. 
+5. The order of arguments should be from most to least essential. If the 
+   function operates on a data frame, for example, it should be the first 
+   argument. Put arguments with defined defaults at the end, so the function 
+   user can safely omit providing values for those arguments if they prefer to 
+   use the defaults you have defined for them.
+6. Use argument names as consistently as possible. Refer to functions you 
+   commonly use for examples of consitely named arguments.
+7. The function should return a single value or object (e.g., a vector, 
+   dataframe, list, etc.).
+8. Use the return() function at the end of the function to return this object 
+   explicitly. Otherwise, the value of the last expression of the function will 
+   be returned implicitly. You will see both methods in practice, but the use 
+   of return() is preferred as it makes it very clear what is being returned.
+9. Comment your function to make it clear what it expects for input and what
+   it returns as output
+10. Write the function to be as resuable (i.e., flexible, generic) as practical.
+11. When practical, validate the inputs (argument list) for expected data type 
+   and appropriate range if values to avoid strange results if the function is 
+   misused.
+12. Avoid huge monolithic functions that perform all sorts of tasks. Separate 
+    steps into separate functions when it makes sense to do so. This will make 
+    your code more reusable, flexible, easier to understand, and therefore 
+    easier to debug.
+    
 To start our learning process, first we write a function to estimate the MSE and
 MSE-based R^2^.  We call it `getMSE`.  Note that in addition to its name and
 arguments, there are key formatting details that are required in defining
