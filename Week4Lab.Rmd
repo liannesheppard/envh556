@@ -273,7 +273,7 @@ cluster (or cross-validation group) separately and average these.  (See e.g. the
 # create a variable to store CV predictions 
 # Note: it is better practice to not grow objects as we do here.  See the do_CV
 # function for a better practice.
-CV_pred <- NULL
+cv_pred <- NULL
 
 # loop over the 10 clusters
 for (i in 1:10){
@@ -289,30 +289,86 @@ for (i in 1:10){
   
     # save the predictions and observations in CV_pred for the current cluster
     # (test set)
-    CV_results <- fall %>%
+    cv_results <- fall %>%
         modelr::add_predictions(CV_lm,"preds") %>%
         filter(cluster == i) %>%
         dplyr::select(ID, cluster, ln_nox, preds)
     
     # bind the results together to get back the full dataset    
-    CV_pred <- rbind(CV_pred, CV_results)
+    cv_pred <- rbind(cv_pred, cv_results)
 }
 
 # now get the MSE, RMSE, MSE-based R2
 # 
 # mean of observations
-ln_nox_avg <- mean(CV_pred$ln_nox)
+ln_nox_avg <- mean(cv_pred$ln_nox)
 
 # MSE of predictions
-MSE_pred <- mean((CV_pred$ln_nox - CV_pred$preds)^2)
+MSE_pred <- mean((cv_pred$ln_nox - cv_pred$preds)^2)
 
 # MSE of observations (for R2 denominator)
-MSE_obs <- mean((CV_pred$ln_nox - ln_nox_avg)^2)
+MSE_obs <- mean((cv_pred$ln_nox - ln_nox_avg)^2)
 
-# print the results
-paste("RMSE:  ", round( sqrt(MSE_pred), 2))
-paste("MSE-based R2:  ", round( max(1 - MSE_pred/MSE_obs, 0), 2))
-     
+# print the results, rounded
+#paste("RMSE:  ", round( sqrt(MSE_pred), 2))
+#paste("MSE-based R2:  ", round( max(1 - MSE_pred/MSE_obs, 0), 2))
+# print the results not rounded
+paste("RMSE:  ", sqrt(MSE_pred))
+paste("MSE-based R2:  ", max(1 - MSE_pred/MSE_obs, 0))  
+
+```
+
+```{r a manual CV NEW}
+# manual CV NEW ------
+
+# create a variable to store CV predictions 
+# Note: it is better practice to not grow objects as we do here.  See the do_CV
+# function for a better practice.
+#cv_pred <- NULL
+cv_pred <- data.frame(fall, preds = numeric(dim(fall)[1]))
+
+# loop over the 10 clusters
+for (i in 1:10){
+    # define the current cluster variable as a logical vector
+    is_cluster <- cv_pred$cluster == i
+    
+    # fit the linear model to the training set by omitting cluster i 
+    # Note: it is better practice to negate logical vectors with "!" rather than
+    # "-".
+    CV_lm <-
+        lm(ln_nox ~ D2A1 + A1_50 + A23_400 + Pop_5000 + D2C + Int_3000 + D2Comm,
+           data = cv_pred, subset =!is_cluster)
+  
+    # save the predictions and observations in CV_pred for the current cluster
+    # (test set)
+    cv_results <- fall %>%
+        modelr::add_predictions(CV_lm,"preds") 
+    #%>%
+        #filter(cluster == i) %>%
+        #dplyr::select(ID, cluster, ln_nox, preds)
+    
+    # bind the results together to get back the full dataset    
+    cv_pred$preds[is_cluster] <- cv_results$preds[is_cluster]
+}
+
+# now get the MSE, RMSE, MSE-based R2
+# 
+# mean of observations
+ln_nox_avg <- mean(cv_pred$ln_nox)
+
+# MSE of predictions
+MSE_pred <- mean((cv_pred$ln_nox - cv_pred$preds)^2)
+
+# MSE of observations (for R2 denominator)
+MSE_obs <- mean((cv_pred$ln_nox - ln_nox_avg)^2)
+
+# print the results, rounded
+#paste("RMSE:  ", round( sqrt(MSE_pred), 2))
+#paste("MSE-based R2:  ", round( max(1 - MSE_pred/MSE_obs, 0), 2))
+# print the results not rounded
+paste("RMSE:  ", sqrt(MSE_pred))
+paste("MSE-based R2:  ", max(1 - MSE_pred/MSE_obs, 0))  
+
 ```
 
 
@@ -320,14 +376,8 @@ paste("MSE-based R2:  ", round( max(1 - MSE_pred/MSE_obs, 0), 2))
 
 ### Tips on writing functions
 
-TODO Brian:  Add list of best practices and update this section as appropriate
-
 From the *R for Data Science* [R4DS](https://r4ds.had.co.nz/index.html) chapter on functions, [Chapter 19](https://r4ds.had.co.nz/functions.html), the
-reason to write functions is to automate repetitive tasks and avoid copying and
-pasting.  This eliminates the need to update the code in multiple places when
-you make a change and reduces your chances of making mistakes.  A simple rule of
-thumb is to write a function whenever you have or will need at least three
-copies of a block of code.
+reason to write functions is to automate repetitive tasks and avoid copying and pasting.  This eliminates the need to update the code in multiple places when you make a change and reduces your chances of making mistakes.  A simple rule of thumb is to write a function whenever you have or will need at least three copies of a block of code.
 
 Here are the 3 basic steps to writing a function as described in *R4DS*:
 
@@ -335,7 +385,7 @@ Here are the 3 basic steps to writing a function as described in *R4DS*:
 2. List the inputs or *arguments* to the function inside the function call.
 3. Put code to accomplish what you want in the body of the function.
 
-Here is a list of twelve best practices for writing functions:  
+Here is a list of twelve best practices for writing functions graciously provided by Brian High:  
 
 1. Use a function when you need to repeat a block of code, instead of simply 
    copying and pasting the same block of code. I.e. "do not repeat yourself".
@@ -368,7 +418,10 @@ Here is a list of twelve best practices for writing functions:
     steps into separate functions when it makes sense to do so. This will make 
     your code more reusable, flexible, easier to understand, and therefore 
     easier to debug.
-    
+
+
+### Our first function:  getMSE
+
 To start our learning process, first we write a function to estimate the MSE and
 MSE-based R^2^.  We call it `getMSE`.  Note that in addition to its name and
 arguments, there are key formatting details that are required in defining
@@ -402,9 +455,11 @@ Now test our function, using the manual CV results we obtained:
 
 ```{r test getMSE}
 # test getMSE -----
-getMSE(CV_pred$ln_nox,CV_pred$preds)
+getMSE(cv_pred$ln_nox,cv_pred$preds)
 
 ```
+
+### A function to do cross-validation:  do_CV
 
 Now convert our cross-validation to a function:
 
@@ -415,12 +470,13 @@ do_CV <- function(data, group, formula) {
     # 1. put the dataset first in the function definition
     # 2. put most important arguments first, followed by the specific ones
     # 3. can include defaults in the function definitions
+    # 
     # Arguments:
         # data is the data frame
         # group is the grouping variable (in the data frame)
-        # formula to pass to lm
-        # the function returns the dataset with a new variable called cvpreds,
-        # out-of-sample predictions
+        # formula is the formula to pass to lm
+        # the function returns the dataset with a new variable called cvpreds
+        # appended to the end; these are the , out-of-sample predictions
 
     # create a variable to store CV predictions 
     #CV_pred <- NULL
@@ -443,14 +499,16 @@ do_CV <- function(data, group, formula) {
         # fit the linear model to the training set
         CV_lm <- lm(formula = formula, data = training)
   
-        # save the predictions and observations in CV_pred for the current group
-        # (test set)
-        tempCV <- data %>% modelr::add_predictions(CV_lm, "cvpreds") 
-        # only update CV_preds for the test data
+        # save the predictions in a temporary dataset with all observations
+        # (training + test sets), tempCV, then restrict updating into CV_pred to
+        # the current group (test set)
+        tempCV <- data %>% 
+            modelr::add_predictions(CV_lm, "cvpreds") 
+        # only update CV_pred dataset, cvpreds variable, for the test data rows:
         CV_pred$cvpreds[is_group] <- tempCV$cvpreds[is_group]
     }
     # return the dataset
-    CV_pred
+    return(CV_pred)
 }
 
 ```
@@ -464,7 +522,11 @@ common_model_formula <-
 
 # Note: the do_CV function assumes the group variable is part of the input dataset. 
 
-temp <- do_CV(data = fall, group = cluster, formula = common_model_formula)
+temp <- do_CV(data = fall, group = cluster, formula = 
+                  common_model_formula)
+
+#ln_nox ~ D2A1 + A1_50 + A23_400 + Pop_5000 + D2C + Int_3000 + D2Comm)
+#
 
 ```
 
