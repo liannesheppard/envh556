@@ -63,10 +63,6 @@ if (file.exists(snapshot.path)) {
 ```
 
 
-TODO:  Determine whether the bias-variance plot results are suggesting any problems
-
-TODO:  Find out why the random grouping didn't seem to work
-
 
 # Purpose
 
@@ -267,63 +263,13 @@ valid way to do the summary.  Other approaches summarize the results in each
 cluster (or cross-validation group) separately and average these.  (See e.g. the *Introduction to Statistical Learning* textbook: 
 [ISL](http://www-bcf.usc.edu/~gareth/ISL/) for guidance using this approach.)
 
+
 ```{r a manual CV}
-# manual CV ------
+# manual CV NEW (with better practices) ------
 
 # create a variable to store CV predictions 
-# Note: it is better practice to not grow objects as we do here.  See the do_CV
-# function for a better practice.
-cv_pred <- NULL
-
-# loop over the 10 clusters
-for (i in 1:10){
-    # define the current cluster variable as a logical vector
-    is_cluster <- fall$cluster == i
-    
-    # fit the linear model to the training set by omitting cluster i 
-    # Note: it is better practice to negate logical vectors with "!" rather than
-    # "-".
-    CV_lm <-
-        lm(ln_nox ~ D2A1 + A1_50 + A23_400 + Pop_5000 + D2C + Int_3000 + D2Comm,
-           data = fall[!is_cluster, ])
-  
-    # save the predictions and observations in CV_pred for the current cluster
-    # (test set)
-    cv_results <- fall %>%
-        modelr::add_predictions(CV_lm,"preds") %>%
-        filter(cluster == i) %>%
-        dplyr::select(ID, cluster, ln_nox, preds)
-    
-    # bind the results together to get back the full dataset    
-    cv_pred <- rbind(cv_pred, cv_results)
-}
-
-# now get the MSE, RMSE, MSE-based R2
-# 
-# mean of observations
-ln_nox_avg <- mean(cv_pred$ln_nox)
-
-# MSE of predictions
-MSE_pred <- mean((cv_pred$ln_nox - cv_pred$preds)^2)
-
-# MSE of observations (for R2 denominator)
-MSE_obs <- mean((cv_pred$ln_nox - ln_nox_avg)^2)
-
-# print the results, rounded
-#paste("RMSE:  ", round( sqrt(MSE_pred), 2))
-#paste("MSE-based R2:  ", round( max(1 - MSE_pred/MSE_obs, 0), 2))
-# print the results not rounded
-paste("RMSE:  ", sqrt(MSE_pred))
-paste("MSE-based R2:  ", max(1 - MSE_pred/MSE_obs, 0))  
-
-```
-
-```{r a manual CV NEW}
-# manual CV NEW ------
-
-# create a variable to store CV predictions 
-# Note: it is better practice to not grow objects as we do here.  See the do_CV
-# function for a better practice.
+# Note: it is better practice to not grow objects as we have in the commented
+# out statement thta follows.
 #cv_pred <- NULL
 cv_pred <- data.frame(fall, preds = numeric(dim(fall)[1]))
 
@@ -333,13 +279,12 @@ for (i in 1:10){
     is_cluster <- cv_pred$cluster == i
     
     # fit the linear model to the training set by omitting cluster i 
-    # Note: it is better practice to negate logical vectors with "!" rather than
-    # "-".
+    # Note the better practice to negate logical vectors with "!" and not "-".
     CV_lm <-
         lm(ln_nox ~ D2A1 + A1_50 + A23_400 + Pop_5000 + D2C + Int_3000 + D2Comm,
            data = cv_pred, subset =!is_cluster)
   
-    # save the predictions and observations in CV_pred for the current cluster
+    # save the predictions and observations in cv_pred for the current cluster
     # (test set)
     cv_results <- fall %>%
         modelr::add_predictions(CV_lm, "preds") 
@@ -444,9 +389,12 @@ getMSE <- function(obs,pred) {
     # MSE of predictions
     MSE_pred <- mean((obs - pred)^2)
     result <- c(sqrt(MSE_pred),
-    max(1 - MSE_pred/MSE_obs, 0))
+                max(1 - MSE_pred / MSE_obs, 0))
     names(result) <-  c("RMSE", "R2(MSE-based)")
-    result
+    # it is better practice to use an explicit return statement
+    # the alternative is to just output the object:
+    #result
+    return(result)
 }
 
 ```
@@ -465,7 +413,7 @@ Now convert our cross-validation to a function:
 
 ```{r CV function}
 # CV function -------
-do_CV <- function(data, group, formula) {
+do_CV <- function(data, group = "group", formula) {
     # In writing functions, it is good practice to:
     # 1. put the dataset first in the function definition
     # 2. put most important arguments first, followed by the specific ones
@@ -484,16 +432,19 @@ do_CV <- function(data, group, formula) {
     # frame
     CV_pred <- data.frame(data, cvpreds = numeric(dim(data)[1]))
                           
-    # get the number of distict groups or clusters 
+    # get the number of distict groups or clusters
+    # Note the use of "[[ ]]" rather than "$" because group is input in the
+    # function call as a quoted variable
     k <- length(unique(data[[group]]))
     
     # loop over all the groups or clusters
     for (i in 1:k){
         # define the current group variable as a logical vector
+        # again using "[[ ]]" instead of "$"
         is_group <- data[[group]] == i
         
         # subset the data to create the training set by omitting cluster i
-        # Note: better to use ! rather than - for negating a logical vector
+        # Note: better to use "!" rather than "-" for negating a logical vector
         training <- data[!is_group, ]
         
         # fit the linear model to the training set
@@ -529,13 +480,11 @@ temp <- do_CV(data = fall, group = "cluster", formula =
 # Check to see if result is identical with manual method (done earlier)
 identical(cv_pred$preds, temp$cvpreds)
 
-#ln_nox ~ D2A1 + A1_50 + A23_400 + Pop_5000 + D2C + Int_3000 + D2Comm)
-#
 
 ```
 
-```{r check CV results}
-# check CV results -------
+```{r review CV results}
+# review CV results -------
 # now check the results from the CV function
 # Summarize with getMSE
 getMSE(temp$ln_nox, temp$cvpreds)
@@ -564,7 +513,7 @@ set.seed(283)
 CVgrp <- rep(1:10, length.out = dim(fall)[1])
 
 # now give it a random order
-# replace = FALSE just reorders the variable
+# replace = FALSE in sample just reorders the variable
 CVgrp <- sample(CVgrp, replace = FALSE)
 
 # now append it to the fall data frame
@@ -576,7 +525,7 @@ fall <- mutate(fall, CVgrp = CVgrp)
 
 ```
 
-TODO Lianne or Brian:  Alarm:  results from this are IDENTICAL to those using the cluster grouping variable.  This SHOULD NOT occur.  These out-of-sample results should look better.  Why is it happening? (I verified that the two grouping variables are distinct.)
+Now test the CV on random groups.  Note that these out-of-sample results should look better.  Why is that the case? (This is a homework challenge question.)
 
 ```{r CV results on random group}
 # CV results random group -------
@@ -621,7 +570,7 @@ Steps to coding this:
 TODO LIANNE (or Brian if you see something obvious I missed):  verify the results are as expected.  I was surprised that for models bigger than 30 the R2 was 0.  This is because the RMSE blew up.  While it is possible, are we expecting this major change with the addition of a single variable?  Maybe because of the correlation of the variables and the number of variables plus the relatively small dataset.
 
 ```{r Model order and CV, echo=TRUE}
-# Model order and CV
+# Model order and CV ----
 
 #get the length of the vector of names from forward selection
 n_covars <- length(covars_forward)
@@ -743,7 +692,7 @@ Perform the following tasks:
 1. Determine the R project you will use.
 2. Explore the dataset a bit, focusing on one particular season.  Make sure you
 have some basic understanding of the outcome variable (*ln_nox*), the CV grouping
-variable (*cluster*), and the large number of covariates you can choose from.   In
+variable (*cluster*), and the large number of covariates you can use in your prediction modeling.   In
 this lab you should restrict your analysis to one season (e.g. fall for the practice session; winter for homework).
 3. Fit the model for one of the seasons given in Table 4 of Mercer et al. Make
 note of these in-sample estimates of R^2^ and RMSE.
