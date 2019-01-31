@@ -83,12 +83,12 @@ if (file.exists(snapshot.path)) {
 
 ## Set-up to make the season variables match each other
 
-```{r recode season}
+```{r check season}
 # recode season -----
-snapshot1 <- snapshot
-snapshot1$season <- snapshot1$season+1
-# test that this is correct
-table(snapshot1$season,snapshot1$seasonfac)
+#snapshot1 <- snapshot
+#snapshot1$season <- snapshot1$season+1
+# test that season is coded correctly
+table(snapshot$season,snapshot$seasonfac)
 
 ```
 
@@ -100,10 +100,10 @@ table(snapshot1$season,snapshot1$seasonfac)
 # Note:  need the dplyr:: before the select command.  
 lm_fall <-
     lm(ln_nox ~ D2A1 + A1_50 + A23_400 + Pop_5000 + D2C + Int_3000 + D2Comm,
-       data = subset(snapshot1, season == 2))
+       data = subset(snapshot, season == 2))
 
 # make predictions on the full dataset using the fall model
-snap2 <- snapshot1 %>%  
+snap2 <- snapshot %>%  
     modelr::add_predictions(lm_fall,"preds_fall")  
 
 # regression of in-sample predictions vs. data
@@ -234,12 +234,12 @@ BIC(lm_fall)
 ```{r prediction intervals}
 # estimate prediction intervals for all seasons -----
 preds_from_fall <- predict(lm_fall, 
-                snapshot1, 
+                snapshot, 
                 interval="prediction")
 
 # combine these with snapshot data
 # We're assuming data are in the same order when we cbind
-snap_fpred <- cbind(snapshot1,preds_from_fall)
+snap_fpred <- cbind(snapshot,preds_from_fall)
 
 # now plot:  in-sample
 #fall_results <- 
