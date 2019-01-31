@@ -715,8 +715,7 @@ print(plot.R2)
 
 plot.RMSE <- ggplot(res.reshaped) +
     geom_point(aes(x = n_pred, y = RMSE, color = Source)) + 
-    geom_smooth(aes(x = n_pred, y = RMSE, color = Source), 
-                se = FALSE, method = 'loess', formula = 'y ~ x') +
+    geom_line(aes(x = n_pred, y = RMSE, color = Source)) +
     xlab("Model Complexity (# of terms)") +
     ylab(bquote(bold(RMSE))) +
     scale_x_continuous(breaks = c(seq(0, 63, 5))) +
