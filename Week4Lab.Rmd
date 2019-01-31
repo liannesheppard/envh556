@@ -485,12 +485,12 @@ do_CV <- function(data, group, formula) {
     CV_pred <- data.frame(data, cvpreds = numeric(dim(data)[1]))
                           
     # get the number of distict groups or clusters 
-    k <- length(unique(data$group))
+    k <- length(unique(data[[group]]))
     
     # loop over all the groups or clusters
     for (i in 1:k){
         # define the current group variable as a logical vector
-        is_group <- data$group == i
+        is_group <- data[[group]] == i
         
         # subset the data to create the training set by omitting cluster i
         # Note: better to use ! rather than - for negating a logical vector
@@ -524,6 +524,10 @@ common_model_formula <-
 
 temp <- do_CV(data = fall, group = "cluster", formula = 
                   common_model_formula)
+
+
+# Check to see if result is identical with manual method (done earlier)
+identical(cv_pred$preds, temp$cvpreds)
 
 #ln_nox ~ D2A1 + A1_50 + A23_400 + Pop_5000 + D2C + Int_3000 + D2Comm)
 #
@@ -661,7 +665,7 @@ for (i in 1:n_covars) {
     res$in_R2[i] <- summary(in_model)$r.squared
     
     # out-of sample model and estimates
-    out_ests <- do_CV(fall, group = `cluster`, fmla)
+    out_ests <- do_CV(fall, group = 'cluster', fmla)
     out_results <- getMSE(out_ests$ln_nox, out_ests$cvpreds)
     res$out_RMSE[i] <- out_results[1]
     res$out_R2[i] <- out_results[2]
