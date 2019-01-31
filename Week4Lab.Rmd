@@ -635,11 +635,14 @@ TODO:  Need to figure out if the precipitous drop in R2 in the out of sample ass
 # TODO Lianne or Brian:  FIX legend!! Colors backwards. Red = in-sample; blue = out-of-sample
 # plots with both model based (in sample) R2 and CV generated MSER2
 
-plot.R2 <- ggplot(res) +
-    geom_point(aes(x = n_pred, y = in_R2, color = "blue")) + 
-    geom_line(aes(x = n_pred, y = in_R2, color = "blue")) +
-    geom_point(aes(x = n_pred, y = out_R2, color = "red")) + 
-    geom_smooth(aes(x = n_pred, y = out_R2, color = "red"), se = FALSE) +
+res.reshaped <- res %>% 
+    gather(key = variable, value = value, -n_pred, -covar) %>% 
+    separate(col = variable, into = c('Source', 'Estimate'), sep="_") %>% 
+    spread(key = Estimate, value = value)
+
+plot.R2 <- ggplot(res.reshaped) +
+    geom_point(aes(x = n_pred, y = R2, color = Source)) + 
+    geom_line(aes(x = n_pred, y = R2, color = Source)) +
     xlab("Model Complexity (# of terms)") +
     ylab(bquote(bold(R ^ 2))) +
     scale_x_continuous(breaks = c(seq(0, 63, 5))) +
@@ -647,7 +650,7 @@ plot.R2 <- ggplot(res) +
     theme(axis.text = element_text(face = "bold"),
           axis.title = element_text(face = "bold")) +
           scale_color_discrete(name = "Prediction\nSource",  
-                labels = c("Out-of-sample", "In-sample"))
+                labels = c("In-sample", "Out-of-sample"))
 
 print(plot.R2)
 
@@ -659,11 +662,9 @@ print(plot.R2)
 # TODO: Update to restrict range so we can see the difference in the model complexity <40.
 # plots with both model based (in sample) RMSE and CV generated RMSE
 
-plot.RMSE <- ggplot(res) +
-    geom_point(aes(x = n_pred, y = in_RMSE, color = "blue")) + 
-    geom_line(aes(x = n_pred, y = in_RMSE, color = "blue")) +
-    geom_point(aes(x = n_pred, y = out_RMSE, color = "red")) + 
-    geom_smooth(aes(x = n_pred, y = out_RMSE, color = "red"), se = FALSE) +
+plot.RMSE <- ggplot(res.reshaped) +
+    geom_point(aes(x = n_pred, y = RMSE, color = Source)) + 
+    geom_line(aes(x = n_pred, y = RMSE, color = Source)) +
     xlab("Model Complexity (# of terms)") +
     ylab(bquote(bold(RMSE))) +
     scale_x_continuous(breaks = c(seq(0, 63, 5))) +
@@ -671,7 +672,7 @@ plot.RMSE <- ggplot(res) +
     theme(axis.text = element_text(face = "bold"),
           axis.title = element_text(face = "bold")) +
           scale_color_discrete(name = "Prediction\nSource",  
-                labels = c("Out-of-sample", "In-sample"))
+                labels = c("In-sample", "Out-of-sample"))
 
 print(plot.RMSE)
 
