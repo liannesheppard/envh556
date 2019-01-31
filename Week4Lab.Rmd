@@ -464,6 +464,8 @@ do_CV <- function(data, group = "group", formula) {
 
 ```
 
+Now test the `do_CV` function:
+
 ```{r test do_CV}
 # test do_CV------
 
@@ -482,6 +484,8 @@ identical(cv_pred$preds, temp$cvpreds)
 
 
 ```
+
+And review the CV results:
 
 ```{r review CV results}
 # review CV results -------
@@ -553,23 +557,30 @@ ggplot(data = temp2, aes(ln_nox, cvpreds)) +
 
 Assignment Request:	Use the order of entry into the stepwise to sequentially
 complete the following computations.  For models with one up to the maximum
-number of selected variables:
-        i.  Use the full dataset to obtain in-sample estimates of the RMSE and R2.  
-        ii. Estimate predicted values using cross-validation.  
-        iii.  Compute out-of-sample RMSE and MSE-based R2 estimates.  
+number of selected variables:  
+
+1. Use the full dataset to obtain in-sample estimates of the RMSE and R2.  
+2. Estimate predicted values using cross-validation.  
+3.  Compute out-of-sample RMSE and MSE-based R2 estimates.  
  
-Steps to coding this:
+Steps to coding this:  
+
 * compute/retrieve the vector of names output from the forward selection model
+
 * loop over the maximum number of covariates from forward selection
+
 * create a formula that is the linear combination of the first i terms of the forward selection model
+
 * summarize the in-sample prediction MSE and R2
+
 * cross-validate this and summarize the out-of-sample MSE and R2
+
 * store the key set of results, plus the number of covariates in the model and possibly the variable added to use in plotting
+
 * use ggplot to make the bias-variance trade-off plot
 
-TODO LIANNE (or Brian if you see something obvious I missed):  verify the results are as expected.  I was surprised that for models bigger than 30 the R2 was 0.  This is because the RMSE blew up.  While it is possible, are we expecting this major change with the addition of a single variable?  Maybe because of the correlation of the variables and the number of variables plus the relatively small dataset.
 
-```{r Model order and CV, echo=TRUE}
+```{r Model order and CV, echo = TRUE, warning = FALSE}
 # Model order and CV ----
 
 #get the length of the vector of names from forward selection
@@ -628,18 +639,19 @@ for (i in 1:n_covars) {
 
 ### Now plot the bias-variance trade-off
 
-TODO:  Need to figure out if the precipitous drop in R2 in the out of sample assessment is valid or indication of an error.
+Note: the precipitous drop in R2 in the out of sample assessment is best explained by major overfitting of this model after ~ 30 covariates.
 
-```{r bias-var R2 plot}
-# bias-var R2 plot ------
-# TODO Lianne or Brian:  FIX legend!! Colors backwards. Red = in-sample; blue = out-of-sample
-# plots with both model based (in sample) R2 and CV generated MSER2
+```{r bias-var separate plots}
+# bias-var separate plots ------
 
+# first reshape the data to take advantage of ggplot features
 res.reshaped <- res %>% 
     gather(key = variable, value = value, -n_pred, -covar) %>% 
     separate(col = variable, into = c('Source', 'Estimate'), sep="_") %>% 
     spread(key = Estimate, value = value)
 
+# R2 plot
+# plots with both model based (in sample) R2 and CV generated R2
 plot.R2 <- ggplot(res.reshaped) +
     geom_point(aes(x = n_pred, y = R2, color = Source)) + 
     geom_line(aes(x = n_pred, y = R2, color = Source)) +
@@ -654,13 +666,8 @@ plot.R2 <- ggplot(res.reshaped) +
 
 print(plot.R2)
 
-```
 
-```{r bias-var RMSE}
-# bias-var RMSE ------
-# TODO Lianne or Brian:  FIX legend!! Colors backwards. Red = in-sample; blue = out-of-sample
-# TODO: Update to restrict range so we can see the difference in the model complexity <40.
-# plots with both model based (in sample) RMSE and CV generated RMSE
+# plot with both model based (in sample) RMSE and CV generated RMSE
 
 plot.RMSE <- ggplot(res.reshaped) +
     geom_point(aes(x = n_pred, y = RMSE, color = Source)) + 
@@ -678,10 +685,14 @@ print(plot.RMSE)
 
 ```
 
-```{r bias-var combined}
-# bias-var combined plot ------
-# plots with both model based (in sample) R2 and CV generated MSER2
+```{r bias-var combined plots}
+# bias-var combined plots ------
+# TODO:  Some clean-up details should be addressed to help the presentation.
 
+# plots with both model-based (in sample) and CV generated MSE and R2
+
+# first reshape the data to take advantage of ggplot features
+# No longer want the spread used above
 res.reshaped <- res %>% 
     gather(key = variable, value = value, -n_pred, -covar) %>% 
     separate(col = variable, into = c('Source', 'Estimate'), sep="_") 
@@ -693,12 +704,8 @@ plot.both <- ggplot(res.reshaped) +
     xlab("Model Complexity (# of terms)") +
     ylab("") +
     scale_x_continuous(breaks = c(seq(0, 63, 5))) +
-    facet_grid(Estimate ~ ., scales = "free_y")
-    theme_bw() +
-    #theme(axis.text = element_text(face = "bold"),
-     #     axis.title = element_text(face = "bold")) +
-     #     scale_color_discrete(name = "Prediction\nSource",  
-     #           labels = c("In-sample", "Out-of-sample"))
+    facet_grid(Estimate ~ ., scales = "free_y") +
+    theme_bw() 
 
 print(plot.both)
 

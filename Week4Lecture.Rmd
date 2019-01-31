@@ -81,6 +81,18 @@ if (file.exists(snapshot.path)) {
 
 # Week 4 Lecture slides R code
 
+## Set-up to make the season variables match each other
+
+```{r recode season}
+# recode season -----
+snapshot1 <- snapshot
+snapshot1$season <- snapshot1$season+1
+# test that this is correct
+table(snapshot1$season,snapshot1$seasonfac)
+
+```
+
+
 ## Slide 12:  In-sample assessment (fall)
 
 ```{r Slide 12 commands}
@@ -88,10 +100,10 @@ if (file.exists(snapshot.path)) {
 # Note:  need the dplyr:: before the select command.  
 lm_fall <-
     lm(ln_nox ~ D2A1 + A1_50 + A23_400 + Pop_5000 + D2C + Int_3000 + D2Comm,
-       data = subset(snapshot, season == 2))
+       data = subset(snapshot1, season == 2))
 
 # make predictions on the full dataset using the fall model
-snap2 <- snapshot %>%  
+snap2 <- snapshot1 %>%  
     modelr::add_predictions(lm_fall,"preds_fall")  
 
 # regression of in-sample predictions vs. data
@@ -102,7 +114,7 @@ summary(lm(ln_nox ~ preds_fall,
 fallMSE_from_fall <-
     dplyr::select(snap2,  
                   c("ln_nox", "preds_fall", "ID", "season")) %>%
-    filter(season == 2) %>%
+    filter(season == 1) %>%
     dplyr::summarize(r = cor(ln_nox, preds_fall),  
               R2 = r^2)
 
@@ -116,6 +128,7 @@ cat( "In-sample R2 of predictions from fall model, predicted in fall:  ", paste(
 ```{r slide 14}
 # slide 14:  out of sample assessment-----
 # regression of out-of-sample predictions vs. data (evaluate fall model in winter)
+
 summary(lm(ln_nox ~ preds_fall, 
            data = subset(snap2, season == 3)))
 
@@ -221,12 +234,12 @@ BIC(lm_fall)
 ```{r prediction intervals}
 # estimate prediction intervals for all seasons -----
 preds_from_fall <- predict(lm_fall, 
-                snapshot, 
+                snapshot1, 
                 interval="prediction")
 
 # combine these with snapshot data
 # We're assuming data are in the same order when we cbind
-snap_fpred <- cbind(snapshot,preds_from_fall)
+snap_fpred <- cbind(snapshot1,preds_from_fall)
 
 # now plot:  in-sample
 #fall_results <- 
