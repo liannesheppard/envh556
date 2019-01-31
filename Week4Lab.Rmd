@@ -342,7 +342,7 @@ for (i in 1:10){
     # save the predictions and observations in CV_pred for the current cluster
     # (test set)
     cv_results <- fall %>%
-        modelr::add_predictions(CV_lm,"preds") 
+        modelr::add_predictions(CV_lm, "preds") 
     #%>%
         #filter(cluster == i) %>%
         #dplyr::select(ID, cluster, ln_nox, preds)
@@ -522,7 +522,7 @@ common_model_formula <-
 
 # Note: the do_CV function assumes the group variable is part of the input dataset. 
 
-temp <- do_CV(data = fall, group = cluster, formula = 
+temp <- do_CV(data = fall, group = 'cluster', formula = 
                   common_model_formula)
 
 #ln_nox ~ D2A1 + A1_50 + A23_400 + Pop_5000 + D2C + Int_3000 + D2Comm)
@@ -565,10 +565,10 @@ CVgrp <- sample(CVgrp, replace = FALSE)
 
 # now append it to the fall data frame
 # Base R version
-fall <- cbind(fall, CVgrp)
+#fall <- cbind(fall, CVgrp)
 
-# TODO (Brian??): Tidyverse version or drop these lines
-# ADD here
+# Tidyverse version
+fall <- mutate(fall, CVgrp = CVgrp)
 
 ```
 
