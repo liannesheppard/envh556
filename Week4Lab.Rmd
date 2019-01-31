@@ -678,6 +678,31 @@ print(plot.RMSE)
 
 ```
 
+```{r bias-var combined}
+# bias-var combined plot ------
+# plots with both model based (in sample) R2 and CV generated MSER2
+
+res.reshaped <- res %>% 
+    gather(key = variable, value = value, -n_pred, -covar) %>% 
+    separate(col = variable, into = c('Source', 'Estimate'), sep="_") 
+
+
+plot.both <- ggplot(res.reshaped) +
+    geom_point(aes(x = n_pred, y = value, color = Source)) + 
+    geom_line(aes(x = n_pred, y = value, color = Source)) +
+    xlab("Model Complexity (# of terms)") +
+    ylab("") +
+    scale_x_continuous(breaks = c(seq(0, 63, 5))) +
+    facet_grid(Estimate ~ ., scales = "free_y")
+    theme_bw() +
+    #theme(axis.text = element_text(face = "bold"),
+     #     axis.title = element_text(face = "bold")) +
+     #     scale_color_discrete(name = "Prediction\nSource",  
+     #           labels = c("In-sample", "Out-of-sample"))
+
+print(plot.both)
+
+```
 
 # Practice Session
 
