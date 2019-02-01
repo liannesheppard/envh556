@@ -1,0 +1,163 @@
+---
+title: "Week 5 Lab:  Variance Components"
+author: "Lianne Sheppard for ENVH 556"
+date: "Winter 2019; Updated `r format(Sys.time(), '%d %B, %Y')`"
+output: 
+    html_document:
+        fig_caption: yes
+        toc: true
+        toc_depth: 3
+        number_sections: true
+---
+
+<!--Basic document set-up goes here  -->
+
+```{r setup, include=FALSE}
+#-------------r.setup-------------
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r load.libraries.pacman, echo=FALSE, include=FALSE, eval=TRUE}
+#----------------load.libraries.pacman----
+# Load pacman into memory, installing as needed
+my_repo <- 'http://cran.r-project.org'
+if (!require("pacman")) {install.packages("pacman", repos = my_repo)}
+
+# Load the other packages, installing as needed.  Some reasons for packages:
+# knitr:  kable()
+# ggplot2: part of tidyverse
+# readr: part of tidyverse
+# dplyr: part of tidyverse
+# multcomp:  glht
+# modelr:  part of tidyverse and need for add_predictions and add_residuals
+# boot:  cv tools are available
+# Hmisc:  describe
+pacman::p_load(tidyverse, knitr, multcomp, dplyr, modelr, Hmisc)  
+```
+
+```{r read.data.from.a.web.site, eval=TRUE, echo=FALSE}
+#-----read.data.from.a.web.site--------
+# Download the data file from a web site if it is not already downloaded, then
+# read in the file
+
+datapath <- "Datasets"
+dir.create(datapath, showWarnings=FALSE, recursive = TRUE)
+
+weldshchool.file <- "weldschool.rds"
+weldshchool.path <- file.path(datapath, weldshchool.file)
+
+# Only download the file if it's not already present
+if (!file.exists(weldshchool.path)) {
+    url <- paste("https://staff.washington.edu/high/envh556/Datasets", 
+                 weldshchool.file, sep = '/')
+    download.file(url = url, destfile = weldshchool.path)
+}
+
+# Output a warning message if the file cannot be found
+if (file.exists(weldshchool.path)) {
+    weldshchool <- readRDS(file = weldshchool.path)
+} else warning(paste("Can't find", weldshchool.file, "!"))
+
+```
+
+TODO: Get R commands and remove Stata from this document
+
+# Introduction and Purpose
+
+The purpose of this lab is to practice estimating variance components for random and mixed effect models.
+
+In this lab exercise we will use the Welding School personal survey data.  The data are stored in the file named “weldschoolexp.rds”.  The exposure concentration variables in the dataset consist of *mnconc* and *particulate*, the airborne concentrations of manganese and total particulate, respectively, both in µg/m3.    Further description of the variables can be found in “Welding School Exposures variables 556 rev021015.docx”, and the background and study design is in the published paper with file name “Baker Blood Mn Review.”
+
+# Getting Started
+
+Read the data for this lab
+
+Generic forumula for a random intercept model with all nested factors:  ADD??
+
+Three ways to write/estimate a random effect model for a one-factor design.
+** Approach 1 using loneway:
+loneway lnmn subjid 
+** Approach 2 using xtmixed with REML estimation
+**  version 2a reports the random effect estimates on the SD scale, facilitating comparison 
+**  with loneway
+xtmixed lnmn || _all:R.subjid, nolog reml
+**  version 2b reports the random effect estimates on the variance scale
+xtmixed lnmn || _all:R.subjid, variance nolog reml
+**  version 2c is a multilevel model formulation of the same model and is more intuitive
+**  coding
+** this intuitive coding is recommended because it is also more efficient
+xtmixed lnmn || subjid:, nolog var reml
+*Approach 3 using xtmixed with ML estimation 
+*        (and reporting RE estimates on the variance scale)
+xtmixed lnmn || subjid:, nolog var
+
+**Some sample mixed models.  These have one fixed effect added, coded as a factor variable:
+xi: xtmixed lnmn i.quarter || subjid:, nolog var reml
+xi: xtmixed lnmn i.weldtyp || subjid:, nolog var reml 
+Manually estimating variance components between and within subject:
+** describe the data using tabstat
+tabstat lnmn, statistics(n mean sd)  by(subjid)
+
+** Manually estimate variance components from stratified data 
+* Details for reporting on the standard deviation scale:
+collapse (mean) lnmn (sd) sdlnmn=lnmn, by(subjid)
+gen varlnmn=sdlnmn^2
+summarize lnmn varlnmn 
+display sqrt(r(mean))
+
+** NOTE: You must read in the original data again to continue analysis on the original dataset
+use weldschoolexpo.dta, clear
+*create a log-transformed version of each outcome variable:
+gen lnmn= ln(mnconc)
+gen lnpart= ln(particulate)
+
+** Manually estimating variance components by subjid:
+** manually estimate variance components from stratified data 
+collapse (mean) lnmn (sd) sdlnmn=lnmn, by(subjid)
+gen varlnmn=sdlnmn^2
+summarize varlnmn lnmn 
+display r(Var)
+** NOTE: You must read in the original data again to continue analysis on the original dataset
+
+# Practice Session
+
+2.	Read in the weldschoolexpo dataset:
+a.	Become familiar with your data
+b.	How many observations, students, quarters are in your dataset?  How many observations are there per student (average, minimum, maximum)?
+c.	Characterize your two outcome variables (airborne measurements of Mn concentration and total particles), and all potential covariates. 
+d.	Get a basic understanding of the distribution of the airborne measurements on both the native and log-transformed scale.  What scale do you think you should conduct your variance components analysis on?
+For the rest of the practice session we will focus on the Mn concentration variable:
+3.	Try to estimate the variance components within and between subject by hand using collapse.  
+a.	You may look at the intermediate results (using e.g., tabstat or by summarizations of the collapse result) and try to get more insight from them.
+4.	Now use loneway to estimate the variance components.
+a.	Do your estimates agree with those from Step 3?  Why or why not?
+5.	Now use xtmixed to estimate the variance components.  (Decide whether you want maximum likelihood or restricted maximum likelihood estimates.  Be able to articulate your reason for your choice.)
+a.	Do your estimates agree with those from Step 3?  Why or why not?
+6.	Decide whether you should add any fixed effects into your model.  
+a.	If so, which one(s)?  Why?  (Note:  Make sure to consider science in your answer!)
+b.	Compare the variance components from the models with and without fixed effect(s).  What happens to the variance component estimates from Step 5 after you add your selected covariate(s)?  Does this make sense to you?  (Hint:  Consider how your covariate is distributed within and between subjects in the data.)
+
+# Homework Exercises
+
+1.	Repeat the practice session analysis with particulate concentration.  Does this produce any different results? Why or why not?
+2.	How do your variance component estimates compare with those reported by Kromhout et al for measures that are “similar” to these welding exposure measures? 
+3.	Report and discuss the results of your analysis of Mn and total particulate for this lab, touching on the following points:
+a.	The design of the study and structure of the dataset.
+b.	The scale of the data on which you did your analysis.
+c.	The comparability of variance component estimates using different estimation approaches and some possible reasons for (lack of) comparability.
+d.	The impact on the variance component estimates when you include fixed effect(s) in your model and the reason for the change(s) in these data.
+e.	Incorporate insights from the Kromhout et al and Peretz et al papers.
+
+# Appendix
+
+```{r session.info}
+#-----------------session.info: beginning of Appendix -----------------
+#This allows reproducibility by documenting the version of R and every package you used.
+sessionInfo()
+```
+
+```{r appendix.code, ref.label=knitr::all_labels(), echo=TRUE, eval=FALSE, tidy=TRUE, tidy.opts=list(width.cutoff=60), include=T}
+
+```
+
+
