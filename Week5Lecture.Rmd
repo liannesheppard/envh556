@@ -1,0 +1,191 @@
+---
+title: "Week5Lecture: Variance Components"
+author: "Lianne Sheppard for ENVH 556"
+date: "Winter 2019; Updated `r format(Sys.time(), '%d %B, %Y')`"
+output: 
+    word_document
+        
+---
+
+<!--Basic document set-up goes here  -->
+
+```{r setup, include=FALSE}
+#-------------r.setup-------------
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r load.libraries.pacman, echo=FALSE, include=FALSE, eval=TRUE}
+#----------------load.libraries.pacman----
+# Load pacman into memory, installing as needed
+my_repo <- 'http://cran.r-project.org'
+if (!require("pacman")) {install.packages("pacman", repos = my_repo)}
+
+# Load the other packages, installing as needed.  Some reasons for packages:
+# knitr:  kable()
+# ggplot2: part of tidyverse
+# readr: part of tidyverse
+# dplyr: part of tidyverse
+# multcomp:  glht
+# modelr:  part of tidyverse and need for add_predictions and add_residuals
+# boot:  cv tools are available
+# Hmisc:  describe
+# lme4: mixed models and random effects ANOVA
+# VCA for variance component analysis (note it masks several lme4 objects:  fixef, getL, ranef)
+pacman::p_load(tidyverse, knitr, lme4, VCA)  
+```
+
+```{r read.data.from.a.web.site, eval=TRUE, echo=FALSE}
+#-----read.data.from.a.web.site--------
+# Download the data file from a web site if it is not already downloaded, then
+# read in the file
+
+datapath <- "Datasets"
+dir.create(datapath, showWarnings=FALSE, recursive = TRUE)
+
+snapshot.file <- "allseasonsR.rds"
+snapshot.path <- file.path(datapath, snapshot.file)
+
+# Only download the file if it's not already present
+if (!file.exists(snapshot.path)) {
+    url <- paste("https://staff.washington.edu/high/envh556/Datasets", 
+                 snapshot.file, sep = '/')
+    download.file(url = url, destfile = snapshot.path)
+}
+
+# Output a warning message if the file cannot be found
+if (file.exists(snapshot.path)) {
+    snapshot <- readRDS(file = snapshot.path)
+} else warning(paste("Can't find", snapshot.file, "!"))
+
+```
+
+## slide 11:  Plot the example of traffic gradient site as one grouping variable in the snapshot data
+
+```{r data setup}
+# data setup -----------
+# get the gradient sites
+gradient_sites <- snapshot %>% 
+    filter(season == 2)  %>% 
+    group_by(group_loc) %>%
+    summarize(count = n()) %>%
+    filter( count > 3)
+# fall dataset for variance components
+# keeps only gradient sites with at least 4 observations
+fvc <- snapshot %>% filter(season == 2, group_loc %in% gradient_sites$group_loc) 
+```
+
+```{r dotplot of fvc}
+# dotplot of fvc ----------
+ggplot(fvc, aes(x = group_loc, y = ln_nox)) +
+           geom_dotplot(aes(group = group_loc), binaxis = "y", binwidth = .01, stackdir =  "center", color = "red", fill = NA, dotsize = 2) +
+    geom_boxplot(aes(x=group_loc, group = group_loc),
+                 outlier.color = NA, 
+                 width = .6) +
+    labs(title = "Dotplot with Overlaid Boxplot\nfor Ln(NOx) in Fall by Gradient Site Index",
+         y = "ln(NOx) in ln(ppb)",
+         x = "Gradient Site Index")
+```
+## Slide 14:  Stratified by gradient location
+
+```{r tidyverse stratified summary}
+# tidyverse stratified summary-----
+vc_summary <- fvc %>%
+    group_by(group_loc) %>%
+    summarize( N = n(), 
+               mean = mean(ln_nox),
+               sd = sd(ln_nox)) 
+#vc_summary <- recode_factor(group_loc,.default)
+vc_total <- fvc %>%
+    summarize( N = n(), 
+               mean = mean(ln_nox),
+               sd = sd(ln_nox))
+vc_total <- cbind(group_loc = 100, vc_total)
+
+kable(rbind(vc_summary,vc_total), digits = 3)
+```
+
+## Slide 16:  Assessing between and within site variability
+
+```{r slide 16: graident variability}
+# slide 15: gradient variability
+vc_var <- vc_summary %>%
+    summarize(N_sites = n(),
+              median_grand = median(mean),
+              mean_grand = mean(mean),
+              median_sd = median(sd), 
+              within_sd = sqrt(mean(sd^2)),
+              between_sd = sd(mean)
+              )
+vc_var
+
+paste("Between-group variance estimate(SD scale) = ",round(vc_var$between_sd,3))
+paste("Within-group  variance estimate(SD scale) = ",round(vc_var$within_sd,3))
+paste("Total         variance estimate(SD scale) = ",round(sqrt(vc_var$within_sd^2 + vc_var$between_sd^2),3))
+```
+
+## Slide 16:  Site as a fixed effect
+```{r}
+# slide 16: site as a fixed effect
+fixed_ef <- lm(ln_nox ~ as.factor(group_loc), data = fvc)
+summary(fixed_ef)
+```
+
+## slide 17:  Same in ANOVA
+```{r}
+#slide 17:  same in ANOVA
+anova(fixed_ef)
+```
+
+## Slide 19:  Variance components with VCA
+
+```{r}
+#slide 19:  VCA immplementation
+# visualize data
+varPlot(form = ln_nox~group_loc, Data=fvc)
+## different ways to estimate variance components
+fit_MOM <- anovaVCA(ln_nox ~ group_loc, Data = fvc)
+fit_MOM
+fit_REML <- fitVCA(ln_nox ~ group_loc, Data = fvc, method = "REML")
+fit_REML
+fit_ANOVA <- fitVCA(ln_nox ~ group_loc, Data = fvc, method = "anova")
+fit_ANOVA
+```
+
+
+## Slide 20:  Estimation using lme
+
+```{r}
+# slide 20:  estimation using lme
+
+lmefit_ML <- lmer(ln_nox ~ (1|group_loc), data = fvc, REML = FALSE)
+summary(lmefit_ML)
+
+lmefit_REML <- lmer(ln_nox ~ (1|group_loc), data = fvc, REML = TRUE)
+summary(lmefit_REML)
+```
+
+## Slide 29:  DEMS V Table 3 Facility A example U1 groups
+
+ADD using lmer with reml
+
+## Slides 30-31:  DEMS V Table 3 Facility A example U2 groups
+
+ADD using lmer with reml
+
+## Slide 32:  DEMS V Table 3 Facility A example U3 groups
+
+ADD using lmer with reml
+
+
+# Appendix 
+
+```{r session.info}
+#-----------------session.info: beginning of Appendix -----------------
+#This allows reproducibility by documenting the version of R and every package you used.
+sessionInfo()
+```
+
+```{r appendix.code, ref.label=knitr::all_labels(), echo=TRUE, eval=FALSE, tidy=TRUE, tidy.opts=list(width.cutoff=60), include=T}
+
+```
+
