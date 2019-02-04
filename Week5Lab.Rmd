@@ -17,6 +17,27 @@ output:
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+```{r clear.workspace, eval=FALSE, echo=FALSE}
+#---------clear.workspace------------
+# Clear the environment without clearing knitr
+#
+# This chunk is useful for code development because it simulates the knitr
+# environment. Run it as a code chunk when testing. When knitr is run, it uses a
+# fresh, clean environment, so we set eval=FALSE to disable this chunk when
+# rendering.
+
+# Clear workspace of all objects and unload all extra (non-base) packages
+rm(list = ls(all = TRUE))
+if (!is.null(sessionInfo()$otherPkgs)) {
+    res <- suppressWarnings(
+        lapply(paste('package:', names(sessionInfo()$otherPkgs), sep=""),
+               detach, character.only=TRUE, unload=TRUE, force=TRUE))
+   
+}
+
+```
+
+
 ```{r load.libraries.pacman, echo=FALSE, include=FALSE, eval=TRUE}
 #----------------load.libraries.pacman----
 # Load pacman into memory, installing as needed
@@ -61,67 +82,47 @@ if (file.exists(weldshchool.path)) {
 
 ```
 
-TODO: Get R commands and remove Stata from this document
 
 # Introduction and Purpose
 
 The purpose of this lab is to practice estimating variance components for random and mixed effect models.
 
-In this lab exercise we will use the Welding School personal survey data.  The data are stored in the file named “weldschoolexp.rds”.  The exposure concentration variables in the dataset consist of *mnconc* and *particulate*, the airborne concentrations of manganese and total particulate, respectively, both in µg/m3.    Further description of the variables can be found in “Welding School Exposures variables 556 rev021015.docx”, and the background and study design is in the published paper with file name “Baker Blood Mn Review.”
+In this lab exercise we will use the Welding School personal survey data.  The data are stored in the file named “weldschoolexp.rds”.  The exposure concentration variables in the dataset consist of *mnconc* and *particulate*, the airborne concentrations of manganese and total particulate, respectively, both in µg/m^3^.    The grouping variable is *subjid*.  Further description of the variables can be found in “Welding School Exposures variables 556 rev021015.docx”, and the background and study design is in the published paper with file name “Baker Blood Mn Review.”
 
 # Getting Started
 
-Read the data for this lab
+The companion file *Week5Lecture.Rmd* gives R commands relevant to this lab and applied to the DEMS underground and Snapshot traffic gradient site data.
 
-Generic forumula for a random intercept model with all nested factors:  ADD??
+## Tools for estimating variance components
 
-Three ways to write/estimate a random effect model for a one-factor design.
-** Approach 1 using loneway:
-loneway lnmn subjid 
-** Approach 2 using xtmixed with REML estimation
-**  version 2a reports the random effect estimates on the SD scale, facilitating comparison 
-**  with loneway
-xtmixed lnmn || _all:R.subjid, nolog reml
-**  version 2b reports the random effect estimates on the variance scale
-xtmixed lnmn || _all:R.subjid, variance nolog reml
-**  version 2c is a multilevel model formulation of the same model and is more intuitive
-**  coding
-** this intuitive coding is recommended because it is also more efficient
-xtmixed lnmn || subjid:, nolog var reml
-*Approach 3 using xtmixed with ML estimation 
-*        (and reporting RE estimates on the variance scale)
-xtmixed lnmn || subjid:, nolog var
+Below is a summary of R packages.  See the *Week5Lecture.Rmd* file for coding examples.
 
-**Some sample mixed models.  These have one fixed effect added, coded as a factor variable:
-xi: xtmixed lnmn i.quarter || subjid:, nolog var reml
-xi: xtmixed lnmn i.weldtyp || subjid:, nolog var reml 
-Manually estimating variance components between and within subject:
-** describe the data using tabstat
-tabstat lnmn, statistics(n mean sd)  by(subjid)
+* Descriptively using `dplyr`
+* Random effects models only
+    - ANOVA method of moments using `VCA`
+    - ANOVA restricted maximum likelihood using `VCA`
+* Random effects and mixed models
+    - ANOVA restricted maximum likelihood using `lmer` in the `lme4` package
+    - ANOVA maximum likelihood using `lmer` in the `lme4` package
 
-** Manually estimate variance components from stratified data 
-* Details for reporting on the standard deviation scale:
-collapse (mean) lnmn (sd) sdlnmn=lnmn, by(subjid)
-gen varlnmn=sdlnmn^2
-summarize lnmn varlnmn 
-display sqrt(r(mean))
+## Overview of `lmer` commands
 
-** NOTE: You must read in the original data again to continue analysis on the original dataset
-use weldschoolexpo.dta, clear
-*create a log-transformed version of each outcome variable:
-gen lnmn= ln(mnconc)
-gen lnpart= ln(particulate)
+### `lmer` overview
+TODO:  ADD discussion of lmer.  E.g., Generic forumula for a random intercept model with all nested factors:  ADD??
 
-** Manually estimating variance components by subjid:
-** manually estimate variance components from stratified data 
-collapse (mean) lnmn (sd) sdlnmn=lnmn, by(subjid)
-gen varlnmn=sdlnmn^2
-summarize varlnmn lnmn 
-display r(Var)
-** NOTE: You must read in the original data again to continue analysis on the original dataset
+### `lmer` random effects coding
+
+Here is a [link](https://stats.stackexchange.com/questions/13166/rs-lmer-cheat-sheet) to a helpful stackexchange post on `lme4` random effects coding.  Here is a brief summary for categorical (grouping) variable G and continuous variable X where our goal is to have random effects for levels of G:
+
+* Random intercept only: (1|G)
+* Random slope only:  (0 + X|G)
+* Correlated random slopes and intercepts: (1 + X|G)
+* Independent random slopes and intercepts: (1|G) + (0 + X|G)  
+
 
 # Practice Session
 
+1.  Determine your project for this lab.  
 2.	Read in the weldschoolexpo dataset:
 a.	Become familiar with your data
 b.	How many observations, students, quarters are in your dataset?  How many observations are there per student (average, minimum, maximum)?
@@ -141,13 +142,13 @@ b.	Compare the variance components from the models with and without fixed effect
 # Homework Exercises
 
 1.	Repeat the practice session analysis with particulate concentration.  Does this produce any different results? Why or why not?
-2.	How do your variance component estimates compare with those reported by Kromhout et al for measures that are “similar” to these welding exposure measures? 
+2.	How do your variance component estimates compare with the DEMS and Snapshot examples we discussed in lecture? 
 3.	Report and discuss the results of your analysis of Mn and total particulate for this lab, touching on the following points:
 a.	The design of the study and structure of the dataset.
 b.	The scale of the data on which you did your analysis.
 c.	The comparability of variance component estimates using different estimation approaches and some possible reasons for (lack of) comparability.
 d.	The impact on the variance component estimates when you include fixed effect(s) in your model and the reason for the change(s) in these data.
-e.	Incorporate insights from the Kromhout et al and Peretz et al papers.
+e.	Incorporate insights from the Symanski et al and Peretz et al papers.
 
 # Appendix
 
