@@ -120,6 +120,7 @@ Here is a [link](https://stats.stackexchange.com/questions/13166/rs-lmer-cheat-s
 * Independent random slopes and intercepts: (1|G) + (0 + X|G)  
 
 
+
 # Practice Session
 
 1.  Determine your project for this lab.  
