@@ -126,7 +126,7 @@ ggplot(DEMS, aes(x = facilityno, y = ln_ecdata)) +
          y = "ln(REC) in ln(ug/m3)",
          x = "Facility ID")
 ```
-## Slide 10b:  Stratified by facility ID
+## DEMS Stratified by facility ID (not a slide)
 
 ```{r DEMS tidyverse stratified summary}
 # DEMSvtidyverse stratified summary-----
@@ -145,7 +145,7 @@ vc_total <- cbind(facilityid = "Total", vc_total)
 kable(rbind(vc_summary,vc_total), digits = 2)
 ```
 
-## slide 11:  Plot the example of traffic gradient site as one grouping variable in the snapshot data
+## slide 12:  Plot the example of traffic gradient site as one grouping variable in the snapshot data
 
 ```{r Snapshot data setup}
 # Snapshot data setup -----------
@@ -171,7 +171,7 @@ ggplot(fvc, aes(x = group_loc, y = ln_nox)) +
          y = "ln(NOx) in ln(ppb)",
          x = "Gradient Site Index")
 ```
-## Slide 14:  Stratified by gradient location
+## Slide 18:  Stratified by gradient location
 
 ```{r tidyverse stratified summary snapshot}
 # tidyverse stratified summary-----
@@ -190,10 +190,10 @@ vc_total <- cbind(group_loc = 100, vc_total)
 kable(rbind(vc_summary,vc_total), digits = 3)
 ```
 
-## Slide 16:  Assessing between and within site variability
+## Slide 19:  Assessing between and within site variability
 
-```{r slide 16: graident variability}
-# slide 15: gradient variability
+```{r gradient variability}
+# slide 19: gradient variability
 vc_var <- vc_summary %>%
     summarize(N_sites = n(),
               median_grand = median(mean),
@@ -209,9 +209,9 @@ paste("Within-group  variance estimate(SD scale) = ",round(vc_var$within_sd,3))
 paste("Total         variance estimate(SD scale) = ",round(sqrt(vc_var$within_sd^2 + vc_var$between_sd^2),3))
 ```
 
-## Slide 16:  Site as a fixed effect
+## Dropped from lecture:  Site as a fixed effect
 
-TODO:  Think about focus of this result in comparison to the random effect result.  Perhaps use the "lincom" approch to estimate means and then estimate their variances?? Or just focus on the residual MSE estimate?
+Needs development to focus this result in comparison to the random effect result.  Note that this is a regression model based approach to the previous more descriptive approach.
 
 ```{r}
 # slide 16: site as a fixed effect
@@ -219,9 +219,8 @@ fixed_ef <- lm(ln_nox ~ as.factor(group_loc), data = fvc)
 summary(fixed_ef)
 ```
 
-## slide 17:  Same in ANOVA
+### Dropped from lecture:  Same in ANOVA (fixed effect model)
 
-Think about what to emphasize here
 
 ```{r}
 #slide 17:  same in ANOVA
@@ -230,7 +229,7 @@ anova(fixed_ef)
 
 ## Slide 21 + 22:  Variance components with VCA
 
-VCA allows the MOM estimates and easy comparison with REML estimates.  Also want to compare the random effect analysis vs. fixed effect w.r.t. estimates of variation.  Consider doing a lincom of coefficients and then estimating the same variability of the means we did by hand.
+VCA allows the MOM estimates and easy comparison with REML estimates of variance components.  
 
 ```{r}
 #slide 21+22:  VCA immplementation
@@ -241,32 +240,32 @@ fit_MOM <- anovaVCA(ln_nox ~ group_loc, Data = fvc)
 fit_MOM
 fit_REML <- fitVCA(ln_nox ~ group_loc, Data = fvc, method = "REML")
 fit_REML
-fit_ANOVA <- fitVCA(ln_nox ~ group_loc, Data = fvc, method = "anova")
-fit_ANOVA
+# the following gives the same result so is not repeated
+#fit_ANOVA <- fitVCA(ln_nox ~ group_loc, Data = fvc, method = "anova")
+#fit_ANOVA
 ```
 
 
 ## Slide 23:  Estimation using lme
 
-Want to make the point here that the lmer REML estimates are the same as from VCA.  Discuss why we use ML at all -- basicially to easily compare models.
+A key point here that the `lmer` REML estimates are the same as from `VCA`.  Discuss why we use ML at all -- basicially to easily compare models.
 
-```{r ML}
-# slide 23:  estimation using lme
-
-lmefit_ML <- lmer(ln_nox ~ (1|group_loc), data = fvc, REML = FALSE)
-summary(lmefit_ML)
-```
-
-```{r REML}
-
+```{r REML snapshot}
+# REML with snapshot -----------
 lmefit_REML <- lmer(ln_nox ~ (1|group_loc), data = fvc, REML = TRUE)
 summary(lmefit_REML)
 ```
 
+```{r ML snapshot}
+# ML with snapshot ----------------
+lmefit_ML <- lmer(ln_nox ~ (1|group_loc), data = fvc, REML = FALSE)
+summary(lmefit_ML)
+```
 
-## Slides 26 + 27:  DEMS with VCA
 
-Decide whether to do all of these for the DEMS data or be more selective.
+## Dropped from lecture:  Same examples with DEMS 
+
+### DEMS with VCA
 
 
 ```{r}
@@ -282,33 +281,44 @@ fit_ANOVA <- fitVCA(ln_ecdata ~ facilityid, Data = DEMS, method = "anova")
 fit_ANOVA
 ```
 
-## Slide 28:  DEMS comparison of estimates
+## Slide 26:  DEMS comparison of estimates
 
-Did not redo the R coding for this.  Would need to use the code for the snapshot data, now applied to DEMS, in this section
+I did not develop the R coding for this.  We would need to use the code for the snapshot data, now applied to DEMS, in this section
 
-## Slide 28?:  Mixed model with the Snapshot data
+## Slide 30:  Mixed model with the Snapshot data: Pop_5000
 
-Address how the two variance components changed.  Discuss whether we expect the impact on what scale.
+The following analyses address how the two variance components change when different covariates are in the model.  As was done in the Peretz paper, think about whether we expect an impact on the variance components and whether the impact should affect the between site or within site variance estimates.
 
-```{r}
-mixedfit1_REML <- lmer(ln_nox ~ Pop_5000 + (1|group_loc), data = fvc, REML = TRUE)
-summary(mixedfit1_REML)
-```
-## Slide 29?:  Mixed model with the Snapshot data: two covariates
+Note:  Because one might want to do some model selection comparisons with these analyses, I used the ML option (i.e. REML = FALSE).
 
-TODO:  discuss model selection using ML
-
-Need to pay attention to whether you use ML or REML for comparisons.  Basically to compare models you need to use ML because of how the variance components are estimated to be unbiased in REML.  For final estimates we should report REML.
-
-```{r}
-mixedfit2_REML <- lmer(ln_nox ~ Pop_5000 + D2Comm + (1|group_loc), data = fvc, REML = TRUE)
-summary(mixedfit2_REML)
+```{r mixed model with Pop_5000}
+# mixed model with Pop_5000 ----------
+mixedfit1_ML <- lmer(ln_nox ~ Pop_5000 + (1|group_loc), data = fvc, REML = FALSE)
+summary(mixedfit1_ML)
 ```
 
+## Slide 31:  Mixed model with the Snapshot data: D2R
 
-## Slide 29?:  DEMS V Table 3 Facility A example U1 groups
+```{r mixed model with D2R}
+# mixed model with D2R ----------
+mixedfit2_ML <- lmer(ln_nox ~ D2R + (1|group_loc), data = fvc, REML = FALSE)
+summary(mixedfit2_ML)
+```
 
-THis result has the same number of observations (108) and mdj groups (13) compared to the Stata example from lecture.  My mean is about the same (5.85).  This seems to be the same dataset
+
+## Dropped from lecture:  Mixed model with the Snapshot data: two covariates
+
+Note: to compare models you need to use ML because of how the variance components are estimated to be unbiased in REML.  For final estimates we should report REML.
+
+```{r}
+mixedfit3_ML <- lmer(ln_nox ~ Pop_5000 + D2Comm + (1|group_loc), data = fvc, REML = FALSE)
+summary(mixedfit3_ML)
+```
+
+
+## Slide 35:  DEMS V Table 3 Facility A example U1 groups
+
+Verifying:  This result has the same number of observations (108) and mdj groups (13) compared to the Stata example from lecture.  My mean is about the same (5.85).  This seems to be the same dataset
 
 ```{r DEMSV_U1}
 # Model DEMSV_U1 --------------
@@ -316,7 +326,8 @@ THis result has the same number of observations (108) and mdj groups (13) compar
 DEMSV_U1 <- lmer(ln_ecdata ~  (1|mdj), data = DEMS, REML = TRUE, subset = facilityid == "A" & u_s == "u")
 summary(DEMSV_U1)
 ```
-## Slides 30-31?:  DEMS V Table 3 Facility A example U2 groups
+
+## Slides 36:  DEMS V Table 3 Facility A example U2 groups
 
 ```{r DEMSV_U2}
 # Model DEMSV_U2 --------------
@@ -324,7 +335,7 @@ DEMSV_U2 <- lmer(ln_ecdata ~  as.factor(group2time) + (1|mdj), data = DEMS, REML
 summary(DEMSV_U2)
 ```
 
-## Slide 32?:  DEMS V Table 3 Facility A example U3 groups
+## Slide 37:  DEMS V Table 3 Facility A example U3 groups
 
 ```{r DEMSV_U3}
 # Model DEMSV_U3-------------
@@ -332,7 +343,7 @@ DEMSV_U3 <- lmer(ln_ecdata ~  as.factor(group3area) + (1|mdj), data = DEMS, REML
 summary(DEMSV_U3)
 ```
 
-## Slide 37?:  Regression for association with random effects
+## Slide 41:  Regression for association with random effects
 
 TODO:  Use the snapshot data to compare estimates and SEs for a fixed effect with and without random effects
 
@@ -350,7 +361,7 @@ coef(summary(lmfit1))
 confint(lmfit1)
 
 # mixed model
-#mixedfit1_REML <- lmer(ln_nox ~ Pop_5000 + (1|group_loc), data = fvc, REML = TRUE)
+mixedfit1_REML <- lmer(ln_nox ~ Pop_5000 + (1|group_loc), data = fvc, REML = TRUE)
 
 #summary(mixedfit1_REML)
 cat("\nMixed model summary using REML, coefficients then their confidence intervals\n")
@@ -375,7 +386,7 @@ coef(summary(lmfit2))
 confint(lmfit2)
 
 # mixed model
-#mixedfit2_REML <- lmer(ln_nox ~ Pop_5000 + D2Comm + (1|group_loc), data = fvc, REML = TRUE)
+mixedfit2_REML <- lmer(ln_nox ~ Pop_5000 + D2Comm + (1|group_loc), data = fvc, REML = TRUE)
 
 cat("\nMixed model summary using REML, coefficients then their confidence intervals\n")
 
@@ -384,7 +395,7 @@ coef(summary(mixedfit2_REML))
 confint(mixedfit2_REML)
 
 ```
-## Slide 38?:  Regression for prediction with random effects
+## Slide 42:  Regression for prediction with random effects
 
 To predict from a mixed model, i.e. a linear model with fixed and random effects, you MUST have the same groups as you used to fit your model.  You can't predict on new groups.  Thus random effects models are less commonly used in prediction problems than other kinds of variance models (e.g. geostatistical models).
 
@@ -433,9 +444,6 @@ summary(p3)
 summary(p2)
 ```
 
-TODO:
-* make a new dataset that is the first observation per cluster
-* predict
 
 # Appendix 
 
