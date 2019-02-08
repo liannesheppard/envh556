@@ -345,7 +345,7 @@ summary(DEMSV_U3)
 
 ## Slide 41:  Regression for association with random effects
 
-TODO:  Use the snapshot data to compare estimates and SEs for a fixed effect with and without random effects
+Use the snapshot data to compare estimates and SEs for a fixed effect with and without random effects
 
 ```{r mixed model vs lm}
 # mixed model vs lm -----------
