@@ -83,9 +83,13 @@ saveRDS(weldschool,file=file.path(datapath,"weldschool.rds"))
 #----------------------------------
 # DEMS Term project data
 ## Read data from Stata into R
-RECpersonal<-read.dta(file.path(datapath,"recjob7feb.dta"))
-cohist<-read.dta(file.path(datapath,"cohist15feb.dta"))
-jem<-read.dta(file.path(datapath,"jem7feb.dta"))
+RECpersonal<-read.dta(file.path(convertpath,"recjob7feb.dta"))
+cohist<-read.dta(file.path(convertpath,"cohist15feb.dta"))
+jem<-read.dta(file.path(convertpath,"jem7feb.dta"))
+
+## rename the variable for adj hp 1990+
+
+cohist <- rename(cohist, ln_adj_hp1990 = lnhp2)
 
 ## Save into an Rdataset
 saveRDS(RECpersonal,file=file.path(datapath,"RECpersonal.rds"))
