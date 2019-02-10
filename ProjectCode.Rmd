@@ -1,0 +1,358 @@
+---
+title: "Term Project Code"
+author: "Lianne Sheppard for ENVH 556"
+date: "Winter 2019; Updated `r format(Sys.time(), '%d %B, %Y')`"
+output: 
+    html_document:
+        fig_caption: yes
+        toc: true
+        toc_depth: 3
+        number_sections: true
+---
+
+<!--Basic document set-up goes here  -->
+
+```{r setup, include=FALSE}
+#-------------r.setup-------------
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r clear.workspace, eval=FALSE, echo=FALSE}
+#---------clear.workspace------------
+# Clear the environment without clearing knitr
+#
+# This chunk is useful for code development because it simulates the knitr
+# environment. Run it as a code chunk when testing. When knitr is run, it uses a
+# fresh, clean environment, so we set eval=FALSE to disable this chunk when
+# rendering.
+
+# Clear workspace of all objects and unload all extra (non-base) packages
+rm(list = ls(all = TRUE))
+if (!is.null(sessionInfo()$otherPkgs)) {
+    res <- suppressWarnings(
+        lapply(paste('package:', names(sessionInfo()$otherPkgs), sep=""),
+               detach, character.only=TRUE, unload=TRUE, force=TRUE))
+   
+}
+
+```
+
+
+```{r load.libraries.pacman, echo=FALSE, include=FALSE, eval=TRUE}
+#----------------load.libraries.pacman----
+# Load pacman into memory, installing as needed
+my_repo <- 'http://cran.r-project.org'
+if (!require("pacman")) {install.packages("pacman", repos = my_repo)}
+
+# Load the other packages, installing as needed.  Some reasons for packages:
+# knitr:  kable()
+# ggplot2: part of tidyverse
+# readr: part of tidyverse
+# dplyr: part of tidyverse
+# multcomp:  glht
+# modelr:  part of tidyverse and need for add_predictions and add_residuals
+# boot:  cv tools are available
+# Hmisc:  describe
+# lme4
+# stringr:  string management functions in tidyverse
+# forcats:  factor handling in tidyverse
+pacman::p_load(tidyverse, knitr, dplyr,  
+               stringr, forcats, Hmisc)  
+```
+
+```{r read.datasets.from.a.web.site, eval=TRUE, echo=FALSE}
+#-----read.datasets.from.a.web.site--------
+# Download the data file from a web site if it is not already downloaded, then
+# read in the file
+# This version reads in multiple files using a loop
+
+datapath <- "Datasets"
+dir.create(datapath, showWarnings=FALSE, recursive = TRUE)
+
+# fn has the file names (before ".rds") to loop over
+fn <- c("cohist", "RECpersonal", "jem")
+
+# loop through the files to be read
+for (i in seq_along(fn)){
+    # define the input file name, linking it to the .rds
+    input.file <- str_c(fn[i],".rds")
+    
+    # define the full path for the dataset
+    input.path <- file.path(datapath, input.file)
+    
+    # Only download the file if it's not already present
+   if (!file.exists(input.path)) {
+    url <- paste("https://staff.washington.edu/high/envh556/Datasets", 
+                 input.file, sep = '/')
+    download.file(url = url, destfile = input.path) 
+    }
+
+    # Assign the file to an object of the same input name
+    # Output a warning message if the file cannot be found
+if (file.exists(input.path)) {
+    assign(fn[i],readRDS(file = input.path))
+} else warning(paste("Can't find", input.file, "!"))
+
+}
+
+```
+
+```{r rename REC, echo = FALSE}
+# rename REC to simplify references below-----
+REC <- RECpersonal
+rm(RECpersonal)
+
+```
+
+
+# Introduction and Context
+
+This is the companion R Markdown file to the JEM procedure overview file: *jemsyntax2019.docx*.  This file describes the general steps for generating a Job Exposure Matrix (JEM) for REC from the DEMS data files.  It also addresses dataset features you need to be aware of during your project.  Other important aspects of the project are not described here.
+
+There are basically 4 steps to creating the JEM for REC from the DEMS data:   
+a) Predict REC from a model by mine and job,   
+b) Predict historical CO from a model by mine and year,   
+c) Combine the two sets of predictions into a JEM for each mine, job and year, and   
+d) Calculate the predicted historical REC estimates.  
+
+This syntax that we provide for you is supposed to be generic – that is, it will work, but the models provided are not necessarily the best ones to use.  For instance, in the following sample code, we have fit simple models for all mines combined, and also showed you the methods you would need to predict from these models.  You need to explore and determine the best models, and interpret the results.
+
+# Basic observations about the datasets
+
+Let's get a quick summary of each dataset to begin to grapple with some of the data features we will need to address in this project.
+
+```{r tibbles of datasets}
+# tibbles of datasets -------
+
+as_tibble(REC)
+
+as_tibble(cohist)
+
+as_tibble(jem)
+```
+
+Observations about the datasets:
+
+* **Numbers of observations**:  The number of rows in each dataset:
+    - `REC`:  688
+    - `cohist`:  6,040
+    - `jem`:  6,480
+
+* **Facility**:  All datasets have one or two variables to identify facility.  Two of them (`cohist` and `REC`) have two variables while `jem` has only one.  Also the lone facility variable in `jem`, *facilityno* is a factor variable with the combination of the facility letter and number.  This is also true in `REC`.  However, this variable in `cohist` is only a number.
+
+* **Time**:  REC is only for the NIOSH survey data and so doesn't have a time period.  `cohist` has whole years and a variable *period* which is an integer coded from 2-8.  `jem` has both *year* and *period*.  Coding is identical for year but the *period* variable is a factor with labels rather than an integer.
+
+* **Job**:  `jem` has a single variable *job* which is coded the same as the variable *job* in `REC`.  `REC` has two additional job variables:  *mdj*, the concatenation of mine (as a number), department, and job, and *job98* which is not identical to *job* and TODO:  ADD explanation
+
+Here is some code to create a factor variable for faciity in `cohist` that aligns with the simiar factor variable in the other two datasets.
+
+```{r preliminary data management}
+# preliminary data management------
+
+# get the facilityno factor levels for fixing cohist
+fn_levels <- levels(REC$facilityno)
+
+# now create a factor version of facility in cohist
+cohist <- cohist %>%
+    mutate(
+        facilitychar = str_c(facilityid,facilityno),
+        facilityfac = factor(facilitychar, levels = fn_levels)) 
+
+```
+
+# Analysis Steps
+
+## REC Models:  Predict REC from observations and create a new dataset with an estimated AM for each mine and job
+
+###	Create a variable lnrec = ln(ecdata) 
+
+```{r update REC}
+# update REC -----------
+ 
+# create lnrec
+REC$lnrec <- log(REC$ecdata)
+
+```
+
+###	Use one of the approaches we learned to estimate an AM for each mine and job combination
+
+We show regression and the MLE estimate of the arithmetic mean (AM) using a single very simple model with all facilities together.  Your job is to decide how you want to approach this (e.g what model will you select and why?) using the tools we have learned over the quarter.  Here are some considerations (some apply to the CO data also):
+
+* Regression is just one way to do this.  
+* How you approach the modeling will affect whether you can predict for all job and facility combinations.  Think about what predictions you think are supported scientifically.  
+* We have not addressed here how to handle facility J. If you are going to try to predict at this facility, how will you approach it and why?
+
+```{r REC regression for prediction}
+# REC regression for prediction---------
+# first create job as a factor variable and set the reference level to be job 410
+# 410 is a common job and thus a useful reference category
+# relevel easily moves the specified factor to be first or the reference in regression
+REC$jobf <- factor(REC$job)
+REC$jobf <- relevel(REC$jobf, ref = "410")
+
+# regression
+recfit <- lm(lnrec ~ facilityno + jobf, data=REC)
+
+# create a new dataset that has one observation per job and facility
+# (Make sure you include all covariates in your regression model)
+# 
+# Choose one of the following; comment out the other
+# The following only picks out the distinct job-facility combinations that exist
+# in the dataset, n = 50
+newdat <- REC %>% 
+    select(facilityno, facilityid, job, jobf) %>%
+    distinct()
+
+# Here is the alternative to get all possible values of the facilityno and job
+# combinations, n = 105
+# Note:  still need to address the missing facility J 
+f <- unique(REC$facilityno)
+j <- unique(REC$jobf)
+# currently doesn't work with this option: why?
+#newdat <- expand.grid(faciltyno = f, jobf = j)
+
+# prediction over all facilityno job combinations
+newrec <- predict(recfit, newdat, se.fit=TRUE)
+newdat$lnrec_p <- newrec$fit
+newdat$lnrec_pvar <- 
+    newrec$se.fit^2 + newrec$residual.scale^2
+newdat$rec_AM <- 
+    exp(newdat$lnrec_p + newdat$lnrec_pvar/2)
+# for getting the above variance of a new obs from predict(), see e.g. https://stackoverflow.com/questions/38109501/how-does-predict-lm-compute-confidence-interval-and-prediction-interval/38110406#38110406
+# 
+# 
+RECnew <- newdat %>% 
+    select(facilityno, facilityid, job, jobf, rec_AM)
+
+```
+
+
+###	Use your results from the previous step to produce an estimate of the AM for each mine and job combination.
+
+See above.  Combined with the regression and prediction chunk.
+
+## CO models:  Model CO concentration from observations and create a new dataset with an estimated AM for each mine and year (or period)
+
+###	Use one of the approaches we learned to estimate an AM for each mine and job combination by time period (categorized or individual years). 
+
+We show regression and the MLE estimate of the arithmetic mean (AM) using a single very simple model with all facilities together.  Your job is to decide how you want to approach this using the tools we have learned over the quarter.
+
+```{r CO regression for prediction}
+# CO regression for prediction -------
+
+# a basic regression
+simplefit <- lm(lnco ~ facilityfac + as.factor(year), data=cohist)
+
+# prediction over all facilityno year combinations
+# Choose one of the following; comment out the other
+# The following only picks out the distinct year-facility combinations that exist
+# in the dataset, n = ADD
+newdat <- cohist %>% 
+    select(facilityfac, facilityno, facilityid, year, period) %>%
+    distinct()
+
+# Here is the alternative to get all possible values of the facilityno and times
+# combinations, n = ADD
+f <- unique(cohist$facilityfac)
+t <- unique(cohist$year)
+# currently doesn't work with this option: why?
+#newdat <- expand.grid(faciltyno = f, year = t)
+
+# prediction over all facilityno year combinations
+newco <- predict(simplefit, newdat, se.fit=TRUE)
+newdat$lnco_p <- newco$fit
+newdat$lnco_pvar <- 
+    newco$se.fit^2 + newco$residual.scale^2
+newdat$co_AM <- 
+    exp(newdat$lnco_p + newdat$lnco_pvar/2)
+
+# create dataset to merge, addressing facilityno isn't a factor variable coded
+# like in the other datasets
+COnew <- newdat %>%
+    select(facilityno, facilityid, facilityfac, year, period, co_AM)
+
+```
+###	Use your results from the previous step to produce an estimate of the AM for each mine and time combination.
+
+See above.  Combined with the regression and prediction chunk.
+
+## JEM target file: Put predictions into the JEM
+
+We have created the JEM for you.  It has a record for each combination of job, year (thus also period) and facilityno.  This step requires that you merge the data from `REC` and from `cohist` into the JEM.  In `tidyverse`, merging is call joining.  The syntax below is from `tidyverse`, specifically from the `dplyr` package.  To learn more about joins, see *R for Data Science* [R4DS](https://r4ds.had.co.nz/index.html), specifically the chapter on relational data, [Chapter 13](https://r4ds.had.co.nz/relational-data.html).
+
+An important part of joining datasets is making sure the results you get from the join are as you expect and are correctly joined.  Make sure you understand the datasets you are joining, how they relate to each other, and the keys (or variables) you will use to merge them with.  Keys connect the two datasets or tables.  They can be comprised of mulitple variables.  For our data, we ultimately want data merged by time (*year* or *period*), *job*, and facility (*facilityid* or *facilityno*).  Thus these will make up our key variables.  Note the `REC` dataset only has facility and job, while the `cohist` dataset only has facility and time.  So the keys in each of those joins will be different.
+
+### Merge REC into the JEM by facility and job
+
+We will use a left join and join REC into the JEM.  In principle we want to preserve all rows of the JEM, although if the REC data don't have values we don't want bogus data to be inserted.  We'd prefer to have those be NAs.  (An alternative would be to drop row of the JEM that don't match REC.  However, it is probably easier to keep track of our objectives by keeping all JEM rows and then addressing later those that don't have data in them.)
+
+```{r leftjoin JEM with REC}
+# leftjoin JEM with REC------
+JEMnew <- left_join(jem, RECnew, by = c("facilityno", "job"))
+
+```
+
+Note:  it is critical that you develop habits to make sure the data you get from a procedure are what you expect.  This is particularly important after doing a join.  Add code to the next chunk to check whether you did the matching in the merge correctly.  You should at least verify using the sample sizes to determine whether you have the data you expect.  Find out whether there are any records without a match.  Does it make sense to you that they haven't matched?  
+
+```{r check the join of JEM with REC}
+# check the join of JEM with REC------
+# ADD this
+```
+
+
+###	Merge CO into the JEM by facility and time (period or year)
+
+```{r leftjoin JEM with CO}
+# leftjoin JEM with CO------
+JEMnew2 <- left_join(JEMnew, COnew, 
+        by = c("facilityno" = "facilityfac", "year"))
+
+```
+
+
+TODO:  Make sure to verify you did the merge correctly.
+
+```{r check the join of JEM with CO}
+# check the join of JEM with CO------
+# ADD this
+```
+
+## Compute REC for each observation within JEM dataset 
+Use a version of the formula in DEMS IV to estimate the REC for each observation in the JEM dataset  
+    - Formula:  rec_mjy = (CO_am / baselineco) * REC_am  
+    - Note:  Not all combinations of mine, job, and year have AM estimates, therefore you should have missing predictions that you will need to drop.  In conjuction with this step, make sure you are only missing predictions where you expect them to be missing.
+
+
+```{r predicted REC in JEM}
+# predicted REC in JEM------
+
+JEM <- JEMnew2 %>%
+    mutate(rec_mjy = (co_AM / baselineco) / rec_AM)
+
+```
+
+Some summaries of the final JEM:
+
+```{r describe JEM}
+# ----- describe JEM -------
+as_tibble(JEM)
+
+describe(JEM)
+
+```
+
+
+
+# Appendix
+
+```{r session.info}
+#-----------------session.info: beginning of Appendix -----------------
+#This allows reproducibility by documenting the version of R and every package you used.
+sessionInfo()
+```
+
+```{r appendix.code, ref.label=knitr::all_labels(), echo=TRUE, eval=FALSE, tidy=TRUE, tidy.opts=list(width.cutoff=60), include=T}
+
+```
+
+
