@@ -140,11 +140,11 @@ Observations about the datasets:
 
 * **Facility**:  All datasets have one or two variables to identify facility.  Two of them (`cohist` and `REC`) have two variables while `jem` has only one.  Also the lone facility variable in `jem`, *facilityno* is a factor variable with the combination of the facility letter and number.  This is also true in `REC`.  However, this variable in `cohist` is only a number.
 
-* **Time**:  REC is only for the NIOSH survey data and so doesn't have a time period.  `cohist` has whole years and a variable *period* which is an integer coded from 2-8.  `jem` has both *year* and *period*.  Coding is identical for year but the *period* variable is a factor with labels rather than an integer.
+* **Time**:  REC is only for the NIOSH survey data and so doesn't have a time period.  `cohist` has whole years and a variable *period* which is an integer coded from 2-8.  `jem` has both *year* and *period*.  Coding is identical for year but the *period* variable is a factor with labels rather than an integer.  To learn how `cohist` and `jem` definitions of period align, we need to do a merge and compare them.  See below.
 
 * **Job**:  `jem` has a single variable *job* which is coded the same as the variable *job* in `REC`.  `REC` has two additional job variables:  *mdj*, the concatenation of mine (as a number), department, and job, and *job98* which is not identical to *job* and TODO:  ADD explanation
 
-Here is some code to create a factor variable for faciity in `cohist` that aligns with the simiar factor variable in the other two datasets.
+Here is some code to create a factor variable for faciity in `cohist` that aligns with the simiar factor variable in the other two datasets.  We also investigate the period variable in `cohist` and `jem` and then create a new variable *periodfac* which is a factor variable coded the same across datasets.  (In your analyses be careful to take note of which datasets have which information and how you will approach this.)
 
 ```{r preliminary data management}
 # preliminary data management------
@@ -158,6 +158,58 @@ cohist <- cohist %>%
         facilitychar = str_c(facilityid,facilityno),
         facilityfac = factor(facilitychar, levels = fn_levels)) 
 
+# figure out the period variables
+# period in cohist
+with(cohist, table(year, period))
+# observe only 4 observations in period 2 (in 1972), a fair number in periods 2-7, and only 15 in period 8
+# 
+# period in jem
+with(jem, table(year, period))
+# observe 
+#   1. 120 observations per year-period combo
+#   2. year starts in 1947, ends in 2003
+#   3. periods are:  1 -- 55 (1947-1970)
+#           2 -- 71-72 (1971-1975)
+#           3 -- 76-79 (1976-1979)
+#           4 -- 80-84 (1980-1984)
+#           5 -- 85-89 (1985-1989)
+#           6 -- 90-94 (1990-1994)
+#           7 -- 95-99 (1995-1999)
+#           8 -- 2001  (2000-2003)
+# merge jem and cohist as an inner join (only keep those that match) and then compare period on them
+cohist_uniq <- cohist %>%
+    group_by(year) %>%
+    dplyr::summarize(year_u = first(year),
+                     period_u = first(period)
+                    )
+ #   select(year, period)
+testjem <- inner_join(jem, cohist_uniq, "year" = "year_u")
+# observe the periods line up in jem and cohist, though there are no data for
+# the earliest period in jem
+with(testjem,table(period, period_u))
+
+# recode the period variables to align across datasets
+#period_levels <- c("1947-1970", "1971-1975", "1976-1979", "1980-1984", "1985-1989", "1990-1994", "1995-1999", "2000-2003" )
+#period_levels_co <- period_levels[-1]
+cohist <- mutate(cohist, periodfac = factor(period))
+cohist <- cohist %>% mutate(periodfac = fct_recode(periodfac,
+            "1971-1975" = "2",
+            "1976-1979" = "3",
+            "1980-1984" = "4",
+            "1985-1989" = "5",
+            "1990-1994" = "6",
+            "1995-1999" = "7",
+            "2000-2003" = "8"))
+
+jem <- jem %>% mutate(periodfac = fct_recode(period,
+            "1947-1970" = "55",
+            "1971-1975" = "71-72",
+            "1976-1979" = "76-79",
+            "1980-1984" = "80-84",
+            "1985-1989" = "85-89",
+            "1990-1994" = "90-94",
+            "1995-1999" = "95-99",
+            "2000-2003" = "2001"))
 ```
 
 # Analysis Steps
@@ -188,7 +240,8 @@ We show regression and the MLE estimate of the arithmetic mean (AM) using a sing
 # 410 is a common job and thus a useful reference category
 # relevel easily moves the specified factor to be first or the reference in regression
 REC$jobf <- factor(REC$job)
-REC$jobf <- relevel(REC$jobf, ref = "410")
+#REC$jobf <- fct_relevel(REC$jobf)
+#REC$jobf <- fct_relevel(REC$jobf, ref = "410")
 
 # regression
 recfit <- lm(lnrec ~ facilityno + jobf, data=REC)
@@ -199,17 +252,17 @@ recfit <- lm(lnrec ~ facilityno + jobf, data=REC)
 # Choose one of the following; comment out the other
 # The following only picks out the distinct job-facility combinations that exist
 # in the dataset, n = 50
-newdat <- REC %>% 
-    select(facilityno, facilityid, job, jobf) %>%
-    distinct()
+#newdat <- REC %>% 
+#    select(facilityno, facilityid, job, jobf) %>%
+#    distinct()
 
 # Here is the alternative to get all possible values of the facilityno and job
 # combinations, n = 105
 # Note:  still need to address the missing facility J 
-f <- unique(REC$facilityno)
-j <- unique(REC$jobf)
+#f <- unique(REC$facilityno)
+#j <- unique(REC$jobf)
 # currently doesn't work with this option: why?
-#newdat <- expand.grid(faciltyno = f, jobf = j)
+newdat <- with(REC, expand.grid(facilityno = unique(facilityno), jobf = unique(jobf)) )
 
 # prediction over all facilityno job combinations
 newrec <- predict(recfit, newdat, se.fit=TRUE)
@@ -220,9 +273,13 @@ newdat$rec_AM <-
     exp(newdat$lnrec_p + newdat$lnrec_pvar/2)
 # for getting the above variance of a new obs from predict(), see e.g. https://stackoverflow.com/questions/38109501/how-does-predict-lm-compute-confidence-interval-and-prediction-interval/38110406#38110406
 # 
-# 
+# use this version for the first newdat definition
+#RECnew <- newdat %>% 
+#    select(facilityno, job, jobf, rec_AM)
+# use this version for the second newdat definition
 RECnew <- newdat %>% 
-    select(facilityno, facilityid, job, jobf, rec_AM)
+    mutate(job = as.numeric(as.character(jobf))) %>%
+    select(facilityno, job, jobf, rec_AM)
 
 ```
 
@@ -247,16 +304,13 @@ simplefit <- lm(lnco ~ facilityfac + as.factor(year), data=cohist)
 # Choose one of the following; comment out the other
 # The following only picks out the distinct year-facility combinations that exist
 # in the dataset, n = ADD
-newdat <- cohist %>% 
-    select(facilityfac, facilityno, facilityid, year, period) %>%
-    distinct()
+#newdat <- cohist %>% 
+#    select(facilityfac, facilityno, facilityid, year, period) %>%
+#    distinct()
 
 # Here is the alternative to get all possible values of the facilityno and times
 # combinations, n = ADD
-f <- unique(cohist$facilityfac)
-t <- unique(cohist$year)
-# currently doesn't work with this option: why?
-#newdat <- expand.grid(faciltyno = f, year = t)
+newdat <- with(cohist, expand.grid(facilityfac = unique(facilityfac), year = unique(year)))
 
 # prediction over all facilityno year combinations
 newco <- predict(simplefit, newdat, se.fit=TRUE)
@@ -268,8 +322,14 @@ newdat$co_AM <-
 
 # create dataset to merge, addressing facilityno isn't a factor variable coded
 # like in the other datasets
+# Use this version for the first newdat definition
+#COnew <- newdat %>%
+#    select(facilityno, facilityfac, year, period, co_AM)
+# Use this version for the second newdat definition
+# Note it drops period
 COnew <- newdat %>%
-    select(facilityno, facilityid, facilityfac, year, period, co_AM)
+    mutate(facilityno = as.character(facilityfac)) %>%
+    select(facilityno, facilityfac, year, co_AM)
 
 ```
 ###	Use your results from the previous step to produce an estimate of the AM for each mine and time combination.
@@ -288,7 +348,7 @@ We will use a left join and join REC into the JEM.  In principle we want to pres
 
 ```{r leftjoin JEM with REC}
 # leftjoin JEM with REC------
-JEMnew <- left_join(jem, RECnew, by = c("facilityno", "job"))
+JEMnew <- left_join(jem, RECnew, by = c("facilityno", "job" = "job"))
 
 ```
 
@@ -335,6 +395,98 @@ Some summaries of the final JEM:
 
 ```{r describe JEM}
 # ----- describe JEM -------
+as_tibble(JEM)
+
+describe(JEM)
+
+```
+
+# Different Analysis Steps when Period is the Time Variable
+
+## REC Models:  Predict REC from observations and create a new dataset with an estimated AM for each mine and job
+
+No changes needed
+
+## CO models:  Model CO concentration from observations and create a new dataset with an estimated AM for each mine and **period**
+
+###	Use one of the approaches we learned to estimate an AM for each mine and job combination by time period (categorized here). 
+
+Repeat example regression and the MLE estimate of the arithmetic mean (AM) using a single very simple model with all facilities together.  This time with period as the time variable. 
+
+```{r CO regression for prediction on period}
+# CO regression for prediction on period -------
+
+# a basic regression
+simplefit <- lm(lnco ~ facilityfac + periodfac, data=cohist)
+
+# prediction over all facilityno period combinations
+# Use expand.grid to get all possible values of the facilityno and period
+# combinations, n = ADD
+newdat <- with(cohist, expand.grid(facilityfac = unique(facilityfac), periodfac = unique(periodfac)))
+
+# prediction over all facilityno year combinations
+newco <- predict(simplefit, newdat, se.fit=TRUE)
+newdat$lnco_p <- newco$fit
+newdat$lnco_pvar <- 
+    newco$se.fit^2 + newco$residual.scale^2
+newdat$co_AM <- 
+    exp(newdat$lnco_p + newdat$lnco_pvar/2)
+
+# create dataset to merge, addressing facilityno isn't a factor variable coded
+# like in the other datasets AND that period is coded differently in JEM
+
+# Use this version for the expand.grid newdat definition
+# Note it drops year
+COnew <- newdat %>%
+    mutate(facilityno = as.character(facilityfac)) %>%
+    select(facilityno, facilityfac, periodfac, co_AM)
+
+```
+###	Use your results from the previous step to produce an estimate of the AM for each mine and time combination.
+
+See above.  Combined with the regression and prediction chunk.
+
+## JEM target file: Put predictions into the JEM
+
+
+
+### Merge REC into the JEM by facility and job
+
+Completed previously.  Result is in `JEMnew`.
+
+
+###	Merge CO into the JEM by facility and *time (**period* or year)**
+
+```{r leftjoin JEM with CO by period}
+# leftjoin JEM with CO by period------
+JEMnew2 <- left_join(JEMnew, COnew, 
+        by = c("facilityno" = "facilityfac", "periodfac"))
+
+```
+
+
+TODO:  Make sure to verify you did the merge correctly.
+
+```{r check the join of JEM with CO by period}
+# check the join of JEM with CO by period------
+# ADD this
+```
+
+## Compute REC for each observation within JEM dataset 
+Repeat, by period this time.  It is worthwhile to think about whether you can sensibly fill in data for missing periods and how you will do this.
+
+```{r predicted REC in JEM by period}
+# predicted REC in JEM by period------
+
+JEM <- JEMnew2 %>%
+    mutate(rec_mjy = (co_AM / baselineco) / rec_AM)
+
+```
+
+Some summaries of the final JEM:
+
+```{r describe JEM by period}
+# ----- describe JEM by period -------
 as_tibble(JEM)
 
 describe(JEM)
