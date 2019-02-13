@@ -91,7 +91,7 @@ me_pure <- function(n_subj = 10000) {
         lmfit <- lm(y ~ get(i))
         list(tidy(lmfit)$estimate[2], 
              tidy(lmfit)$std.error[2],
-             getMSE(y, lmfit$fitted.values),
+             as.numeric(getMSE(y, lmfit$fitted.values)[2]),
              var(get(i)))
     })
     
