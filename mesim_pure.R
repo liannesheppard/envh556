@@ -87,32 +87,21 @@ me_pure <- function(n_subj = 10000) {
     # models <- map(setNames(1:7,predictors), ~ lm(y ~ paste(.x)))
     
     # Define a list for 4 parameters x 7 models
-    b1 <- as.vector(NULL)
-    seb1 <- as.vector(NULL)
-    R2 <- list(NULL)
-    exp_var <- as.vector(NULL)
-    
-    for (i in seq_along(predictors)) {
-        lmfit <- lm(y ~ get(predictors[i]))
-        
-        b1[i]      <- tidy(lmfit)$estimate[2]
-        seb1[i]    <- tidy(lmfit)$std.error[2]
-        R2[[i]]    <- getMSE(y, lmfit$fitted.values)
-        exp_var[i] <- var(get(predictors[i]))
-    }
-    
-    ret.list <- list(b1, seb1, R2, exp_var)
+    ret.list <- lapply(predictors, function(i) {
+        lmfit <- lm(y ~ get(i))
+        list(tidy(lmfit)$estimate[2], 
+             tidy(lmfit)$std.error[2],
+             getMSE(y, lmfit$fitted.values),
+             var(get(i)))
+    })
     
     # Set names for list items and the items contained in each item
-    
-    names(ret.list) <- c('b1', 'seb1', 'R2', 'exp_var')
-    
+    names(ret.list) <- predictors
     for (i in 1:length(ret.list)) {
-        names(ret.list[[i]]) <- predictors
+        names(ret.list[[i]]) <- c('b1', 'seb1', 'R2', 'exp_var')
     }
     
     # Return the list
-    
     return(ret.list)
 }
 
