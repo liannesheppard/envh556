@@ -163,7 +163,7 @@ res <- res.tbl %>%
     t() %>% as_tibble(.name_repair = 'minimal')
 
 # Fix the names since t() lost them
-names(res) <- as.vector(res[1, ])
+names(res) <- as.vector(as.character(res[1, ]))
 res <- res[2:nrow(res), ]
 res$stat <- c('mean', 'SD')
 
