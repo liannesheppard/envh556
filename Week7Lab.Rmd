@@ -139,8 +139,10 @@ The next chunk is to summarize the results using basic descriptive tools and plo
 
 ```{r Summarize pure ME results}
 # --------- Summarize pure ME results -------------
+# ADD code here
 predictors <- c("x", "Berk_1", "Berk_2", "Berk_3", 
                 "class_1", "class_2", "class_3")
+parameters <-  c('b1', 'seb1', 'R2', 'exp_var')
 
 # Transform the 3D list of vectors into a 2D list of tibbles
 res.lst.tbl <- lapply(1:1000, function(x) { 
