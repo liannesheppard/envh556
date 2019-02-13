@@ -159,10 +159,16 @@ res.tbl <- dplyr::bind_rows(res.lst.tbl)
 # Summarize the results: find mean and sd of "b1" for all 7 predictors
 res <- res.tbl %>% 
     group_by(predictor) %>% 
-    summarise_at(vars(b1), funs(mean, sd))
+    summarise_at(vars(b1), funs(mean, sd)) %>% 
+    t() %>% as_tibble(.name_repair = 'minimal')
+
+# Fix the names since t() lost them
+names(res) <- as.vector(res[1, ])
+res <- res[2:nrow(res), ]
+res$stat <- c('mean', 'SD')
 
 # Display results
-res
+knitr::kable(res %>% select("stat", predictors))
 
 ```
 
