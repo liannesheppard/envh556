@@ -1,8 +1,6 @@
-# mesim_pure and related functions:
+# Pure measurement error functions for simulation:
 #   getMSE
 #   me_pure
-# TODO: DROP?: Note:  uses the purrr tidyverse package
-# 
 
 # Load the broom package for the tidy() function
 pacman::p_load(broom)
@@ -22,8 +20,7 @@ getMSE <- function(obs,pred) {
     return(result)
 }
 
-# mesim_pure code (need to learn...)
-
+# me_pure function
 me_pure <- function(n_subj = 10000) {
     # definition of terms:
     #   n for sample size (n_subj), referring to subject 
@@ -82,11 +79,8 @@ me_pure <- function(n_subj = 10000) {
                     "class_2",
                     "class_3")
     
-    # TODO DROP most likely:  idea for doing this with purrr.  probably too
-    # advanced for ENVH 556 (and me!) 
-    # models <- map(setNames(1:7,predictors), ~ lm(y ~ paste(.x)))
-    
     # Define a list for 4 parameters x 7 models
+    # note use of "get()" to refer to the variable as a variable, not its name
     ret.list <- lapply(predictors, function(i) {
         lmfit <- lm(y ~ get(i))
         list(tidy(lmfit)$estimate[2], 
@@ -105,11 +99,11 @@ me_pure <- function(n_subj = 10000) {
     return(ret.list)
 }
 
+# The following belongs outside of the function file once we finish coding:
 set.seed(100)
 
-# TODO:  need to test this and make sure it returns what I want
-result_pure <- lapply(1:1000, function(x) me_pure())
+# use lapply to return this as a list
+# the alternative is replicate which returns a matrix.  In this case replicate
+# should be OK.
+mesim_pure <- lapply(1:1000, function(x) me_pure())
 
-# TODO:  once I have the result_pure in the structure I want, I need to do some
-# analyses of it.  Presumably do that inside the calling .Rmd instead of here.
-# May even want the result_pure replication step in the calling .Rmd.

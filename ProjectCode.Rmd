@@ -107,17 +107,17 @@ rm(RECpersonal)
 
 # Introduction and Context
 
-This is the companion R Markdown file to the JEM procedure overview file: *jemsyntax2019.docx*.  This file describes the general steps for generating a Job Exposure Matrix (JEM) for REC from the DEMS data files.  It also addresses dataset features you need to be aware of during your project.  Other important aspects of the project are not described here.
+This is the companion R Markdown file to the JEM procedure overview file: *jemsyntax2019.docx*.  These files describes the general steps for generating a Job Exposure Matrix (JEM) for REC from the DEMS datasets.  It also addresses dataset features you need to be aware of during your project.  Other important aspects of the project are not described here.
 
 There are basically 4 steps to creating the JEM for REC from the DEMS data:   
-a) Predict REC from a model by mine and job,   
-b) Predict historical CO from a model by mine and year,   
-c) Combine the two sets of predictions into a JEM for each mine, job and year, and   
-d) Calculate the predicted historical REC estimates.  
+    a) Predict REC from a model by mine and job,   
+    b) Predict historical CO from a model by mine and year,   
+    c) Combine the two sets of predictions into a JEM for each mine, job and year, and   
+    d) Calculate the predicted historical REC estimates.  
 
-This syntax that we provide for you is supposed to be generic – that is, it will work, but the models provided are not necessarily the best ones to use.  For instance, in the following sample code, we have fit simple models for all mines combined, and also showed you the methods you would need to predict from these models.  You need to explore and determine the best models, and interpret the results.
+This syntax that we provide for you in this R Markdown file is supposed to be generic – that is, it will work, but the models we have provided are not necessarily the best ones to use.  For instance, in the sample code in Section 3, we have fit simple models for all mines combined, and we have also showed you the methods you would need to predict from these models.  Because there were some complicated aspects of handling the period factor variables, in Section 4 we repeated parts of this work using period instead of year as the time variable.   You need to explore and determine the best models, and interpret the results.
 
-# Basic observations about the datasets
+# Basic observations about the datasets and some preliminary data management
 
 Let's get a quick summary of each dataset to begin to grapple with some of the data features we will need to address in this project.
 
@@ -140,7 +140,7 @@ Observations about the datasets:
 
 * **Facility**:  All datasets have one or two variables to identify facility.  Two of them (`cohist` and `REC`) have two variables while `jem` has only one.  Also the lone facility variable in `jem`, *facilityno* is a factor variable with the combination of the facility letter and number.  This is also true in `REC`.  However, this variable in `cohist` is only a number.
 
-* **Time**:  REC is only for the NIOSH survey data and so doesn't have a time period.  `cohist` has whole years and a variable *period* which is an integer coded from 2-8.  `jem` has both *year* and *period*.  Coding is identical for year but the *period* variable is a factor with labels rather than an integer.  To learn how `cohist` and `jem` definitions of period align, we need to do a merge and compare them.  See below.
+* **Time**:  REC was only collected during the NIOSH survey and so doesn't have a time period.  `cohist` has whole years and a variable *period* which is an integer coded from 2-8.  `jem` has both *year* and *period*.  Coding is identical for year but the *period* variable is a factor with labels rather than an integer.  To learn how `cohist` and `jem` definitions of period align, we need to do a merge and compare them.  See below.
 
 * **Job**:  `jem` has a single variable *job* which is coded the same as the variable *job* in `REC`.  `REC` has two additional job variables:  *mdj*, the concatenation of mine (as a number), department, and job, and *job98* which is not identical to *job* and TODO:  ADD explanation
 
@@ -184,8 +184,8 @@ cohist_uniq <- cohist %>%
                     )
  #   select(year, period)
 testjem <- inner_join(jem, cohist_uniq, "year" = "year_u")
-# observe the periods line up in jem and cohist, though there are no data for
-# the earliest period in jem
+# observe the periods line up in jem and cohist, though there are no cohist data
+# for the earliest time period in the jem
 with(testjem,table(period, period_u))
 
 # recode the period variables to align across datasets
@@ -302,6 +302,7 @@ simplefit <- lm(lnco ~ facilityfac + as.factor(year), data=cohist)
 
 # prediction over all facilityno year combinations
 # Choose one of the following; comment out the other
+#
 # The following only picks out the distinct year-facility combinations that exist
 # in the dataset, n = ADD
 #newdat <- cohist %>% 
@@ -312,7 +313,7 @@ simplefit <- lm(lnco ~ facilityfac + as.factor(year), data=cohist)
 # combinations, n = ADD
 newdat <- with(cohist, expand.grid(facilityfac = unique(facilityfac), year = unique(year)))
 
-# prediction over all facilityno year combinations
+# prediction over all facilityfac and year combinations
 newco <- predict(simplefit, newdat, se.fit=TRUE)
 newdat$lnco_p <- newco$fit
 newdat$lnco_pvar <- 
@@ -321,8 +322,9 @@ newdat$co_AM <-
     exp(newdat$lnco_p + newdat$lnco_pvar/2)
 
 # create dataset to merge, addressing facilityno isn't a factor variable coded
-# like in the other datasets
-# Use this version for the first newdat definition
+# the same way as in the other datasets
+#
+# Use this version for the first newdat definition:
 #COnew <- newdat %>%
 #    select(facilityno, facilityfac, year, period, co_AM)
 # Use this version for the second newdat definition
@@ -348,7 +350,7 @@ We will use a left join and join REC into the JEM.  In principle we want to pres
 
 ```{r leftjoin JEM with REC}
 # leftjoin JEM with REC------
-JEMnew <- left_join(jem, RECnew, by = c("facilityno", "job" = "job"))
+JEMnew <- left_join(jem, RECnew, by = c("facilityno", "job"))
 
 ```
 
@@ -360,7 +362,7 @@ Note:  it is critical that you develop habits to make sure the data you get from
 ```
 
 
-###	Merge CO into the JEM by facility and time (period or year)
+###	Merge CO into the JEM by facility and time (period or **year**)
 
 ```{r leftjoin JEM with CO}
 # leftjoin JEM with CO------
@@ -387,7 +389,9 @@ Use a version of the formula in DEMS IV to estimate the REC for each observation
 # predicted REC in JEM------
 
 JEM <- JEMnew2 %>%
-    mutate(rec_mjy = (co_AM / baselineco) / rec_AM)
+    mutate(co_ratio = co_AM /baselineco,
+           rec_mjy =  co_ratio * rec_AM
+           )
 
 ```
 
@@ -455,7 +459,7 @@ See above.  Combined with the regression and prediction chunk.
 Completed previously.  Result is in `JEMnew`.
 
 
-###	Merge CO into the JEM by facility and *time (**period* or year)**
+###	Merge CO into the JEM by facility and time (**period** or year)
 
 ```{r leftjoin JEM with CO by period}
 # leftjoin JEM with CO by period------
@@ -479,7 +483,9 @@ Repeat, by period this time.  It is worthwhile to think about whether you can se
 # predicted REC in JEM by period------
 
 JEM <- JEMnew2 %>%
-    mutate(rec_mjy = (co_AM / baselineco) / rec_AM)
+    mutate(co_ratio = co_AM /baselineco,
+           rec_mjy =  co_ratio * rec_AM
+           )
 
 ```
 
@@ -493,7 +499,9 @@ describe(JEM)
 
 ```
 
+TODO:  Understand the reasons behind the somewhat substantial differences in co_ratio estimates between the approach using period and the approach using year.  While both approaches used fairly simple-minded models, and so there could be good reasos to see these differences, I'm suspicious that this might be a clue that there is something that should be corrected.
 
+TODO:  At a minimum it would be worthwhile to look at how these compare with the numbers given in Table 3 of DEMS IV.
 
 # Appendix
 
