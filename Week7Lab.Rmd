@@ -119,11 +119,14 @@ $$  \begin{align}
 # ------- ME simulation for pure Berkson & classical ------
 
 # TODO:  Read (or copy??) in the functions in the mesim_pure.R code
+source("mesim_pure.R")
 # TODO:  Set the seed in this chunk?
+set.seed(100)
 # Steps:  
 #   1. define functions
 #   2. create the data for one iteration of n_samps
 #   3. replicate over n_samps iterations using the replicate command (here or in the .R function??)
+result_pure <- lapply(1:1000, function(x) me_pure())
 #   4. (In the next chunk) Summarize the results:  mean and SD of b1 for each of 7 models, with
 #   names we want to attach here or in the function; mean and SD of seb1
 #   (summarized on the variance scale then sqrt); TODO: consider showing some density
@@ -136,7 +139,28 @@ The next chunk is to summarize the results using basic descriptive tools and plo
 
 ```{r Summarize pure ME results}
 # --------- Summarize pure ME results -------------
-# ADD code here
+predictors <- c("x", "Berk_1", "Berk_2", "Berk_3", 
+                "class_1", "class_2", "class_3")
+
+# Transform the 3D list of vectors into a 2D list of tibbles
+res.lst.tbl <- lapply(1:1000, function(x) { 
+    res.tbl <- as_tibble(matrix(unlist(result_pure[[x]]), 
+                                nrow=length(predictors), byrow=TRUE, 
+                                dimnames = list(predictors, parameters)))
+    res.tbl$predictor <- predictors
+    res.tbl$replicate <- x
+    res.tbl})
+
+# Transform the 2D list of tibbles into one large tibble
+res.tbl <- dplyr::bind_rows(res.lst.tbl)
+
+# Summarize the results: find mean and sd of "b1" for all 7 predictors
+res <- res.tbl %>% 
+    group_by(predictor) %>% 
+    summarise_at(vars(b1), funs(mean, sd))
+
+# Display results
+res
 
 ```
 

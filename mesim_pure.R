@@ -100,10 +100,8 @@ me_pure <- function(n_subj = 10000) {
 }
 
 # The following belongs outside of the function file once we finish coding:
-set.seed(100)
+#set.seed(100)
 
 # use lapply to return this as a list
-# the alternative is replicate which returns a matrix.  In this case replicate
-# should be OK.
-mesim_pure <- lapply(1:1000, function(x) me_pure())
+#mesim_pure <- lapply(1:1000, function(x) me_pure())
 
