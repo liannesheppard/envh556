@@ -132,11 +132,13 @@ set.seed(100)
 # Single-core processing
 system.time(result_pure_sp <- lapply(1:1000, function(x) me_pure()))
 
-# Multi-core processing
-system.time(result_pure_mp <- mclapply(1:1000, function(x) me_pure(), 
-                                       mc.cores = 8, 
-                                       mc.set.seed = TRUE,
-                                       mc.preschedule = TRUE))
+# Multi-core processing - mclapply() does not work in Windows
+# if (.Platform$OS.type != "windows") {
+#     system.time(result_pure_mp <- mclapply(1:1000, function(x) me_pure(), 
+#                                            mc.cores = 8, 
+#                                            mc.set.seed = TRUE,
+#                                            mc.preschedule = TRUE))
+#}
 
 #   4. (In the next chunk) Summarize the results:  mean and SD of b1 for each of 7 models, with
 #   names we want to attach here or in the function; mean and SD of seb1
