@@ -8,6 +8,8 @@ output:
         toc: true
         toc_depth: 3
         number_sections: true
+editor_options: 
+  chunk_output_type: console
 ---
 
 <!--Basic document set-up goes here  -->
@@ -54,7 +56,7 @@ if (!require("pacman")) {install.packages("pacman", repos = my_repo)}
 # boot:  cv tools are available
 # Hmisc:  describe
 # lme4
-pacman::p_load(tidyverse, knitr, dplyr, modelr, Hmisc)  
+pacman::p_load(tidyverse, knitr, dplyr, modelr, Hmisc, parallel)  
 ```
 
 
@@ -126,7 +128,16 @@ set.seed(100)
 #   1. define functions
 #   2. create the data for one iteration of n_samps
 #   3. replicate over n_samps iterations using the replicate command (here or in the .R function??)
-result_pure <- lapply(1:1000, function(x) me_pure())
+
+# Single-core processing
+system.time(result_pure_sp <- lapply(1:1000, function(x) me_pure()))
+
+# Multi-core processing
+system.time(result_pure_mp <- mclapply(1:1000, function(x) me_pure(), 
+                                       mc.cores = 8, 
+                                       mc.set.seed = TRUE,
+                                       mc.preschedule = TRUE))
+
 #   4. (In the next chunk) Summarize the results:  mean and SD of b1 for each of 7 models, with
 #   names we want to attach here or in the function; mean and SD of seb1
 #   (summarized on the variance scale then sqrt); TODO: consider showing some density
@@ -146,7 +157,7 @@ parameters <-  c('b1', 'seb1', 'R2', 'exp_var')
 
 # Transform the 3D list of vectors into a 2D list of tibbles
 res.lst.tbl <- lapply(1:1000, function(x) { 
-    res.tbl <- as_tibble(matrix(unlist(result_pure[[x]]), 
+    res.tbl <- as_tibble(matrix(unlist(result_pure_sp[[x]]), 
                                 nrow=length(predictors), byrow=TRUE, 
                                 dimnames = list(predictors, parameters)))
     res.tbl$predictor <- predictors
