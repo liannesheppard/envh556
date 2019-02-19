@@ -54,7 +54,7 @@ if (!require("pacman")) {install.packages("pacman", repos = my_repo)}
 # boot:  cv tools are available
 # Hmisc:  describe
 # lme4
-pacman::p_load(tidyverse, knitr, dplyr, modelr, Hmisc)  
+pacman::p_load(tidyverse, knitr, dplyr, modelr, Hmisc, lme4, VCA)  
 ```
 
 ```{r read.data.from.a.web.site, eval=TRUE, echo=FALSE}
@@ -65,20 +65,20 @@ pacman::p_load(tidyverse, knitr, dplyr, modelr, Hmisc)
 datapath <- "Datasets"
 dir.create(datapath, showWarnings=FALSE, recursive = TRUE)
 
-weldshchool.file <- "weldschool.rds"
-weldshchool.path <- file.path(datapath, weldshchool.file)
+weldschool.file <- "weldschool.rds"
+weldschool.path <- file.path(datapath, weldschool.file)
 
 # Only download the file if it's not already present
-if (!file.exists(weldshchool.path)) {
+if (!file.exists(weldschool.path)) {
     url <- paste("https://staff.washington.edu/high/envh556/Datasets", 
-                 weldshchool.file, sep = '/')
-    download.file(url = url, destfile = weldshchool.path)
+                 weldschool.file, sep = '/')
+    download.file(url = url, destfile = weldschool.path)
 }
 
 # Output a warning message if the file cannot be found
-if (file.exists(weldshchool.path)) {
-    weldshchool <- readRDS(file = weldshchool.path)
-} else warning(paste("Can't find", weldshchool.file, "!"))
+if (file.exists(weldschool.path)) {
+    weldschool <- readRDS(file = weldschool.path)
+} else warning(paste("Can't find", weldschool.file, "!"))
 
 ```
 

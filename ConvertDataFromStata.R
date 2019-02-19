@@ -74,8 +74,10 @@ saveRDS(allseasonsR,file=file.path(datapath,"allseasonsR.rds"))
 #-------------------------------------
 # Welder data
 ## Read data from Stata into R
+# Note:  this is the OLD version that has some negative values for particulate
+# and should not be used: weld school exp 556.dta
 weldschool <-
-    read.dta(file.path(datapath, "weld school exp 556.dta"))
+    read.dta(file.path(datapath, "weldschoolexpo.dta"))
 
 ## Save into an Rdataset
 saveRDS(weldschool,file=file.path(datapath,"weldschool.rds"))
