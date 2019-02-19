@@ -1,0 +1,125 @@
+---
+title: "Week 9 Lab:  Geostatistics"
+author: "Lianne Sheppard for ENVH 556"
+date: "Winter 2019; Updated `r format(Sys.time(), '%d %B, %Y')`"
+output: 
+    html_document:
+        fig_caption: yes
+        toc: true
+        toc_depth: 3
+        number_sections: true
+editor_options: 
+  chunk_output_type: console
+---
+
+<!--Basic document set-up goes here  -->
+
+```{r setup, include=FALSE}
+#-------------r.setup-------------
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r clear.workspace, eval=FALSE, echo=FALSE}
+#---------clear.workspace------------
+# Clear the environment without clearing knitr
+#
+# This chunk is useful for code development because it simulates the knitr
+# environment. Run it as a code chunk when testing. When knitr is run, it uses a
+# fresh, clean environment, so we set eval=FALSE to disable this chunk when
+# rendering.
+
+# Clear workspace of all objects and unload all extra (non-base) packages
+rm(list = ls(all = TRUE))
+if (!is.null(sessionInfo()$otherPkgs)) {
+    res <- suppressWarnings(
+        lapply(paste('package:', names(sessionInfo()$otherPkgs), sep=""),
+               detach, character.only=TRUE, unload=TRUE, force=TRUE))
+   
+}
+
+```
+
+
+```{r load.libraries.pacman, echo=FALSE, include=FALSE, eval=TRUE}
+#----------------load.libraries.pacman----
+# Load pacman into memory, installing as needed
+my_repo <- 'http://cran.r-project.org'
+if (!require("pacman")) {install.packages("pacman", repos = my_repo)}
+
+# Load the other packages, installing as needed.  Some reasons for packages:
+# knitr:  kable()
+# ggplot2: part of tidyverse
+# readr: part of tidyverse
+# dplyr: part of tidyverse
+# multcomp:  glht
+# modelr:  part of tidyverse and need for add_predictions and add_residuals
+# boot:  cv tools are available
+# Hmisc:  describe
+# lme4:  for lmer, mixed models and random effects models
+# parallel:  for parallel processing
+# geoR:  for kriging
+# maps: for maps
+# sf:  ??
+# maptools: ??
+pacman::p_load(tidyverse, knitr, dplyr, geoR, sf, maps)  
+```
+
+TODO:  Download geoR, Sun's geoR lab, find some variogram code/package
+
+# Introduction and Purpose
+
+The purpose of this lab is to further solidify your understanding of regression for prediction, and learn about geostatistical models.  We will use the same MESA Air snapshot data described in Mercer et al 2011 that we used earlier in the quarter.
+
+# Getting Started
+
+## Some comments on universal kriging and prediction:  
+TODO:  UPDATE In kriging prediction, you can't predict on the same locations that you used to estimate the parameters.  Think of this as an enforced need to do cross-validation to evaluate your predictions.  This has important implications for using the user-written ukrige code in this class.  Some notes on implementing the code:
+
+## Practice using `geoR`:
+
+TODO:  Add practice using Sun's code, perhaps with the installed datasets first??
+
+
+
+
+# Practice Session
+
+TODO:  UPDATE section
+This section covers basic practice to be completed during the lab.     
+
+Perform the following tasks:  (see the Week8commands2017.do file for details)
+1.	Open a do-file editor, a log file, have ukrige_programs.do available to run (e.g. open in your do-file editor), and change your working directory so you can reference all files without a path.  (See the Stata file menu for changing the working directory.)
+2.	Install the variog program. 
+3.	Read in the snapshot data for one season and as needed redo some basic data description so you remember how these data are formatted, etc.
+4.	Fit a LUR model using the covariates in Table 4.  Save the residuals for further analysis.
+5.	Plot a variogram of the residuals.  Explore the bandwidth and see how the variogram plots change as a function of bandwidth.  Observe similarities and differences between your plots and those presented in the paper.  (We can discuss these observations in lab.)
+6.	Fit the universal kriging model.  Look at the estimates from the model and compare them with the estimates in the table.  Import the raw residuals from mata into a Stata variable.
+7.	Display the residuals from UK in a variogram; explore different bandwidths.
+8.	Cross-validate the UK model.  Do you get the same performance statistics reported in Table 4?  This complements your previous cross-validation of LUR in these data.
+
+
+
+# Homework Exercises 
+
+TODO:  update section
+In addition to summarizing your geostatistical analyses, demonstrate some basic understanding of the similarities and differences between land use regression and universal kriging in air pollution studies:
+1.	Describe your analysis and show some variograms.  Is there evidence of spatial structure in the data?
+2.	Discuss whether you were able to replicate the results for at least one season in Table 4 of Mercer et al (2011).  (You don’t need to reproduce the table if you don’t wish to.)
+3.	Write a basic summary of your understanding of how universal kriging differs from land use regression.  What additional insights do you get from the Mercer et al paper that weren’t evident in the Hoek et al paper?
+4.	Discuss what are the most useful summaries to show from an exposure prediction analysis.   Base this on the papers you read this week (Mercer et al & Hoek et al) that were focused more on methods, vs. papers that are more focused on showing the results from the predictive modeling (e.g. Young et al discussed in lecture).
+
+
+
+# Code Appendix
+
+```{r session.info}
+#-----------session.info: beginning of Code Appendix -------------
+
+sessionInfo()
+```
+
+```{r appendix.code, ref.label=knitr::all_labels(), echo=TRUE, eval=FALSE, tidy=TRUE, tidy.opts=list(width.cutoff=60), include=T}
+
+```
+
+
