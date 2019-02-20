@@ -150,13 +150,12 @@ me_like <- function(n_subj = 10000, n_samp = 100, s3_sd1 = 1, s3_sd2 = 0.3) {
                     "xhat_2red")
     
     # Define a list for 4 parameters from disease model fits x 5 exposures
-    # note use of "get()" to refer to the variable as a variable, not its name
     ret.list <- lapply(predictors, function(i) {
-        lmfit <- lm(y ~ get(i))
+        lmfit <- lm(subj$y ~ subj[[i]])
         list(tidy(lmfit)$estimate[2], 
              tidy(lmfit)$std.error[2],
-             as.numeric(getMSE(y, lmfit$fitted.values)[2]),
-             var(get(i)))
+             as.numeric(getMSE(subj$y, lmfit$fitted.values)[2]),
+             var(subj[[i]]))
     })
     
     # Set names for list items and the items contained in each item

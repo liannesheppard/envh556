@@ -239,7 +239,7 @@ knitr::kable(res, caption = "Health effect estimate properties")
 3.  We use **simulation** to get the statistical properties of our results:  To simulate this we replicate steps 1. and 2. `n_iter` number of times.  Our default value for `n_iter` is 1,000.  For testing it is good practice to use a MUCH smaller number of replicates, such as `n_iter=10`.   
 4.  **Summarize the results** of the exposures and health effect estimates after the program completes
 
-```{r ME simulation_like, eval = FALSE}
+```{r ME simulation_like, eval = TRUE}
 # ------- ME simulation for Berkson-like & classical-like measurement error ------
 
 # Steps to accomplish the above:  
@@ -257,7 +257,7 @@ source("mesim_like.R")
 set.seed(101)
 
 # define the number of simulation iterations to use
-n_iter <- 10
+n_iter <- 1000
 
 # Single-core processing
 system.time(result_like_sp <- lapply(1:n_iter, function(x) me_like()))
@@ -304,7 +304,7 @@ res_tbl <- dplyr::bind_rows(res_lst_tbl)
 
 The next chunk is to summarize the results using basic descriptive tools and plots.  We only show a simple version of part of the summary needed.
 
-```{r Summarize like ME results, eval = FALSE}
+```{r Summarize like ME results, eval = TRUE}
 # --------- Summarize like ME results -------------
 # TODO REVISE code here?
 
