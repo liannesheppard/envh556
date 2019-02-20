@@ -163,8 +163,17 @@ me_like <- function(n_subj = 10000, n_samp = 100, s3_sd1 = 1, s3_sd2 = 0.3) {
     for (i in 1:length(ret.list)) {
         names(ret.list[[i]]) <- c('b1', 'seb1', 'R2', 'exp_var')
     }
-    # TODO:  also need the in-sample R2 for predicted exposures, a3 & var_a3 for full
-    # TODO:  need to handle that a3 and var_a3 not always defined + insamp R2
+    
+    # Add additional parameters (a3hat, a3var, r2) for (1, 2) and (full, red)
+    for (i in 1:2) {
+        for (j in c('full', 'red')) {
+            for (k in paste0(c('a3hat_', 'a3var_', 'r2_'), i, j)) {
+                k_abrev <- strsplit(k, split = "_")[[1]][1]
+                ret.list[[paste0('xhat_', i, j)]][[k_abrev]] <- 
+                    dynGet(k, ifnotfound = NA)
+            }
+        }
+    }
     
     # Return the list
     return(ret.list)

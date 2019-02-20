@@ -257,7 +257,7 @@ source("mesim_like.R")
 set.seed(101)
 
 # define the number of simulation iterations to use
-n_iter <- 1000
+n_iter <- 10
 
 # Single-core processing
 system.time(result_like_sp <- lapply(1:n_iter, function(x) me_like()))
@@ -274,12 +274,8 @@ system.time(result_like_sp <- lapply(1:n_iter, function(x) me_like()))
 # Step III.  Transform the list into a structure more easily summarized
 # 
 # Define vectors to be used in the function below
-predictors <- c("x",
-                "xhat_1full",
-                "xhat_1red",
-                "xhat_2full",
-                "xhat_2red")
-parameters <-  c("b1", "seb1", "R2", "exp_var")
+predictors <- c("x", "xhat_1full", "xhat_1red", "xhat_2full", "xhat_2red")
+parameters <- c("b1", "seb1", "R2", "exp_var", "a3hat", "a3var", "r2")
 
 # The result returned from mesim_like.R is a list with n_iter lists that each
 # contain a list for each of the 5 exposures (in predictors), and the 4 returned
@@ -287,9 +283,9 @@ parameters <-  c("b1", "seb1", "R2", "exp_var")
 # easier to analyze.  The next two conversion steps accomplish this:
 # 1. Transform the 3D list of vectors into a 2D list of tibbles
 res_lst_tbl <- lapply(1:n_iter, function(x) { 
-    res_tbl <- as_tibble(matrix(unlist(result_like_sp[[x]]), 
+    res_tbl <- as_tibble(suppressWarnings(matrix(unlist(result_like_sp[[x]]), 
                                 nrow=length(predictors), byrow=TRUE, 
-                                dimnames = list(predictors, parameters)))
+                                dimnames = list(predictors, parameters))))
     res_tbl$predictor <- predictors
     res_tbl$replicate <- x
     res_tbl})
@@ -297,6 +293,8 @@ res_lst_tbl <- lapply(1:n_iter, function(x) {
 # 2. Transform the 2D list of tibbles into one large tibble
 res_tbl <- dplyr::bind_rows(res_lst_tbl)
 
+# Display results
+#knitr::kable(res_tbl)
 
 # Step IV. (In the next chunk) Summarize the results
 
@@ -304,7 +302,7 @@ res_tbl <- dplyr::bind_rows(res_lst_tbl)
 
 The next chunk is to summarize the results using basic descriptive tools and plots.  We only show a simple version of part of the summary needed.
 
-```{r Summarize like ME results, eval = TRUE}
+```{r Summarize like ME results, eval = FALSE}
 # --------- Summarize like ME results -------------
 # TODO REVISE code here?
 
