@@ -143,7 +143,7 @@ system.time(result_pure_sp <- lapply(1:n_iter, function(x) me_pure()))
 # The above application uses single-core processing.  Multi-core (or parallel)
 # processing can greatly speed up long programs.  We use the system.time()
 # function to determine how long a procedure works.  We use multi-core versions
-# of functions to allow the paralell processing as in the following steps:
+# of functions to allow the parallel processing as in the following steps:
 # Multi-core processing - Note: mclapply() does not work in Windows
 # if (.Platform$OS.type != "windows") {
 #     system.time(result_pure_mp <- mclapply(1:n_iter, function(x) me_pure(), 
@@ -170,7 +170,7 @@ parameters <-  c("b1", "seb1", "R2", "exp_var")
 # returned parameters. We would like to convert this into a structure that is
 # easier to analyze.  The next two conversion steps accomplish this:
 
-# 1. Transform the 3D list of vectors into a 2D list of tibbles
+# 1. Transform the 3D list of lists into a 2D list of tibbles
 res_lst_tbl <- lapply(1:n_iter, function(x) { 
     res_tbl <- as_tibble(matrix(unlist(result_pure_sp[[x]]), 
                                 nrow=length(predictors), byrow=TRUE, 
@@ -265,7 +265,7 @@ system.time(result_like_sp <- lapply(1:n_iter, function(x) me_like()))
 # Bonus topic:  parallel processing (see the pure version for explanation)
 # Multi-core processing - Note: mclapply() does not work in Windows
 # if (.Platform$OS.type != "windows") {
-#     system.time(result_pure_mp <- mclapply(1:n_iter, function(x) me_like(), 
+#     system.time(result_like_mp <- mclapply(1:n_iter, function(x) me_like(), 
 #                                            mc.cores = 8, 
 #                                            mc.set.seed = TRUE,
 #                                            mc.preschedule = TRUE))
@@ -287,7 +287,7 @@ parameters <-  c("b1", "seb1", "R2", "exp_var")
 # easier to analyze.  The next two conversion steps accomplish this:
 # 1. Transform the 3D list of vectors into a 2D list of tibbles
 res_lst_tbl <- lapply(1:n_iter, function(x) { 
-    res_tbl <- as_tibble(matrix(unlist(result_pure_sp[[x]]), 
+    res_tbl <- as_tibble(matrix(unlist(result_like_sp[[x]]), 
                                 nrow=length(predictors), byrow=TRUE, 
                                 dimnames = list(predictors, parameters)))
     res_tbl$predictor <- predictors
