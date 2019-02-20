@@ -91,9 +91,8 @@ me_like <- function(n_subj = 10000, n_samp = 100, s3_sd1 = 1, s3_sd2 = 0.3) {
         rnorm(n_samp, sd = sd_eta)
     )
  
- #   TODO:  ADD below   
  # Now develop exposure predictions using the first monitor datset and predict
- # on the subjects
+ #  on the subjects
     # Fully specified exposure model
     lm_1full <- lm(x ~ s_1 + s_2 + s_3, data = samp1)
     #xhat_1full <- predict(lm_1full, data = samp1)
@@ -129,20 +128,21 @@ me_like <- function(n_subj = 10000, n_samp = 100, s3_sd1 = 1, s3_sd2 = 0.3) {
     subj <- subj %>%
         modelr::add_predictions(lm_2red,"xhat_2red")
     
+# The next step is commented out because it is subsumed in the following 
+#   lapply() step
 # Do health analyses:
     # True exposure
-    lm_xtrue <- lm(y ~ x, data = subj)
+#    lm_xtrue <- lm(y ~ x, data = subj)
     # Predicted expsure, monitor set 1 fully specified exposure model
-    lm_x1full <- lm(y ~ xhat_1full, data = subj)
+#    lm_x1full <- lm(y ~ xhat_1full, data = subj)
     # Predicted expsure, monitor set 1 reduced exposure model
-    lm_x1red <- lm(y ~ xhat_1red, data = subj)
+#    lm_x1red <- lm(y ~ xhat_1red, data = subj)
     # Predicted expsure, monitor set 2 fully specified exposure model
-    lm_x2full <- lm(y ~ xhat_2full, data = subj)
+#    lm_x2full <- lm(y ~ xhat_2full, data = subj)
     # Predicted expsure, monitor set 2 reduced exposure model
-    lm_x2red <- lm(y ~ xhat_2red, data = subj)
+#    lm_x2red <- lm(y ~ xhat_2red, data = subj)
      
- # TODO:  collect b1, Vb1, out-of-sampleR2of xhat, variance of xhat, 
- # TODO:  also need the in-sample R2 for predicted exposures, a3 & var_a3 for full
+ # collect b1, Vb1, R2 for disease model, variance of xhat, 
     predictors <- c("x",
                     "xhat_1full",
                     "xhat_1red",
@@ -150,8 +150,6 @@ me_like <- function(n_subj = 10000, n_samp = 100, s3_sd1 = 1, s3_sd2 = 0.3) {
                     "xhat_2red")
     
     # Define a list for 4 parameters from disease model fits x 5 exposures
-    # TODO: how address the other 3?
-    # TODO:  need to handle that a3 and var_a3 not always defined + insamp R2
     # note use of "get()" to refer to the variable as a variable, not its name
     ret.list <- lapply(predictors, function(i) {
         lmfit <- lm(y ~ get(i))
@@ -166,6 +164,8 @@ me_like <- function(n_subj = 10000, n_samp = 100, s3_sd1 = 1, s3_sd2 = 0.3) {
     for (i in 1:length(ret.list)) {
         names(ret.list[[i]]) <- c('b1', 'seb1', 'R2', 'exp_var')
     }
+    # TODO:  also need the in-sample R2 for predicted exposures, a3 & var_a3 for full
+    # TODO:  need to handle that a3 and var_a3 not always defined + insamp R2
     
     # Return the list
     return(ret.list)

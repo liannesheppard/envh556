@@ -61,7 +61,7 @@ if (!require("pacman")) {install.packages("pacman", repos = my_repo)}
 pacman::p_load(tidyverse, knitr, dplyr, Hmisc, broom, parallel)  
 ```
 
-TODO:  Create versions that allow full datasets to be output from the program, at least when it is run one time.  Probably as an option to set.
+TODO:  Also allow one full dataset to be output.
 
 # Introduction and Purpose
 
@@ -164,23 +164,25 @@ predictors <- c("x",
                 "class_3")
 parameters <-  c("b1", "seb1", "R2", "exp_var")
 
-# The result returned from mesim_pure.R is a list of lists.  At the first level
-# we have n_iter lists where each of those contains a list for each of the 7
-# exposures (in predictors), and the 4 returned parameters for each.  We would
-# like to convert this into a structure that is easier to analyze.  The next two
-# conversion steps accomplish this:
+# The result returned from mesim_pure.R is a list of lists (of lists), or a 3D
+# list.  At the first level we have n_iter lists where each of those contains a
+# list for each of the 7 exposures (in predictors), each of which contains the 4
+# returned parameters. We would like to convert this into a structure that is
+# easier to analyze.  The next two conversion steps accomplish this:
 
 # 1. Transform the 3D list of vectors into a 2D list of tibbles
-res.lst.tbl <- lapply(1:n_iter, function(x) { 
-    res.tbl <- as_tibble(matrix(unlist(result_pure_sp[[x]]), 
+res_lst_tbl <- lapply(1:n_iter, function(x) { 
+    res_tbl <- as_tibble(matrix(unlist(result_pure_sp[[x]]), 
                                 nrow=length(predictors), byrow=TRUE, 
                                 dimnames = list(predictors, parameters)))
-    res.tbl$predictor <- predictors
-    res.tbl$replicate <- x
-    res.tbl})
+    res_tbl$predictor <- predictors
+    res_tbl$replicate <- x
+    return(res_tbl)
+    }
+    )
 
 # 2. Transform the 2D list of tibbles into one large tibble
-res.tbl <- dplyr::bind_rows(res.lst.tbl)
+res_tbl <- dplyr::bind_rows(res_lst_tbl)
  
 # Step IV. (In the next chunk) Summarize the results
 
@@ -195,23 +197,20 @@ The next chunk is to summarize the results using basic descriptive tools and plo
 # Students need to expand this summary to also get the E(se(beta1)), mean R2,
 # and average variance of each exposure (ideally reported on the SD scale).
 # Students should also think about graphical displays such as density plots.
-res <- res.tbl %>% 
+res <- res_tbl %>% 
     group_by(predictor) %>% 
     dplyr::summarize(
         N = n(),
-        E_b1 = mean(b1),
+        `E(b1)` = mean(b1),
         sd_b1 = sd(b1),
-        E_se_b1 = sqrt(mean(seb1^2)),
-        E_R2 = mean(R2),
-        E_exp_var = mean(exp_var)
+        `E(se_b1)` = sqrt(mean(seb1^2)),
+        `E(R2)` = mean(R2),
+        `E(exp_var)` = mean(exp_var)
         ) %>%
-   arrange(E_exp_var) 
+   arrange(`E(exp_var)`) 
     
-#    tidyr::gather(stat, val, -predictor) %>% 
-#    tidyr::spread(predictor, val) %>% 
-#    select("stat", predictors)
-
 # Display results
+# TODO: remove N from the table; how to put it in the caption
 knitr::kable(res, caption = "Health effect estimate properties")
 
 ```
@@ -255,7 +254,7 @@ source("mesim_like.R")
 
 # Step II:  Iterate
 # Set the seed
-set.seed(100)
+set.seed(101)
 
 # define the number of simulation iterations to use
 n_iter <- 10
@@ -287,16 +286,16 @@ parameters <-  c("b1", "seb1", "R2", "exp_var")
 # parameters for each.  We would like to convert this into a structure that is
 # easier to analyze.  The next two conversion steps accomplish this:
 # 1. Transform the 3D list of vectors into a 2D list of tibbles
-res.lst.tbl <- lapply(1:n_iter, function(x) { 
-    res.tbl <- as_tibble(matrix(unlist(result_pure_sp[[x]]), 
+res_lst_tbl <- lapply(1:n_iter, function(x) { 
+    res_tbl <- as_tibble(matrix(unlist(result_pure_sp[[x]]), 
                                 nrow=length(predictors), byrow=TRUE, 
                                 dimnames = list(predictors, parameters)))
-    res.tbl$predictor <- predictors
-    res.tbl$replicate <- x
-    res.tbl})
+    res_tbl$predictor <- predictors
+    res_tbl$replicate <- x
+    res_tbl})
 
 # 2. Transform the 2D list of tibbles into one large tibble
-res.tbl <- dplyr::bind_rows(res.lst.tbl)
+res_tbl <- dplyr::bind_rows(res_lst_tbl)
 
 
 # Step IV. (In the next chunk) Summarize the results
@@ -309,16 +308,19 @@ The next chunk is to summarize the results using basic descriptive tools and plo
 # --------- Summarize like ME results -------------
 # TODO REVISE code here?
 
-# This example finds the mean and sd of "b1" for all 5 predictors
-# Note:  Students need to expand this summary to also get the E(se(beta1)), mean
-# R2, and average variance of each exposure (ideally reported on the SD scale),
-# plus analyze the other features and develop plots
-res <- res.tbl %>% 
+# This repeats similar results as developed for the pure ME case.
+# Note:  Students need to analyze the other features and develop plots
+res <- res_tbl %>% 
     group_by(predictor) %>% 
-    summarise_at(vars(b1), funs(mean, sd)) %>% 
-    tidyr::gather(stat, val, -predictor) %>% 
-    tidyr::spread(predictor, val) %>% 
-    select("stat", predictors)
+    dplyr::summarize(
+        N = n(),
+        `E(b1)` = mean(b1),
+        sd_b1 = sd(b1),
+        `E(se_b1)` = sqrt(mean(seb1^2)),
+        `E(R2)` = mean(R2),
+        `E(exp_var)` = mean(exp_var)
+        ) %>%
+   arrange(`E(exp_var)`) 
 
 # Display results
 knitr::kable(res)
@@ -328,14 +330,14 @@ knitr::kable(res)
 # Practice Session
 
 1.  Decide your project for this lab.  Make sure all the code files you will need are available inside your project folder.    
-2.  In lab we will read through the `mesim_pure` function together to make sure you understand each step.  We can practice on one interation so you can investigate the full results.
-TODO
-    a. You may wish to try some of the steps manually to solidify your understanding.
+2.  In lab we will read through the `mesim_pure` function together to make sure you understand each step.  
+    a. You can practice on one interation so you better understand its results by running `me_pure()`.
+    b. While it will take more work, you may wish to try each of the data-generating and fitting steps manually to solidify your understanding.
 3.  Run a small number of simulations for practice (e.g. 10-50).
 4.  Develop some procedures to summarize the results.  Think about what variables you will need to summarize to be able to show results using a format similar to those reported in the Table and Figures (1 and 2) of Szpiro et al.
     a.  Considering the summary statistics for $\hat{\beta}_x$, how were the standard deviation, RMSE, and E(SE) in the Table estimated?  (Hint: the standard deviation and RMSE are estimated using $\hat{\beta}_x$x, while E(SE) is shorthand notation for the “expected” (or average) standard error of $\hat{\beta}_x$ estimated using the variance of $\hat{\beta}_x$.)
     b.  You will need to calculate your own coverage probabilities.  To do this, calculate a 95% CI for (each) $\hat{\beta}_x$ in each simulation and determine whether or not the true value for $\beta_x$ (=2) is covered by that CI.  (Hint:  Generate a new variable that is an indicator variable for your result and summarize this over all simulations.)
-    c.  You may also want to consider summarizing one full dataset used in one simulation iteration.  TODO:  The last iteration dataset is stored in ADD: subjdata.dta.
+    c.  You may also want to consider summarizing one full dataset used in one simulation iteration.  
 5.	For your homework, we’d like you to run a large number of simulations (e.g. 1,000 or more).  Then summarize these in a table and one or more figures, thinking creatively about what you can show in these data to highlight the insights you have gained
 6.	For the optional extra credit part of the homework, we would like you to study both 1) the two conditions shown in the Szpiro et al (2011) Table in order to replicate the table, and 2) in addition choose (at least) one more pair of conditions to investigate.
 
