@@ -22,6 +22,16 @@ getMSE <- function(obs,pred) {
     return(result)
 }
 
+create_dataset <- function(n, sd_s, sd_eta, alpha_0, alpha) {
+    tibble(
+        s_1 = rnorm(n, sd = sd_s[1]),
+        s_2 = rnorm(n, sd = sd_s[2]),
+        s_3 = rnorm(n, sd = sd_s[3]),
+        x = alpha_0 + alpha[1] * s_1 + alpha[2] * s_2 + alpha[3] * s_3 +
+            rnorm(n, sd = sd_eta)
+    )
+}
+
 # me_like function
 me_like <- function(n_subj = 10000, n_samp = 100, s3_sd1 = 1, s3_sd2 = 0.3) {
 # definition of terms:
@@ -60,37 +70,20 @@ me_like <- function(n_subj = 10000, n_samp = 100, s3_sd1 = 1, s3_sd2 = 0.3) {
 # first create the subject dataset, using n_subj as supplied in the
 #   function's parameter list:
     
-    subj <- tibble(
-        s_1 = rnorm(n_subj, sd = sd1_s[1]),
-        s_2 = rnorm(n_subj, sd = sd1_s[2]),
-        s_3 = rnorm(n_subj, sd = sd1_s[3]),
-        x = alpha_0 + alpha[1] * s_1 + alpha[2] * s_2 + alpha[3] * s_3 +
-        rnorm(n_subj, sd = sd_eta),
-        y = beta[1] + beta[2] * x + rnorm(n_subj, sd = sd_eps)
-    )
+    subj <- create_dataset(n_subj, sd1_s, sd_eta, alpha_0, alpha)
+    subj <- subj %>% 
+        mutate(y = beta[1] + beta[2] * x + rnorm(n_subj, sd = sd_eps))
 
 # now create the 1st monitoring dataset drawn from the same distribution as the
 # subject data
 
-    samp1 <- tibble(
-        s_1 = rnorm(n_samp, sd = sd1_s[1]),
-        s_2 = rnorm(n_samp, sd = sd1_s[2]),
-        s_3 = rnorm(n_samp, sd = sd1_s[3]),
-        x = alpha_0 + alpha[1] * s_1 + alpha[2] * s_2 + alpha[3] * s_3 +
-        rnorm(n_samp, sd = sd_eta)
-    )
+    samp1 <- create_dataset(n_samp, sd1_s, sd_eta, alpha_0, alpha)
     
 # now create the 2nd monitoring dataset drawn from a different distribution not
 # the same as the subject data distribution
     
-    samp2 <- tibble(
-        s_1 = rnorm(n_samp, sd = sd2_s[1]),
-        s_2 = rnorm(n_samp, sd = sd2_s[2]),
-        s_3 = rnorm(n_samp, sd = sd2_s[3]),
-        x = alpha_0 + alpha[1] * s_1 + alpha[2] * s_2 + alpha[3] * s_3 +
-        rnorm(n_samp, sd = sd_eta)
-    )
- 
+    samp2 <- create_dataset(n_samp, sd2_s, sd_eta, alpha_0, alpha)
+    
  # Now develop exposure predictions using the first monitor datset and predict
  #  on the subjects
     # Fully specified exposure model
