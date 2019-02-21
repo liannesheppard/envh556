@@ -158,6 +158,7 @@ me_like <- function(n_subj = 10000, n_samp = 100, s3_sd1 = 1, s3_sd2 = 0.3) {
     }
     
     # Add additional parameters (a3hat, a3var, r2) for (1, 2) and (full, red)
+    ret.list$x[c('a3hat', 'a3var', 'r2')] <- NA
     for (i in 1:2) {
         for (j in c('full', 'red')) {
             for (k in c('a3hat', 'a3var', 'r2')) {
