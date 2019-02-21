@@ -304,7 +304,6 @@ The next chunk is to summarize the results using basic descriptive tools and plo
 
 ```{r Summarize like ME results}
 # --------- Summarize like ME results -------------
-# TODO REVISE code here?
 
 # This repeats similar results as developed for the pure ME case.
 # Note:  Students need to analyze the other features and develop plots
@@ -315,13 +314,13 @@ res <- res_tbl %>%
         `R2_W` = mean(r2),
         `E(a3)` = mean(a3hat),
         `E(se(a3))` = sqrt(mean(a3var)),
+        `E(exp_var)` = mean(exp_var),
         `E(b1)` = mean(b1),
         `SD(b1)` = sd(b1),
         `E(se_b1)` = sqrt(mean(seb1^2)),
-        `E(R2)` = mean(R2_y),
-        `E(exp_var)` = mean(exp_var)
+        `E(R2)` = mean(R2_y)
         ) %>%
-   arrange(`E(exp_var)`) 
+   arrange(predictor) 
 
 # Display results
 knitr::kable(res)
@@ -336,30 +335,30 @@ knitr::kable(res)
     b. While it will take more work, you may wish to try each of the data-generating and fitting steps manually to solidify your understanding.
 3.  Run a small number of simulations for practice (e.g. 10-50).
 4.  Develop some procedures to summarize the results.  Think about what variables you will need to summarize to be able to show results using a format similar to those reported in the Table and Figures (1 and 2) of Szpiro et al.
-    a.  Considering the summary statistics for $\hat{\beta}_x$, how were the standard deviation, RMSE, and E(SE) in the Table estimated?  (Hint: the standard deviation and RMSE are estimated using $\hat{\beta}_x$x, while E(SE) is shorthand notation for the “expected” (or average) standard error of $\hat{\beta}_x$ estimated using the variance of $\hat{\beta}_x$.)
+    a.  Considering the summary statistics for $\hat{\beta}_x$, how were the standard deviation, RMSE, and E(SE) in the Table estimated?  (Hint: the standard deviation and RMSE are estimated using $\hat{\beta}_x$, while E(SE) is shorthand notation for the “expected” (or average) standard error of $\hat{\beta}_x$ estimated using the variance of $\hat{\beta}_x$.)
     b.  You will need to calculate your own coverage probabilities.  To do this, calculate a 95% CI for (each) $\hat{\beta}_x$ in each simulation and determine whether or not the true value for $\beta_x$ (=2) is covered by that CI.  (Hint:  Generate a new variable that is an indicator variable for your result and summarize this over all simulations.)
     c.  You may also want to consider summarizing one full dataset used in one simulation iteration.  
-5.	For your homework, we’d like you to run a large number of simulations (e.g. 1,000 or more).  Then summarize these in a table and one or more figures, thinking creatively about what you can show in these data to highlight the insights you have gained
-6.	For the optional extra credit part of the homework, we would like you to study both 1) the two conditions shown in the Szpiro et al (2011) Table in order to replicate the table, and 2) in addition choose (at least) one more pair of conditions to investigate.
+5.  For your homework, we’d like you to run a large number of simulations (e.g. 1,000 or more).  Then summarize these in a table and one or more figures, thinking creatively about what you can show in these data to highlight the insights you have gained
+6.  For the optional extra credit part of the homework, we would like you to study both 1) the two conditions shown in the Szpiro et al (2011) Table in order to replicate the table, and 2) in addition choose (at least) one more pair of conditions to investigate.
 
 
 # Homework Exercises for Standard Lab
 
 1.  Create your own version of the Szpiro et al Table using the results from your simulation study.  Make sure to show some exposure characteristics as well as characteristics of the health effect estimates for pure Berkson and classical measurement error, respectively.  Discuss your understanding of these results.
 2.  In your lab write-up:  
-    a.  Make sure you describe clearly the conditions you studied in your simulation study.   State the assumptions used in the simulation.  (Note:  If you wish you may change the underlying assumptions, but if you do, make sure you convey what you did completely clearly in your write-up.)
+    a. Make sure you describe clearly the conditions you studied in your simulation study.   State the assumptions used in the simulation.  (Note:  If you wish you may change the underlying assumptions, but if you do, make sure you convey what you did completely clearly in your write-up.)
     b.  Develop some informative figures to help you make your points.  Think about both the exposure side and the health effect estimate side of the simulation study results.
     c.  Discuss your understanding of pure Berkson and classical measurement error and connect that understanding to the quantities you simulated and estimated in the simulation study.
 
 # Homework Exercises:  Optional Extra Credit lab on exposure prediction & measurement error  
 
-1.	Reproduce the Szpiro et al (2011) Table using the same two conditions for the variance of $s_3$ in your simulation study.  Discuss your understanding of these results.
-2.	Choose (at least) one more pair of conditions to investigate in a second simulation study by varying one or more of: the sample sizes for the monitoring data and/or the health study, and/or the relative variability of $s_3$ in the two sets of monitoring data.  (One option is to try to reproduce Figure 3 in the paper.)  
-a.	Describe the conditions you studied in your second simulation study.  Summarize your results and discuss them.
-b.	With respect to both 1. and 2. above, if you have gained any additional insights from looking at any of the other statistics available from the simulation but not reported in the paper, please incorporate these insights into your comments.
-3.	Think about the title of this paper and your intuition about the role of exposure prediction on inference about health effects (or at least any intuition you may have had prior to reading this paper).  Why do you think the authors had difficulty convincing the journal editors to publish this paper?  Do you think the inclusion of the sample code in the supplement and your work trying to replicate the simulation studies inspired by this paper helps make the results more convincing? 
-4.	In a simulation study we can use the true exposure at subject locations as out-of-sample test data for assessing the quality of the exposure prediction model as was done here.  Typically we never know the true exposure and also we don’t have detailed exposure measurements on all the subjects who also provide health data.  Thus in applications we often resort to assessing the quality of the exposure predictions in the exposure monitoring data alone, using .e.g. hold-out datasets or cross-validation strategies. In the settings evaluated in this simulation study, speculate on how our inference and conclusions could be impacted by using the monitoring data instead of the subject data for the assessment of the performance of the exposure model.   (If you wish, you may try cross-validating the exposure model results and comparing these to the true out-of-sample results you have already reported.)
-5.	If you decide to submit this extra credit portion of the lab, please prepare it as a separate lab report.   This extra credit lab is worth a full 10 points.
+1.  Reproduce the Szpiro et al (2011) Table using the same two conditions for the variance of $s_3$ in your simulation study.  Discuss your understanding of these results.
+2.  Choose (at least) one more pair of conditions to investigate in a second simulation study by varying one or more of: the sample sizes for the monitoring data and/or the health study, and/or the relative variability of $s_3$ in the two sets of monitoring data.  (One option is to try to reproduce Figure 3 in the paper.)  
+    a.  Describe the conditions you studied in your second simulation study.  Summarize your results and discuss them.
+    b.  With respect to both 1. and 2. above, if you have gained any additional insights from looking at any of the other statistics available from the simulation but not reported in the paper, please incorporate these insights into your comments.
+3.  Think about the title of this paper and your intuition about the role of exposure prediction on inference about health effects (or at least any intuition you may have had prior to reading this paper).  Why do you think the authors had difficulty convincing the journal editors to publish this paper?  Do you think the inclusion of the sample code in the supplement and your work trying to replicate the simulation studies inspired by this paper helps make the results more convincing? 
+4.  In a simulation study we can use the true exposure at subject locations as out-of-sample test data for assessing the quality of the exposure prediction model as was done here.  Typically we never know the true exposure and also we don’t have detailed exposure measurements on all the subjects who also provide health data.  Thus in applications we often resort to assessing the quality of the exposure predictions in the exposure monitoring data alone, using .e.g. hold-out datasets or cross-validation strategies. In the settings evaluated in this simulation study, speculate on how our inference and conclusions could be impacted by using the monitoring data instead of the subject data for the assessment of the performance of the exposure model.   (If you wish, you may try cross-validating the exposure model results and comparing these to the true out-of-sample results you have already reported.)
+5.  If you decide to submit this extra credit portion of the lab, please prepare it as a separate lab report.   This extra credit lab is worth a full 10 points.
 
 
 
