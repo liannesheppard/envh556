@@ -275,10 +275,10 @@ system.time(result_like_sp <- lapply(1:n_iter, function(x) me_like()))
 # 
 # Define vectors to be used in the function below
 predictors <- c("x", "xhat_1full", "xhat_1red", "xhat_2full", "xhat_2red")
-parameters <- c("b1", "seb1", "R2", "exp_var", "a3hat", "a3var", "r2")
+parameters <- c("b1", "seb1", "R2_y", "exp_var", "a3hat", "a3var", "r2")
 
 # The result returned from mesim_like.R is a list with n_iter lists that each
-# contain a list for each of the 5 exposures (in predictors), and the 4 returned
+# contain a list for each of the 5 exposures (in predictors), and the (4-)7 returned
 # parameters for each.  We would like to convert this into a structure that is
 # easier to analyze.  The next two conversion steps accomplish this:
 # 1. Transform the 3D list of vectors into a 2D list of tibbles
@@ -302,7 +302,7 @@ res_tbl <- dplyr::bind_rows(res_lst_tbl)
 
 The next chunk is to summarize the results using basic descriptive tools and plots.  We only show a simple version of part of the summary needed.
 
-```{r Summarize like ME results, eval = FALSE}
+```{r Summarize like ME results}
 # --------- Summarize like ME results -------------
 # TODO REVISE code here?
 
@@ -312,10 +312,13 @@ res <- res_tbl %>%
     group_by(predictor) %>% 
     dplyr::summarize(
         N = n(),
+        `R2_W` = mean(r2),
+        `E(a3)` = mean(a3hat),
+        `E(se(a3))` = sqrt(mean(a3var)),
         `E(b1)` = mean(b1),
-        sd_b1 = sd(b1),
+        `SD(b1)` = sd(b1),
         `E(se_b1)` = sqrt(mean(seb1^2)),
-        `E(R2)` = mean(R2),
+        `E(R2)` = mean(R2_y),
         `E(exp_var)` = mean(exp_var)
         ) %>%
    arrange(`E(exp_var)`) 

@@ -161,7 +161,7 @@ me_like <- function(n_subj = 10000, n_samp = 100, s3_sd1 = 1, s3_sd2 = 0.3) {
     # Set names for list items and the items contained in each item
     names(ret.list) <- predictors
     for (i in 1:length(ret.list)) {
-        names(ret.list[[i]]) <- c('b1', 'seb1', 'R2', 'exp_var')
+        names(ret.list[[i]]) <- c('b1', 'seb1', 'R2_y', 'exp_var')
     }
     
     # Add additional parameters (a3hat, a3var, r2) for (1, 2) and (full, red)
