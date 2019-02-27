@@ -17,6 +17,8 @@ editor_options:
 ```{r setup, include=FALSE}
 #-------------r.setup-------------
 knitr::opts_chunk$set(echo = TRUE)
+
+par.orig <- par()
 ```
 
 ```{r clear.workspace, eval=FALSE, echo=FALSE}
@@ -61,25 +63,440 @@ if (!require("pacman")) {install.packages("pacman", repos = my_repo)}
 # maps: for maps
 # sf:  ??
 # maptools: ??
-pacman::p_load(tidyverse, knitr, dplyr, geoR, sf, maps)  
+# scatterplot3d for the scatter3d option in geoR plotting
+pacman::p_load(tidyverse, knitr, dplyr, geoR, sf, maps, scatterplot3d,ggmpa)
+
 ```
 
-TODO:  Download geoR, Sun's geoR lab, find some variogram code/package
+```{r read.data.from.a.web.site, eval=TRUE, echo=FALSE}
+#-----read.data.from.a.web.site--------
+# Download the data file from a web site if it is not already downloaded, then
+# read in the file
+
+datapath <- "Datasets"
+dir.create(datapath, showWarnings=FALSE, recursive = TRUE)
+
+snapshot.file <- "allseasonsR.rds"
+snapshot.path <- file.path(datapath, snapshot.file)
+
+# Only download the file if it's not already present
+if (!file.exists(snapshot.path)) {
+    url <- paste("https://staff.washington.edu/high/envh556/Datasets", 
+                 snapshot.file, sep = '/')
+    download.file(url = url, destfile = snapshot.path)
+}
+
+# Output a warning message if the file cannot be found
+if (file.exists(snapshot.path)) {
+    snapshot <- readRDS(file = snapshot.path)
+} else warning(paste("Can't find", snapshot.file, "!"))
+
+```
+
+TODO:  search for TODOs and ?? and fix
+TODO:  Address the practice session, homework exercises, etc.
+TODO:  figure out maps
+
+TODO:  Questions for Sun
+    * where is the grayscale sequence definition from
+    * note the legend problem in the variograms
+    * how know the parameters for the variogram lines?
+    * discuss the choices for plotting kriging predictions
+    * discuss initial values, e.g. in the ca20 data.  How choose?
 
 # Introduction and Purpose
 
-The purpose of this lab is to further solidify your understanding of regression for prediction, and learn about geostatistical models.  We will use the same MESA Air snapshot data described in Mercer et al 2011 that we used earlier in the quarter.
+The purpose of this lab is to learn about geostatistical models and further solidify your understanding of regression for prediction.  We will use the same MESA Air snapshot data described in Mercer et al 2011 that we used earlier in the quarter.
 
 # Getting Started
 
 ## Some comments on universal kriging and prediction:  
-TODO:  UPDATE In kriging prediction, you can't predict on the same locations that you used to estimate the parameters.  Think of this as an enforced need to do cross-validation to evaluate your predictions.  This has important implications for using the user-written ukrige code in this class.  Some notes on implementing the code:
+TODO:  UPDATE In kriging prediction, you can't predict on the same locations that you used to estimate the parameters.  Think of this as an enforced need to do cross-validation to evaluate your predictions. 
+
+## R packages for geostatistics
+
+The packages I am aware of include `geoR` and `gstat`.  `geoR` has been around for some time; `gstat` appears to be newer and has been updated more recently (2018 vs. 2016 for `geoR`).  The two appear to give identical results, at least for a simple dataset example.  To see this, type `demo(gstat::comp_geoR)` in the console.
+
+Because of my familiarity, we discuss `geoR` in this lab.
 
 ## Practice using `geoR`:
 
-TODO:  Add practice using Sun's code, perhaps with the installed datasets first??
+The purpose of this section is to show some `geoR` tools using the geo datasets included in the `geoR` package.  Both are stored in the geodata format.  First we go through the `s100` dataset, a simple dataset of simulated data.  This allows us to demonstrate the geodata object, the plot default, variograms, modeling using different approaches, kriging predictions, and plotting the results.  Then we explore `ca20` to understand inclusion of covariates into geostatistical analysis.
+
+TODO:  Refine the practice using Sun's code.  Fix the legend problem.  Maybe figure out how to use ggmap with this??
+
+### s100 dataset, a simulated dataset
+
+#### Summary
+
+```{r basics with s100 dataset - summary}
+# basics with s100 dataset - summary -----------
+# Summary uses the summary.geodata function
+summary(s100)
+
+# Plot uses the plot.geodata function in geoR, the default
+#   the first plot is the data on an x-y "map" by quartiles of values
+#   the next two plots show the data vs the x or y coordinate (to look for broad
+#       trends by the coordinates)
+#   the last plot shows a histogram of the data
+plot(s100)
+# need to install package scatterplot3d for the following to work
+#   adds a 3d scatterplot as the 4th plot instead of the histogram
+plot(s100, scatter3d = TRUE)
+
+# points uses the points.geodata function in geoR
+par(mfrow=c(2,2))
+points(s100, xlab="X", ylab="Y", main="Map 1, default w/ sizes proportional to data")
+points(s100, xlab="X", ylab="Y", pt.divide="rank.prop", main = "Map 2, point sizes proportional to data rank")
+# TODO: ASK why the gray scale is set up as a sequence from 1 - .1 of length 100.  Presumably the length is because the data are 100 points.
+points(s100, xlab="X", ylab="Y", cex.max=1.7, 
+       col=gray(seq(1, 0.1, l=100)), pt.divide="equal", main = "Map 3, equal size points in gray scale")
+points(s100, pt.divide = "quintile", xlab="X",ylab="Y", main = "Map 4, quintiles of the data")
+```
+
+#### Empirical variogram
+
+```{r s100 empirical variogram}
+# s100 empirical variogram ------------
+cloud1 <- variog(s100, option="cloud", max.dist=1)
+bin1 <- variog(s100, uvec=seq(0, 1, l=11))
+par(mfrow=c(1,2))
+plot(cloud1, main="Empirical variogram: cloud")
+lines(smooth.spline(cloud1$u, cloud1$v, df = 6), col="red",lwd = 4)
+plot(bin1, main="Empirical variogram: bin")
+
+```
+
+#### Modeled variagram
+
+One can superimpose on empirical variograms various modeled variograms.
 
 
+```{r s100 modeled variogram}
+# s100 modeled variogram -------------
+
+plot(variog(s100, uvec=seq(0,1,l=11)))
+lines.variomodel(cov.model="exp", cov.pars=c(1, 0.3), nug=0, max.dist=1)
+lines.variomodel(cov.model="sph", cov.pars=c(0.8, 0.8), nug=0.1, max.dist=1, lty=2)
+legend("bottomright", c("exponential","spherical"), lty = 1:2, text.width = 0.2, cex = 0.6)
+
+```
+
+#### Parameter estimation
+```{r s100 parameter estimation}
+# s100 parameter estimation ---------
+
+ml <- likfit(s100, ini = c(1, 0.5))
+ml
+summary(ml)
+
+# zero no nugget
+ml <- likfit(s100, ini=c(1, 0.5), fix.nugget=T)
+reml <- likfit(s100, ini=c(1, 0.5), fix.nugget=T, lik.method="REML")
+ols <- variofit(bin1, ini=c(1, 0.5), fix.nugget=T, weights="equal")
+wls <- variofit(bin1, ini=c(1, 0.5), fix.nugget=T)
+
+# estimated nugget
+ml.n <- likfit(s100, ini = c(1, 0.5), nugget = 0.5)
+reml.n <- likfit(s100, ini = c(1, 0.5), nugget = 0.5, 
+                 lik.method = "RML")
+ols.n <- variofit(bin1, ini = c(1, 0.5), nugget = 0.5, 
+                  weights = "equal")
+wls.n <- variofit(bin1, ini = c(1, 0.5), nugget = 0.5)
+
+par(mfrow=c(1, 2))
+plot(bin1, main=expression(paste("fixed nugget:  ", tau^2==0)))
+lines(ml, max.dist=1)
+lines(reml, lwd=2, max.dist=1)
+lines(ols, lty=2, max.dist=1)
+lines(wls, lty=2, lwd=2, max.dist=1)
+legend("bottomright", legend = c("ML","REML","OLS","WLS"), lty=c(1,1,2,2), lwd=c(1,2,1,2), cex=0.5, text.width = 0.1, seg.len = 1)
+
+plot(bin1, main=expression(paste("estimated ", tau^2)))
+lines(ml.n, max.dist=1)
+lines(reml.n, lwd=2, max.dist=1)
+lines(ols.n, lty=2, max.dist=1)
+lines(wls.n, lty=2, lwd=2, max.dist=1)
+legend("bottomright", legend = c("ML","REML","OLS","WLS"), lty=c(1,1,2,2), lwd=c(1,2,1,2), cex=0.5, text.width = 0.1, seg.len = 1)
+
+```
+
+#### Cross-validation
+
+geoR defaults to doing leave-one-out cross-validation (option `locations.xvalid = all`).  It also has an option for validating on an external dataset when the `data = ` option is set.  The alternative approach in the documentation, using a subset of the data selected with `locations.xvalid`, is not documented and thus it isn't clear how it works.  Thus in a later chunk we will enforce 10-fold cross-validation using a grouping variable and dataset splitting procedure.  
+
+```{r s100 LOO cross-validation}
+# s100 LOO cross-validation ----------------
+# 
+xv.ml <- xvalid(s100, model=ml)
+xv.wls <- xvalid(s100, model=wls)
+
+mse.ml <- mean ((xv.ml$data - xv.ml$predicted)^2 )
+mse.wls <- mean ((xv.wls$data - xv.wls$predicted)^2 )
+
+# dropping the following because uses variance, not mean squared variations in
+# the denominator.  Best to not correct for the d.f. as the variance does
+#r2.ml <- 1 - mse.ml/var(xv.ml$data)
+#r2.wls <- 1 - mse.wls/var(xv.wls$data)
+r2.ml <- 1 - mse.ml/mean((xv.ml$data - mean(xv.ml$data))^2)
+r2.wls <- 1 - mse.wls/mean((xv.wls$data - mean(xv.wls$data))^2)
+
+mse.ml
+mse.wls
+r2.ml
+r2.wls
+
+# uses `plot.xvalid` to produce a set of plots showing the cross-validation results
+# under the weighted least squares variogram model
+par(mfcol=c(5,2), mar=c(3,3,1,0.5), mgp=c(1.5,0.7,0))
+plot(xv.wls)
+
+# under the maximum likelihood variogram model
+par(mfcol=c(5,2), mar=c(3,3,1,0.5), mgp=c(1.5,0.7,0))
+plot(xv.ml)
+
+```
+
+
+#### Kriging (ordinary)
+
+```{r s100 kriging}
+# s100 kriging --------------
+ 
+# Set up the plot area
+par(mfrow = c(2,2))
+
+# show the coordinates and the 4 prediction locations, 
+#   one location is outside the area of the data
+plot(s100$coords, xlim=c(0,1.2), ylim=c(0,1.2), xlab="X", ylab="Y",
+     main = "Data locations + 4 new loci to predict at")
+loci <- matrix(c(0.2,0.6,0.2,1.1,0.2,0.3,1,1.1), ncol=2)
+text(loci, as.character(1:4), col="red")
+
+# conventional Kriging, predict at the 4 loci defined above
+#   Note:  one location is out of the data area
+# Kriging default is ordinary kriging (OK; i.e. with constant mean)
+kc4 <- krige.conv(s100, locations=loci, krige=krige.control(obj.m=wls))
+
+# find out what is in the object produced
+names(kc4)
+
+# print the values of the predictions
+kc4$predict
+
+# print the variances of the predictions
+kc4$krige.var
+
+# rerun the kriging predictions to predict on a grid we create:
+pred.grid <- expand.grid(seq(0,1,l=51), seq(0,1,l=51))
+kc <- krige.conv(s100, loc=pred.grid, krige=krige.control(obj.m=ml))
+
+# define colors for plotting
+# TODO:  look into ColorBrewer
+col.range <- c("darkblue","blue","green","yellow","orange","red")
+
+# add prediction plots, 3 types:
+# TODO:  As Sun about choices here
+# TODO:  Set xlim, ylim so plots are square?  getting funny limits
+plot(s100$coords[,1:2], col=col.range[c(2:4,6)][floor(s100$data+2)], xlab="X", ylab="Y", main = "Data in categories")
+
+plot(pred.grid[,1:2], col=col.range[c(2:4,6)][floor(kc$predict+2)], xlab="X", ylab="Y", main = "Grid predictions in categories")
+
+image(kc, loc=pred.grid, col=gray(seq(1,0.1,l = 30)), xlab="X", ylab="Y", main = "Grid predictions as gray-scale image")
+
+```
+
+#### Kriging (ordinary) with 10-fold cross-validation
+
+```{r s100 kriging + CV}
+# s100 kriging + 10-fold CV --------------
+
+# generate a grouping variable for 10-fold cross-validation
+set.seed(250)
+grp <- rep(1:10, length.out = 100)
+grp <- sample(grp, replace = FALSE)
+
+
+# Conventional Kriging, predict at the 10% of left out data
+# Kriging default is OK with constant mean
+# 
+# First create a new dataset for the output
+s100new <- list(coords = s100[[1]], data = s100[[2]], pred = numeric(length(grp)), beta = numeric(10))
+
+# Use a loop to do the 10-fold CV:
+for (i in 1:10){
+    is_group <- grp == i
+    training_coord <- s100[[1]][!is_group,]
+    training_data <- s100[[2]][!is_group]
+    valid_coord <- s100[[1]][is_group,]
+    kc_cv <- krige.conv(coords = training_coord, data = training_data,
+                        locations = valid_coord, 
+                        krige=krige.control(obj.m=wls))
+    s100new$pred[is_group] <- kc_cv$predict
+    s100new$beta[i] <- kc_cv$beta.est
+}
+
+# get the properties of the kriging predictions:
+mse_cv <- mean ((s100new$data - s100new$pred)^2 )
+r2_cv <- 1 - mse_cv/mean((s100new$data - mean(s100new$data))^2)
+
+#print results
+mse_cv
+cat("RMSE from CV:  ", sqrt(mse_cv), "\n")
+r2_cv
+
+# compare to leave-one-out CV results
+# TODO:  digits in kable not working WHY?
+res <- rbind(#c("  ", "MSE", "RMSE", "R2"),
+      c("LOO (lik)", mse.ml, sqrt(mse.ml), r2.ml),
+      c("LOO (wls)", mse.wls, sqrt(mse.wls), r2.wls),
+      c("10-fold wls", mse_cv, sqrt(mse_cv), r2_cv))
+kable(res, format = "markdown", col.names = c("  ", "MSE", "RMSE", "R2"), caption = "Compare LOO and 10-fold CV results", digits = 2)
+
+```
+
+### Calcium data to demonstrate adding covariates
+
+This `geoR` dataset contains the calcium content measured in soil samples in a study area divided into 3 sub-areas (`area`).  Elevation
+(`altitude`) is also recorded.  The data of interest is calcium content measured in $mmol_c/dm^3$.  For more information, type `?ca20` at the console.
+
+#### Summary of ca20
+
+
+```{r ca20 summary}
+# ca20 summary -----------
+summary(ca20)
+
+plot(ca20)
+
+```
+
+
+#### Empirical and modeled variogram (including covariates)
+
+```{r ca20 variograms}
+# ca20 variograms ---------------
+
+ca20.v1 <- variog(ca20, max.dist=600)
+ca20.v2 <- variog(ca20, max.dist=600, trend= ~altitude+area)
+
+plot(ca20.v1)
+lines(ca20.v1)
+lines(ca20.v2, col=2)
+lines.variomodel(cov.model="exp", cov.pars=c(100, 30), nug=0, max.dist=600, col=3)
+#TODO: legend colors not showing up.  Why?
+legend("bottomright", c("empirical: ordinary","empirical: universal", "modeled: exponential"), col=1:3, text.width = 200, cex = 0.6)
+ 
+```
+
+#### Parameter estimation using likelihood fitting
+
+Note:  with likelihood fitting we need to provide the initial values.
+
+TODO:  Discuss with Sun the selection of these initial values
+
+```{r ca20 param estimation}
+# ca20 param estimation ----------
+
+ca20.ml <- likfit(ca20, trend= ~altitude+area, ini=c(100, 30))
+ca20.ml
+
+```
+
+#### Cross-validation
+
+```{r ca20 cross-validation}
+# ca20 cross-validation -------------
+
+# cross-validate (leave one out)
+ca20.xv.ml <- xvalid(ca20, model=ca20.ml)
+
+# estimate MSE and R2 (note: R2 uses the variance (divided by n-1) not the average deviations (divided by n))
+ca20.mse.ml <- mean ((ca20.xv.ml$data - ca20.xv.ml$predicted)^2 )
+ca20.r2.ml <- 1 - ca20.mse.ml/var(ca20.xv.ml$data)
+ca20.mse.ml
+ca20.r2.ml
+
+```
+
+#### Universal kriging
+
+```{r ca20 universal kriging}
+# ca20 universal kriging ----------------
+
+# create the prediction grid based on the dataset coordinates
+# NOTE:  this ignores the borders, which should be incorporated
+# TODO:  drop points based on the borders
+ca20.pred.grid <- expand.grid(
+            seq(min(ca20$coords[,1]),   max(ca20$coords[,1]),l=51), 
+            seq(min(ca20$coords[,2]),max(ca20$coords[,2]),l=51))
+
+# do the kriging predictions based on the ml fit
+ca20.kc <-
+    krige.conv(ca20, 
+               loc = ca20.pred.grid, 
+               krige = krige.control(obj.m = ca20.ml))
+
+# plot the results in two ways
+# TODO:  What kind of plot are we leveraging here? image is for kriging predictions, the other two seem to be stnadard plots
+# TODO:  address the borders in the second plot
+par(mfrow=c(1,3))
+plot(ca20$coords[, 1:2],
+     col = col.range[as.numeric(substr(ca20$data, 1, 1)) - 1],
+     xlab = "X",
+     ylab = "Y")
+     title(main = "Original data in ?? categories \nbased on values", line = 1)
+plot(ca20.pred.grid[, 1:2],
+     col = col.range[as.numeric(substr(ca20.kc$predict, 1, 1)) - 1],
+     xlab = "X",
+     ylab = "Y")
+     title(main = "Grid predictions in ?? categories \nbased on values", line = 1)
+image(ca20.kc,
+     loc = ca20.pred.grid,
+     col = gray(seq(1, 0.1, l = 30)),
+     xlab = "X",
+     ylab = "Y")
+     title(main = "Gray-scale image of \ngridded predictions",
+        line = 1)
+
+```
+
+
+
+## Using the Snapshot data
+
+First read in the snapshot data as a geodata object:
+
+```{r read snapshot as geodata}
+# read fall snapshot as geodata --------
+
+fall <- subset(snapshot, seasonfac == "2Fall")
+
+fall_geo <- as.geodata(fall, coords.col = 2:3, data.col = 6, covar.col = 12:74, covar.names = names(fall)[12:74])
+
+```
+
+Now plot the snapshot data.  This is a simple x-y plot without any map outline.
+
+```{r plot fall snapshot -----}
+# plot fall snapshot -----
+
+points(fall_geo, xlab = "Latitude", ylab = "Longitude", main = "Fall Snapshot Data:  ln(NOx)")
+
+```
+
+```{r test map}
+#DROP?? doesn't add snapshot to LA
+# all names of Los Angeles counties of CA
+map('county', 'california,los', names = TRUE, plot = FALSE)
+# names of all counties in CA:
+map('county', 'california', names = TRUE, plot = FALSE)
+# And this gives the outline of LA county:
+map('county', 'california,los')
+# doesn't add to LA map:
+points(fall_geo, xlab = "Latitude", ylab = "Longitude", main = "Fall Snapshot Data:  ln(NOx)")
+
+```
 
 
 # Practice Session
@@ -87,13 +504,14 @@ TODO:  Add practice using Sun's code, perhaps with the installed datasets first?
 TODO:  UPDATE section
 This section covers basic practice to be completed during the lab.     
 
-Perform the following tasks:  (see the Week8commands2017.do file for details)
-1.	Open a do-file editor, a log file, have ukrige_programs.do available to run (e.g. open in your do-file editor), and change your working directory so you can reference all files without a path.  (See the Stata file menu for changing the working directory.)
-2.	Install the variog program. 
+Perform the following tasks:  
+1.	Decide your project and make sure TODO: what else needs to be done?
+2.	
 3.	Read in the snapshot data for one season and as needed redo some basic data description so you remember how these data are formatted, etc.
+Make a geodata object??
 4.	Fit a LUR model using the covariates in Table 4.  Save the residuals for further analysis.
 5.	Plot a variogram of the residuals.  Explore the bandwidth and see how the variogram plots change as a function of bandwidth.  Observe similarities and differences between your plots and those presented in the paper.  (We can discuss these observations in lab.)
-6.	Fit the universal kriging model.  Look at the estimates from the model and compare them with the estimates in the table.  Import the raw residuals from mata into a Stata variable.
+6.	Fit the universal kriging model.  Look at the estimates from the model and compare them with the estimates in the table.  
 7.	Display the residuals from UK in a variogram; explore different bandwidths.
 8.	Cross-validate the UK model.  Do you get the same performance statistics reported in Table 4?  This complements your previous cross-validation of LUR in these data.
 
