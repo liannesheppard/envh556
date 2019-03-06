@@ -98,3 +98,9 @@ saveRDS(RECpersonal,file=file.path(datapath,"RECpersonal.rds"))
 saveRDS(cohist,file=file.path(datapath,"cohist.rds"))
 saveRDS(jem,file=file.path(datapath,"jem.rds"))
 
+#---------------------------------------------
+# Read in the new snapshot dataset for the geostatistics lab
+# Has lambert coordinates added
+
+#See the week 8 Geostatistics lab for code.
+
