@@ -414,7 +414,7 @@ r2_cv
 
 # compare to leave-one-out CV results
 # TODO:  digits in kable not working WHY?
-res <- rbind(#c("  ", "MSE", "RMSE", "R2"),
+res <- rbind(
       c("LOO (lik)", mse.ml, sqrt(mse.ml), r2.ml),
       c("LOO (wls)", mse.wls, sqrt(mse.wls), r2.wls),
       c("10-fold wls", mse_cv, sqrt(mse_cv), r2_cv))
@@ -439,9 +439,9 @@ Note that `geoR` appears to do *all* its distance calculations based on the inpu
 # focus only on the common model covariates
 fall <- snapshot %>%
     filter(seasonfac == "2Fall") %>%
-    select(ID, latitude, longitude, ln_nox, D2A1, A1_50, A23_400, Pop_5000, D2C, Int_3000, D2Comm, cluster, group_loc, FieldID)
+    select(ID, latitude, longitude, lat_m, long_m, ln_nox, D2A1, A1_50, A23_400, Pop_5000, D2C, Int_3000, D2Comm, cluster, group_loc, FieldID)
 
-fall_geo <- as.geodata(fall, coords.col = 2:3, data.col = 4, covar.col = 5:11, covar.names = names(fall)[5:11])
+fall_geo <- as.geodata(fall, coords.col = 5:4, data.col = 6, covar.col = 7:13, covar.names = names(fall)[7:13])
 
 # summarize and get the names
 names(fall_geo)
@@ -455,9 +455,9 @@ Now plot the snapshot data.  This is a simple x-y plot available in `geoR`, with
 # plot fall snapshot -----
 
 par(mfrow = c(1,2))
-points(fall_geo, xlab = "Latitude", ylab = "Longitude", main = "Fall Snapshot Data:  ln(NOx)")
+points(fall_geo, ylab = "Lat_m", xlab = "Long_m", main = "Fall Snapshot Data:  ln(NOx)")
 
-points(fall_geo, xlab = "Latitude", ylab = "Longitude", main = "Fall Snapshot Data:  ln(NOx)", pt.divide = "quintile")
+points(fall_geo, ylab = "Lat_m", xlab = "Long_m", main = "Fall Snapshot Data:  ln(NOx)", pt.divide = "quintile")
 
 ```
 
@@ -475,8 +475,8 @@ Note:  Maps require access to the internet to load.
 # ---------- LA Stamen map --------------
 # uses ggmap; initial version of code kindly provided by Brian High
 # get the basic dimensions of the data
-height <- max(fall_geo$coord[,1]) - min(fall_geo$coord[,1])
-width <- max(fall_geo$coord[,2]) - min(fall_geo$coord[,2])
+height <- max(fall$latitude) - min(fall$latitude)
+width <- max(fall$longitude) - min(fall$longitude)
 
 # define the color palate for the map
 #mypalette <- brewer.pal(7, "YlOrRd")
@@ -485,10 +485,10 @@ width <- max(fall_geo$coord[,2]) - min(fall_geo$coord[,2])
 # dimensions
 bbox <-
     c(
-        min(fall_geo$coord[,2]) - 0.1*width,
-        min(fall_geo$coord[,1]) - 0.1*height,
-        max(fall_geo$coord[,2]) + 0.1*width,
-        max(fall_geo$coord[,1]) + 0.1*height
+        min(fall$longitude) - 0.1*width,
+        min(fall$latitude) - 0.1*height,
+        max(fall$longitude) + 0.1*width,
+        max(fall$latitude) + 0.1*height
     )
 
 names(bbox) <- c('left', 'bottom', 'right', 'top')
@@ -545,8 +545,9 @@ plot(la_grid[,2:3], xlab="Latitude", ylab = "Longitude", main = "Grid points", t
 
 For later use, we need to convert the grid to geodata.  Also, the full grid isn't working, so we use a subset.
 
-```{r convert LA grid to geodata}
+```{r convert LA grid to geodata, eval = FALSE}
 # convert LA grid to geodata --------
+# TODO:  Revise with the new grid; this grid doesn't have the right coordinates
 la_geo <- as.geodata(la_grid, coords.col = 2:3, data.col = 4, covar.col = 4:10, covar.names = names(la_grid)[4:10])
 
 test_grid <- la_grid[1:11000,]
@@ -563,11 +564,12 @@ test_geo <- as.geodata(test_grid, coords.col = 2:3, data.col = 4, covar.col = 4:
 ```{r fall estimate variog}
 # fall estimate variog -----------
 
+md <- 30000
 # get the variogram, no trend
-fall_variog_notrend <- variog(fall_geo, max.dist = 0.5)
+fall_variog_notrend <- variog(fall_geo, max.dist = md)
 
 # get the variogram given the trend specified by the common model
-fall_variog <- variog(fall_geo, max.dist = 0.5, trend= ~ D2A1 + A1_50 + A23_400 + Pop_5000 + D2C + Int_3000 + D2Comm)
+fall_variog <- variog(fall_geo, max.dist = md, trend= ~ D2A1 + A1_50 + A23_400 + Pop_5000 + D2C + Int_3000 + D2Comm)
 
 # uses weighted least squares and an exponential variogram
 wls_ests <- variofit(fall_variog, cov.model = "exp")
@@ -589,19 +591,19 @@ plot(fall_variog, main="Universal kriging\nEmpirical variogram\nFall snapshot in
 
 # add fitted variogram line to the plot 
 #   based on parameters from estimated variogram:
-lines.variomodel(wls_ests, max.dist=0.5, lty = 1)
-lines(reml_ests, lty=2, max.dist=0.5)
+lines.variomodel(wls_ests, max.dist = md, lty = 1)
+lines(reml_ests, lty=2, max.dist = md)
 legend("bottomright", legend = c("WLS","REML"), lty=c(1,2), 
-       cex=0.5, text.width = 0.1, seg.len = 2)
+       cex=0.5, seg.len = 1.5)
 
 # OK model
 plot(fall_variog_notrend, main="Ordinary kriging\nEmpirical variogram\nFall snapshot in LA")
 
 # add fitted variogram line to the plot 
-lines.variomodel(wls_ests_notrend, max.dist=0.5, lty = 1)
-lines(reml_ests_notrend, lty=2, max.dist=0.5)
+lines.variomodel(wls_ests_notrend, max.dist = md, lty = 1)
+lines(reml_ests_notrend, lty=2, max.dist = md)
 legend("bottomright", legend = c("WLS","REML"), lty=c(1,2), 
-       cex=0.5, text.width = 0.1, seg.len = 2)
+       cex=0.5, seg.len = 1.5)
 #   based on parameters from estimated variogram:
 #lines.variomodel(cov.model="exp", cov.pars=c(.1212, 0.0747), nug=0, max.dist=0.5, lty = 1)
 
@@ -617,6 +619,7 @@ Below are the estimates from the UK models, using both WLS and REML.  Note that 
 summary(wls_ests)
 
 summary(reml_ests)
+
 
 ```
 
@@ -658,10 +661,10 @@ for (i in 1:10){
     training_data <-  fall_geo[[2]][!is_group]
     
     valid_geo <- as.geodata(fall[is_group,], 
-                            coords.col = 2:3, 
-                            data.col = 4, 
-                            covar.col = 5:11, 
-                            covar.names = names(fall)[5:11])
+                            coords.col = 5:4, 
+                            data.col = 6, 
+                            covar.col = 7:13, 
+                            covar.names = names(fall)[7:13])
     valid_coord <- valid_geo[[1]]
 
         test_trend <- trend.spatial(trend = ~ D2A1 + A1_50 + 
@@ -771,21 +774,21 @@ During class we will review the output above.  Please come prepared to ask quest
 # Homework Exercises 
 
 TODO:  update section.  Add a piece on doing UK vs. OK
+
 TODO:  Verify what residuals for variograms in both Mercer columns
+
 TODO:  encourage use of breaks in variogram and find the close in structure.
-In addition to summarizing your geostatistical analyses, demonstrate some basic understanding of the similarities and differences between land use regression and universal kriging in air pollution studies:
-1.	Describe your analysis and show some variograms.  Is there evidence of spatial structure in the data?
-2.	Discuss whether you were able to replicate the results for at least one season in Table 4 of Mercer et al (2011).  (You don’t need to reproduce the table if you don’t wish to.)
-3.	Write a basic summary of your understanding of how universal kriging differs from land use regression.  What additional insights do you get from the Mercer et al paper that weren’t evident in the Hoek et al paper?
-4.	Discuss what are the most useful summaries to show from an exposure prediction analysis.   Base this on the papers you read this week (Mercer et al & Hoek et al) that were focused more on methods, vs. papers that are more focused on showing the results from the predictive modeling (e.g. Young et al discussed in lecture).
 
-TODO:  from practice.  Drop??
-4.	Fit a LUR model using the covariates in Table 4.  Save the residuals for further analysis.
-5.	Plot a variogram of the residuals.  Explore the bandwidth and see how the variogram plots change as a function of bandwidth.  Observe similarities and differences between your plots and those presented in the paper.  (We can discuss these observations in lab.)
-6.	Fit the universal kriging model.  Look at the estimates from the model and compare them with the estimates in the table.  
-7.	Display the residuals from UK in a variogram; explore different bandwidths.
-8.	Cross-validate the UK model.  Do you get the same performance statistics reported in Table 4?  This complements your previous cross-validation of LUR in these data.
+1.  Fit a LUR model (using the common model covariates) to the season-specific snapshot data.  (One model per season.)  Take the residuals from those models and evaluate them:
+    a.  Estimate an emprical binned variogram to the residuals using default bins.  Plot this and discuss.
+    b.  Try a different set of bins for the variogram, making sure you create a few bins at the shorter distances (within the range of 0 to approximately 650 meters).  Plot this and discuss.
+    c.  Is there evidence of spatial structure in the data?  Do you get different insights from each variogram?
+    
+2.  Using 10-fold cross-validation with the cluster variable to define the CV groups, estimate predictions from a 2-step model using the common model covariates.  For this model you need to separately create cross-validated predictions from the LUR model and from the OK model of the LUR residuals (of the full season-specfic dataset), and sum these to compare with the observed ln_nox data.
 
+3.	Write a basic summary of your understanding of how universal kriging differs from land use regression.  What additional insights do you get from the Mercer et al paper now that you have done some analyses using the snapshot data?  
+
+4.	Discuss your thoughts on the most useful summaries to show from an exposure prediction analysis.   
 
 
 # Code Appendix
