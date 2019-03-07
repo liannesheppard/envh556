@@ -70,7 +70,7 @@ pacman::p_load(tidyverse, knitr, dplyr, geoR, maps, scatterplot3d,ggmap, funMode
 
 ```
 
-```{r read.data.from.a.directory, eval=TRUE, echo=FALSE}
+```{r read.data.from.a.directory, eval=TRUE, echo=FALSE, include=FALSE}
 #-----read.data.from.a.directory--------
 # Download the data file from a local directory
 
@@ -101,31 +101,33 @@ TODO:  Note:  This lab is a work in process.  Some questions and gaps are highli
 
 The purpose of this lab is to learn about geostatistical models and further solidify your understanding of regression for prediction.  We will use the same MESA Air snapshot data described in Mercer et al 2011 that we used earlier in the quarter.
 
-**Important Winter 2019 note**:  This lab has not been fully debugged.  There are a number of ideas that need further investigation.  Most likely some additional newer packages should replace some of what is shown in this lab.  The intent is to make this as useful as possible while recognizing its limitations.
+**Important Winter 2019 note**:  This lab is a work in progress and it has some unfinished pieces.  I believe that all included analyses have been sufficiently tested and debugged, but it is also possible some errors remain.  In addition, there are a number of ideas that need further investigation.  Most likely some additional newer packages should replace some of what is shown in this lab.  The intent of the current version of this lab is to help you use geographic data in R as productively as possible while recognizing there is much more to learn and develop.
 
 # Getting Started
 
-## Spatial data in R:  Resources
+## Introductory comments 
 
-TODO:  ADD
+### Resources for Spatial data in R
 
-## R packages for geostatistics
+The use of spatial data in R is rapidly evolving.  The best single overview I have found of this is the new book [Geocomputation in R](https://geocompr.robinlovelace.net/index.html) by Robin Lovelace.  Its [introductory chapter](https://geocompr.robinlovelace.net/intro.html) gives a great overview of the "what" and "why" of geocomputation.  It also has a very nice overview of the history of spatial data in R, which Lovelace calls [The history of R-spatial](https://geocompr.robinlovelace.net/intro.html#the-history-of-r-spatial).  In particular, it puts into historical context the tools we are using in this lab with the current state of the art.  Clearly, another iteration of this lab is needed to demonstrate the current state of the art for R-spatial data.
 
-The packages I am aware of include `geoR` and `gstat`.  `geoR` has been around for some time; `gstat` appears to be newer and has been updated more recently (2018 vs. 2016 for `geoR`).  The two appear to give identical results, at least for a simple dataset example.  To verify this, type `demo(gstat::comp_geoR)` in the console.
+See also the introduction to the snapshot data section below for a discussion on distance calculations.
 
-Because of my familiarity, we discuss `geoR` in this lab.
+### R packages for geostatistics
 
-## Some comments on universal kriging and prediction:  
+The packages I was aware of (before reading *Geocomputation in R*) include `geoR` and `gstat`.  `geoR` has been around for some time; `gstat` appears to be newer and has been updated more recently (2018 vs. 2016 for `geoR`).  The two appear to give identical results, at least for a simple dataset example.  To verify this, type `demo(gstat::comp_geoR)` in the console.
+
+Because of my familiarity, we discuss `geoR` in this lab.  Also note that the online documentation for `geoR` is dated and some of the links are broken.  After some digging around I found a full set of the documentation online and have uploaded it to the class Canvas site in the *R Resources* subdirectory in the Files area.  You may also find the introduction to `geoR` document useful to support your learning; this is also uploaded to Canvas.
+
+### Some comments on universal kriging and prediction  
 
 In kriging, you can't predict on the same locations that you used to estimate the parameters.  As discussed on [stackoverflow](https://stackoverflow.com/questions/45768516/why-does-the-kriging-give-the-same-values-as-the-observed), "this is a well-known property of kriging; it comes from the fact that the model underlying kriging assumes that a value is perfectly correlated with itself."  Thus predicting a know value always returns that value, with zero prediction error.  This is also the cause of errors with duplicate observations at the same location. Think of this property of kriging as an enforced need to do cross-validation to evaluate your predictions.  Apparently you can use the `gstat` package to do smoothing instead of kriging by specifying an Err variogram instead of a Nug nugget effect.
 
-## Practice using `geoR`:
+## Applications using `geoR`: Practice with the built-in s100 dataset, a simulated dataset
 
 The purpose of this section is to show some `geoR` tools using the geo datasets included in the `geoR` package.  Both are stored in the geodata format.  First we go through the `s100` dataset, a simple dataset of simulated data.  This allows us to demonstrate the geodata object, the plot default, variograms, modeling using different approaches, kriging predictions, and plotting the results.  Then we explore `ca20` to understand inclusion of covariates into geostatistical analysis.
 
-### s100 dataset, a simulated dataset
-
-#### Summary
+### Summary
 
 ```{r basics with s100 dataset - summary + EDA}
 # ------------ basics with s100 dataset - summary -----------
@@ -144,15 +146,15 @@ plot(s100, scatter3d = TRUE)
 
 # points uses the points.geodata function in geoR
 par(mfrow=c(2,2))
-points(s100, xlab="X", ylab="Y", main="Map 1, default w/ sizes proportional to data")
-points(s100, xlab="X", ylab="Y", pt.divide="rank.prop", main = "Map 2, point sizes proportional to data rank")
+points(s100, xlab="X", ylab="Y", main="Map 1, default w/ \nsizes proportional to data")
+points(s100, xlab="X", ylab="Y", pt.divide="rank.prop", main = "Map 2, point sizes \nproportional to data rank")
 # TODO: Find out why the gray scale is set up as a sequence from 1 - .1 of length 100.  Presumably the length is because the data are 100 points.
 points(s100, xlab="X", ylab="Y", cex.max=1.7, 
        col=gray(seq(1, 0.1, l=100)), pt.divide="equal", main = "Map 3, equal size points in gray scale")
 points(s100, pt.divide = "quintile", xlab="X",ylab="Y", main = "Map 4, quintiles of the data")
 ```
 
-#### Empirical variograms
+### Empirical variograms
 
 The following code gives empirical variograms, computed using the default classical estimator, using two different options:  a *variogram cloud* with all squared distances (`option = "cloud"`), and the default *binned variogram* (`option = "bin"`).  With the bin option, we can specify the vector of breaks (`uvec`), or use the program defaults.  It is often good practice to also define the maximum distance (`max.dist`) to be about half the total distince since the stability of a variogram estimate breaks down as the distance gets close to the maximum.
 
@@ -164,26 +166,27 @@ par(mfrow=c(1,2))
 plot(cloud1, main="Empirical variogram: cloud")
 lines(smooth.spline(cloud1$u, cloud1$v, df = 6), col="red",lwd = 4)
 plot(bin1, main="Empirical variogram: bin")
+lines(bin1, col="red", lwd = 4)
 
 ```
 
-#### Modeled variagram
+### Modeled variogram
 
 One can superimpose various modeled variograms onto empirical variograms.  This is important because we need to have some idea of appropriate variogram parameters because we need to supply the estimation fuctions (`variofit` and/or `likfit`) with initial values of these parameters, specifically the partial sill ($\sigma^2$) and range ($\phi$).  One can also allow for a non-zero nugget ($\tau^2$) parameter by using the `nugget = ` option with an estimated value after the "=".  The program defaults to estimating the nugget unless you use the `fit.nugget = TRUE` option.
 
 ```{r s100 modeled variogram}
 # ------------ s100 modeled variogram -------------
 
-# no nugget
+# no nugget in modeled variogram
 plot(variog(s100, uvec=seq(0,1,l=11)),
      main = "Variogram fits, no nugget")
 lines.variomodel(cov.model="exp", cov.pars=c(1, 0.3), nug=0, max.dist=1, lty = 1)
 lines.variomodel(cov.model="exp", cov.pars=c(0.5, 0.3), nug=0, max.dist=1, lty = 2)
 lines.variomodel(cov.model="exp", cov.pars=c(1, 0.6), nug=0, max.dist=1, lty = 3)
-legend("bottomright", c("exp (1, 0.3)", "exp (0.5, 0.3)", "exp (1, 0.6)"), lty = 1:3, text.width = 0.2, cex = 0.6, seg.len = 1)
+legend("bottomright", c("exponential (1, 0.3)", "exponential (0.5, 0.3)", "exponential (1, 0.6)"), lty = 1:3, text.width = 0.2, cex = 0.6, seg.len = 1)
 
 
-# with nugget
+# with nugget in modeled variogram
 plot(variog(s100, uvec=seq(0,1,l=11)), 
      main = "Variogram fits, nugget = 0.2")
 lines.variomodel(cov.model="exp", cov.pars=c(1, 0.3), nug=0.2, max.dist=1, lty = 1)
@@ -194,9 +197,9 @@ legend("bottomright", c("exponential (1, 0.3)", "exponential (0.5, 0.3)", "expon
 
 ```
 
-##### How do we decide what is a reasonable variogram model?
+#### How do we decide what is a reasonable variogram model?
 
-This requires some investigation.  We can use a guess and check approach by fitting a set of different guesses as we show above.  Another way is to use the `eyefit` function.  This is an interactive function that will return estimated parameters.  HOWEVER, it does not seem to work in RStudio.  It does work in R if you want to open an R window.  Directly in R, try it by using the empirical variogram results and typing this command into the R gui:  `eyefit(bin1)`. 
+This requires some investigation.  We can use a "guess and check" approach by fitting a set of different guesses as we show above.  Another way is to use the `eyefit` function.  This is an interactive function that will return estimated parameters.  HOWEVER, `eyefit` does not seem to work in RStudio.  It does work in R if you want to open an R window.  Directly in R, try it by referring to your empirical variogram results by typing this command into the R gui:  `eyefit(bin1)`. 
 
 Since we need to supply a likelihood fit with initial values of parameters, an alternative is to use the `variofit` function with no initial values and let `geoR` try to estimate these as is shown next.
 
@@ -211,26 +214,36 @@ wls_ests_nug <- variofit(bin1, cov.model = "exp", nugget = 0.5)
 
 ```
 
-#### Parameter estimation
+### Parameter estimation
 
-This example shows that we can get a likelihood fit using either by directly specifying the known (guessed) initial values for the partial sill and range (using the option `ini = c(partial_sill, range)`), or taken from the output of the `variog` function (using the option `ini = variog_object_name`.  Observe that we get the same result even though the initial parameter values are different.  Note that it is good practice to make sure the result of the optimization is not sensitive to the initial values.
+This example shows that we can get a likelihood fit using either by directly specifying the known (guessed) initial values for the partial sill and range (using the option `ini = c(partial_sill, range)`), or taken from the output of the `variog` function (using the option `ini = variog_object_name`.  Observe that we get the same result even though the initial parameter values are different.  **Note** that it is good practice to try a few different initial values as a way to make sure the result of the optimization is not sensitive to the initial values.
 
 ```{r s100 parameter estimation using ML}
 # ------------ s100 parameter estimation using ML ---------
-
-# fit using maximum likelihood using initial parameter values
+# Note:  The documentation says these default to the matern covariance model, but the output suggests the exponential covariance model was used!
+# fit using maximum likelihood using user-specified initial parameter values
 ml <- likfit(s100, ini = c(1, 0.5))
+
+# print the resulting object -- brief summary
+# take note of the estimated parameters
 ml
+
+# summary of the resulting object (expanded printing of object)
 summary(ml)
 
 # repeat ML fit, now taking initial estimates from the wls variog fit
 ml2 <- likfit(s100, ini = wls_ests)
+
+# print the resulting object -- brief summary
+# take note of the estimated parameters
 ml2 
+
+# summary of the resulting object (expanded printing of object)
 summary(ml2)
 
 ```
 
-The following gives more examples of estimating parameters using various estimation methods.  The two basic options are `likfit` which uses maximum likelihood to do the estimation (with options for ML vs REML), and `variofit` which uses a parametric model fit using either ordinary or weighted least squares.  We also include plots to compare these results.  The plots show that the different approaches to estimation give different fitted variogram results.
+The following chunk gives more examples of estimating geostatistical model parameters using various estimation methods.  The two basic options are `likfit` which uses maximum likelihood to do the estimation (with options for ML vs REML), and `variofit` which uses a parametric model fit using either ordinary or weighted least squares.  We also include plots to compare these results.  The plots show that the different approaches to estimation give different fitted variogram results.
 
 ```{r s100 parameter estimation examples}
 # ------------ s100 parameter estimation examples ------------
@@ -255,36 +268,39 @@ lines(ml, max.dist=1)
 lines(reml, lwd=2, max.dist=1)
 lines(ols, lty=2, max.dist=1)
 lines(wls, lty=2, lwd=2, max.dist=1)
-legend("bottomright", legend = c("ML","REML","OLS","WLS"), lty=c(1,1,2,2), lwd=c(1,2,1,2), cex=0.5, text.width = 0.1, seg.len = 2)
+legend("bottomright", legend = c("ML","REML","OLS","WLS"), 
+       lty=c(1,1,2,2), lwd=c(1,2,1,2), 
+       cex=0.5, text.width = 0.1, seg.len = 2)
 
 plot(bin1, main=expression(paste("estimated ", tau^2)))
 lines(ml.n, max.dist=1)
 lines(reml.n, lwd=2, max.dist=1)
 lines(ols.n, lty=2, max.dist=1)
 lines(wls.n, lty=2, lwd=2, max.dist=1)
-legend("bottomright", legend = c("ML","REML","OLS","WLS"), lty=c(1,1,2,2), lwd=c(1,2,1,2), cex=0.5, text.width = 0.1, seg.len = 2)
+legend("bottomright", legend = c("ML","REML","OLS","WLS"), 
+       lty=c(1,1,2,2), lwd=c(1,2,1,2), 
+       cex=0.5, text.width = 0.1, seg.len = 2)
 
 ```
 
-#### Cross-validation -- leave one out (LOO)
+### Cross-validation -- leave one out (LOO)
 
 `geoR` defaults to doing leave-one-out cross-validation (option `locations.xvalid = all`).  It also has an option for validating on an external dataset when the `data = ` option is set.  The alternative approach in the documentation, using a subset of the data selected with `locations.xvalid`, is not documented and thus it isn't clear how it works.  Thus in a later chunk we will enforce 10-fold cross-validation using a grouping variable and dataset splitting procedure.  (See *s100 kriging + 10-fold CV*.)  This strategy will be useful for the snapshot dataset when we have a pre-defined cluster variable. 
 
 ```{r s100 LOO cross-validation}
 # ------------ s100 LOO cross-validation ----------------
 # 
-# Do cross-validation using two different models:  The likelihood fit model and the weighted least squares model.
+# Do cross-validation using two different models:  
+#   The likelihood fit model and the weighted least squares model.
+# Likelihood fit model
 xv.ml <- xvalid(s100, model=ml)
+
+# Weighted least squares model
 xv.wls <- xvalid(s100, model=wls)
 
 # summarize the MSE and R2
 mse.ml <- mean ((xv.ml$data - xv.ml$predicted)^2 )
 mse.wls <- mean ((xv.wls$data - xv.wls$predicted)^2 )
-
-# dropping the following because uses variance, not mean squared variations in
-# the denominator.  Best to not correct for the d.f. as the variance does
-#r2.ml <- 1 - mse.ml/var(xv.ml$data)
-#r2.wls <- 1 - mse.wls/var(xv.wls$data)
 r2.ml <- 1 - mse.ml/mean((xv.ml$data - mean(xv.ml$data))^2)
 r2.wls <- 1 - mse.wls/mean((xv.wls$data - mean(xv.wls$data))^2)
 
@@ -298,26 +314,27 @@ par(mfcol=c(5,2), mar=c(3,3,1,0.5), mgp=c(1.5,0.7,0))
 plot(xv.wls)
 
 # under the maximum likelihood variogram model
-par(mfcol=c(5,2), mar=c(3,3,1,0.5), mgp=c(1.5,0.7,0))
-plot(xv.ml)
+# (Not shown; results look similar)
+#par(mfcol=c(5,2), mar=c(3,3,1,0.5), mgp=c(1.5,0.7,0))
+#plot(xv.ml)
 
 ```
 
 
-#### Kriging (ordinary)
+### Ordinary Kriging (OK)
 
-We use kriging to get predictions at *new* locations (not used in the model fitting).  Use the function `krig.conv` to accomplish this.  Give it locations where it should predict in the `locations = ` option.  You also need to pass it the results of a fitted model in the `krige = ` option.
+We use kriging to get predictions at *new* locations (not used in the model fitting).  Use the function `krig.conv` to accomplish this.  Give it locations where it should predict in the `locations = ` option.  You also need to pass it the results of a fitted model in the `krige = ` option.  Note that in this example we are estimating a common mean using ordinary kriging, the defauld in `geoR`.
 
 ```{r s100 kriging}
 # ------------ s100 kriging --------------
  
 # Set up the plot area
-par(mfrow = c(2,2))
+par(mfrow = c(2,2), pty = "s")
 
 # show the coordinates and the 4 prediction locations, 
 #   one location is outside the area of the data
 plot(s100$coords, xlim=c(0,1.2), ylim=c(0,1.2), xlab="X", ylab="Y",
-     main = "Data locations + 4 new loci to predict at")
+     main = "Data locations + 4 new locations \n we will predict at")
 loci <- matrix(c(0.2,0.6,0.2,1.1,0.2,0.3,1,1.1), ncol=2)
 text(loci, as.character(1:4), col="red")
 
@@ -342,22 +359,31 @@ pred.grid <- expand.grid(seq(0,1,l=51), seq(0,1,l=51))
 kc <- krige.conv(s100, loc=pred.grid, krige=krige.control(obj.m=ml))
 
 # define colors for plotting
-# TODO:  this is a crude approach; look into ColorBrewer
+# TODO:  this is a crude approach; look into ColorBrewer or other palette
 col.range <- c("darkblue","blue","green","yellow","orange","red")
 
 # add prediction plots, 3 types:
 # TODO:  As Sun about choices here
 # TODO:  Set xlim, ylim so plots are square?  getting funny limits
 # floor used to get quick and dirty quartiles based on cts data
-plot(s100$coords[,1:2], col=col.range[c(2:4,6)][floor(s100$data+2)], xlab="X", ylab="Y", main = "Data in categories")
+plot(s100$coords[,1:2], 
+     col=col.range[c(2:4,6)][floor(s100$data+2)], 
+     xlim=c(0,1), ylim=c(0,1), 
+     xlab="X", ylab="Y", main = "Data in categories")
 
-plot(pred.grid[,1:2], col=col.range[c(2:4,6)][floor(kc$predict+2)], xlab="X", ylab="Y", main = "Grid predictions in categories")
+plot(pred.grid[,1:2], 
+     col=col.range[c(2:4,6)][floor(kc$predict+2)], 
+     xlim=c(0,1), ylim=c(0,1), 
+     xlab="X", ylab="Y", main = "Grid predictions in categories")
 
-image(kc, loc=pred.grid, col=gray(seq(1,0.1,l = 30)), xlab="X", ylab="Y", main = "Grid predictions as gray-scale image")
+image(kc, loc=pred.grid[,1:2], 
+      col=gray(seq(1,0.1,l = 30)), 
+      xlim=c(0,1), ylim=c(0,1), 
+      xlab="X", ylab="Y", main = "Grid predictions as gray-scale image")
 
 ```
 
-#### Kriging (ordinary) with 10-fold cross-validation
+### Ordinary Kriging (OK) with 10-fold cross-validation
 
 Here is some code to enforce 10-fold cross-validation using a grouping variable that we define and select on in the for loop.  We also compare these results to the leave one out CV done above at the end of this chunk.
 
@@ -395,7 +421,7 @@ r2_cv <- 1 - mse_cv/mean((s100new$data - mean(s100new$data))^2)
 
 #print results
 mse_cv
-cat("RMSE from CV:  ", sqrt(mse_cv), "\n")
+cat("RMSE from CV:  ", sqrt(mse_cv))
 r2_cv
 
 # compare to leave-one-out CV results
@@ -410,15 +436,31 @@ kable(res, format = "markdown", col.names = c("  ", "MSE", "RMSE", "R2"), captio
 
 ### Universal kriging (UK)
 
-To do universal kriging, we also need covariates for the fixed part of the model.  As discussed in Mercer et al, ArcGIS doesn't (or didn't at the time that paper was written) allow an arbitrary set of covarites to be included in UK.  It only allowed the mean function to be a function of latitude and longitude, which is far too limiting in many applications.  We demonstrate UK using `geoR` in the next section.
+To do universal kriging, we also need covariates for the fixed part of the model.  As discussed in Mercer et al, ArcGIS doesn't (or didn't at the time that paper was written) allow an arbitrary set of covarites to be included in UK.  ArcGIS only allows (or allowed) the mean function to be a function of latitude and longitude, which is far too limiting in many applications.  We demonstrate UK using `geoR` with the snapshot data in the next section.
 
+`geoR` has a built-in dataset, ca20, that allows for implementation of UK.  I took out this example from the lab to reduce complexity.  We will implement UK directly using the snapshot data in the next section.
 
+## Geostatistical analysis using the Snapshot data
 
-## Using the Snapshot data
+### Comments about geographic coordinates and conversions
+
+Note that `geoR` appears to do *all* its distance calculations based on the input coordinates using the Pythagorean theorem.  This won't give you correct distances on a sphere.  Thus we can't use latitude and longitude directly.  The dataset provided by Laina Mercer had two variables, `lat_m` and `long_m` that had been projected to a flat surface.  At this writing I have not found the documentation for this.  So the dataset we are using in this lab has [Lambert coordinates](https://en.wikipedia.org/wiki/Lambert_conformal_conic_projection) added (USA Contiguous Lambert Conformal Conic (srid 102004)) from the MESA Air database.  These give approximately the same meters as the coordinates Mercer used.
+
+There are also some useful packages and functions for working with spatial data and get distances.  Leveraging input from Brian High, Jessica Badgeley, and Nancy Carmona:
+
+* The `sp::SpatialPoints` function can is used to create objects of the spatial points from lat/long data. 
+
+* The `rgeos::gWithinDistance` function is used to find if locations are the same, or within a specified distance. 
+
+* The `rgeos::gDistance` function is used to find the cartesian minimum distance between two locations. This function can be used to create a distance matrix.
+
+* The `geosphere` package has  a bunch of distance formulas for two points with latitude and longitude coordinates.  See this [stackoverflow comment](https://stackoverflow.com/questions/31668163/geographic-geospatial-distance-between-2-lists-of-lat-lon-points-coordinates).
+
+### Snapshot data set-up
 
 First read in the snapshot data as a geodata object.  Summarize the data.  Take note of the range of the data coordinates, the maximum distance, and other dataset features (e.g. which covariates are included).  
 
-Note that `geoR` appears to do *all* its distance calculations based on the input coordinates using the Pythagorean theorem.  This won't give you correct distances on a sphere.  Thus we can't use latitude and longitude directly.  The dataset provided by Laina Mercer had two variables, `lat_m` and `long_m` that had been projected to a flat surface.  At this writing this was not documented.  So the dataset we are using in this lab has [Lambert coordinates](https://en.wikipedia.org/wiki/Lambert_azimuthal_equal-area_projection) added.  These give approximately the same meters as the coordinates Mercer used.
+
 
 ```{r read snapshot as geodata}
 # ------------ read fall snapshot as geodata --------
@@ -444,6 +486,10 @@ len <- dim(la_grid)[1]
 la_grid$ln_nox <- numeric(len)
 la_geo <- as.geodata(la_grid, coords.col = 4:5, data.col = 13, covar.col = 6:12, covar.names = names(la_grid)[6:12])
 
+#set.seed(152)
+#index <- sample(1:len, replace = FALSE)
+#Doesn't work with smaller subsets: test_grid <- la_grid[index[1:9000],]
+
 test_grid <- la_grid[1:11000,]
 test_geo <- as.geodata(test_grid, coords.col = 4:5, data.col = 13, covar.col = 6:12, covar.names = names(la_grid)[6:12])
 
@@ -465,11 +511,11 @@ points(fall_geo, ylab = "Lambert_y = latitude", xlab = "Lambert_x = Longitude", 
 
 R has many map options available now.  This seems to be evolving rapidly and there appears to be a growing number of tools available.  Some maps require an API key which adds a layer of complexity we won't address in ENVH 556.  Stamen maps do not require API keys, at least not yet.
 
-Here is code to use `ggmap` with a Stamen map in the background.  The steps are to set the region for the map and then define the borders, call the Stamen map using a variety of options, and then overlay our data onto this.  For some basic info on using these in R, see [Getting started with Stamen maps with ggmap](https://www.r-bloggers.com/getting-started-stamen-maps-with-ggmap/).
+Here is code to use `ggmap` with a Stamen map in the background.  The steps are to set the region for the map and then define the borders, call the Stamen map after choosing from a variety of options, and then overlay our data onto this.  For some basic info on using these in R, see [Getting started with Stamen maps with ggmap](https://www.r-bloggers.com/getting-started-stamen-maps-with-ggmap/).
 
-Note:  the zoom option specifies the scaling on the map.  In `ggmap` zoom can be an integer between 1 and 21.  The smallest zooms are global and continent-level scales, the middle ones (~10-12) are city scale, and 21 is at a building level.
+Note 1:  the zoom option specifies the scaling on the map.  In `ggmap` zoom can be an integer between 1 and 21.  The smallest zooms are global and continent-level scales, the middle ones (~10-12) are city scale, and 21 is at a building level.
 
-Note:  Maps require access to the internet to load. 
+Note 2:  Maps require access to the internet to load. 
 
 ```{r LA Stamen map}
 # ---------- LA Stamen map --------------
@@ -478,17 +524,13 @@ Note:  Maps require access to the internet to load.
 height <- max(fall$latitude) - min(fall$latitude)
 width <- max(fall$longitude) - min(fall$longitude)
 
-# define the color palate for the map
-#mypalette <- brewer.pal(7, "YlOrRd")
-
 # Define the boundaries of our map -- we want it somewhat bigger than our data
 # dimensions
-bbox <-
-    c(
-        min(fall$longitude) - 0.1*width,
-        min(fall$latitude) - 0.1*height,
-        max(fall$longitude) + 0.1*width,
-        max(fall$latitude) + 0.1*height
+bbox <- c(
+            min(fall$longitude) - 0.1*width,
+            min(fall$latitude) - 0.1*height,
+            max(fall$longitude) + 0.1*width,
+            max(fall$latitude) + 0.1*height
     )
 
 names(bbox) <- c('left', 'bottom', 'right', 'top')
@@ -497,14 +539,14 @@ names(bbox) <- c('left', 'bottom', 'right', 'top')
 map <- suppressMessages(get_stamenmap(bbox, zoom = 12,
                                      maptype = "toner-background"))
 
-# Make the map image from the tiles and set the title
+# Make the map image from the tiles 
 g <- ggmap(map, darken = c(0.5, "white")) + theme_void() 
 
 # Show the map
 g + ggtitle("Sample Map of Los Angeles for \n the area covered by the snapshot data")
 
 # add snapshot locations to the map will colors for values
-# Note: need to use a data.frame for this
+# Note: need to use a data.frame for this, not a geodata object
 g + geom_point(aes(x = longitude, y = latitude, col = exp(ln_nox)), data = fall, alpha = 0.8) + 
     scale_color_gradient(name = "NOx (ppb)", low = "yellow", high = "red") + 
     ggtitle("Map of Los Angeles \n with the fall snapshot data") +
@@ -517,19 +559,19 @@ Note, in comparing the above map to the one displayed in Figure 2b of Mercer, a 
 * The gradient points in Mercer are spread out much more than in our map.  This was done on purpose in the displays in Mercer et al to enable the viewer to see the gradient values.  Our data have not been transformed this way.  (It would be a good exercise to implement this...)
 * Not all the points on our map appear to correspond to those displayed in Mercer.  This deserves more investigation since the datasets are supposed to be identical.
 
-Now add the grid to the map.  This isn't particularly informative, other than making it obvious to us that the area covered by the grid is not completely aligned with the area covered by the map.  (TODO:  The warning about points removed deserves investigation.)
+Now add the grid to the map.  This plot isn't particularly informative, other than making it obvious to us that the area covered by the grid is not completely aligned with the area covered by the map.  
 
 ```{r plot the grid on the map, eval = TRUE}
 # ------------ plot the grid on the map ---------------
 # Note: we read the grid csv data above
-
+#TODO:  The warning about points removed deserves investigation.
 g + geom_point(aes(x = longitude, y = latitude), data = la_grid, alpha = 0.3) + 
     ggtitle("Map of Los Angeles \n with the grid locations overlaid") 
 
 ```
 
 
-We can also compare the fall snapshot data and the grid using plots available from `geoR`.  The grid is so dense that we don't see anything but black in that plot.  Note that the y axis range in the grid plot is not the same as with the data.
+We can also compare the fall snapshot data and the grid using plots available from `geoR`.  The grid is so dense that we don't see anything but black in that plot.  Note that the y axis range in the grid plot is not the same as with the data, and that the projection affects how the grid looks on this plot.
 
 ```{r plot the grid}
 # plot the grid ---------------
@@ -543,9 +585,9 @@ plot(la_grid[,4:5], xlab="Lambert_x", ylab = "Lambert_y", main = "Grid points", 
 
 ```
 
-### Estimation using the snapshot data
+### Estimation using the snapshot data:  Universal kriging using the common model
 
-#### Universal kriging using the common model
+Here we fit a UK model using the snapshot data, evaluate their quality using cross-validation, and then produce predictions at the grid locations for later use.
 
 **Step 1**:  Estimate the variograms and geostatistical model parameters (partial sill, range, nugget).  In the following chunk we fit two sets of models:  an OK model with no trend (i.e. covariates in a LUR), and a UK model with trend (i.e. the covariates in the common model).  We plot the variogram fits to both models for comparison.  (Note:  this comparison is for educationa/practice purposes only.  Scientifically we don't think an OK model of these data is a sensible choice.)
 
@@ -565,12 +607,20 @@ fall_variog <- variog(fall_geo, max.dist = md, trend= ~ D2A1 + A1_50 + A23_400 +
 wls_ests <- variofit(fall_variog, cov.model = "exp")
 wls_ests_notrend <- variofit(fall_variog_notrend, cov.model = "exp")
 
+# print WLS estimates
+wls_ests
+wls_ests_notrend
+
 # uses REML likelihood fitting and an exponential variogram
 reml_ests <- likfit(fall_geo, ini = wls_ests, 
     trend = ~ D2A1 + A1_50 + A23_400 + Pop_5000 + D2C + Int_3000 + D2Comm, 
     cov.model = "exp", lik.method = "REML")
 reml_ests_notrend <- likfit(fall_geo, ini = wls_ests_notrend,
     cov.model = "exp", lik.method = "REML")
+
+# print REML estimates
+reml_ests
+reml_ests_notrend
 
 # compare results in plots
 par(mfrow = c(1,2))
@@ -594,14 +644,12 @@ lines.variomodel(wls_ests_notrend, max.dist = md, lty = 1)
 lines(reml_ests_notrend, lty=2, max.dist = md)
 legend("bottomright", legend = c("WLS","REML"), lty=c(1,2), 
        cex=0.5, seg.len = 1.5)
-#   based on parameters from estimated variogram:
-#lines.variomodel(cov.model="exp", cov.pars=c(.1212, 0.0747), nug=0, max.dist=0.5, lty = 1)
 
 ```
 
-Note:  Based on the fitted variograms, I would look more into the REML estimates for UK before proceeding to use this in a real application.
+Observe:  Based on the fitted variograms, both the WLS and REML estimates for UK appear to be very similar and reasonably well fit to the data.  For the OK model, the REML estimates appear to not be as appropriate.
 
-Below are the estimates from the UK models, using both WLS and REML.  Note that only the REML model gives us estimates for the fixed effect parameters.  Also the REML model gives us covariance parameter estimates that are similar those reported by Mercer et al, although the range estimate is smaller.   This may be due to use of a different coordinate system. 
+Below are the estimates from the UK models, using both WLS and REML.  Note that only the REML model gives us estimates for the fixed effect parameters, and neither seems to produce the SE's of these parameter estimates.  Also the REML model gives us covariance parameter estimates that are similar those reported by Mercer et al, although the range estimate is smaller.   This smaller range possibly is due to use of a different coordinate system.  This would be worth checking. 
 
 ```{r show fitted UK model results}
 # ------------ show fitted UK model results ---------
@@ -613,7 +661,7 @@ summary(reml_ests)
 
 ```
 
-**Step 2**:  Cross-validate the UK models to evaluate the quality of the predictions.
+**Step 2**:  Cross-validate the UK models to evaluate the quality of the predictions.  This is the "manual" 10-fold version we showed with the s100 data above.  We use the WLS estimates as the object to input into the kriging prediction model.  Because we are doing UK here, we need to define the trend models for both the input and output (prediction) datasets.  There may be ways to simplify this code, but the following works!  (It isn't well documented so there was some guessing and checking involved in developing this example.)
 
 ```{r snapshot kriging for CV, eval = TRUE}
 # ------- snapshot kriging for 10-fold CV --------------
@@ -723,9 +771,9 @@ kc_la <- krige.conv(fall_geo,
 
 ### Plotting the predictions
 
-**Step 3**:  Display the predictions on a map.  The first chunk uses the default `geoR` plots.  The second chunk adds our predictions to a Stamen map.  TODO:  We still need to figure out how to smooth these instead of plotting the individual points.
+Display the predictions on a map.  The first chunk gives code to the default `geoR` plots, but it is hidden since I didn't find this output that helpful.  The second visible chunk adds our predictions to a Stamen map.  TODO:  We still need to figure out how to smooth these instead of plotting the individual points.
 
-```{r fall predictions}
+```{r fall predictions, echo = FALSE, eval = FALSE}
 # ------------ fall predictions ----------
 
 quant <- quantile(kc_la$predict, seq(0.1, 0.9, 0.1))
@@ -750,7 +798,7 @@ plot(test_grid[, 3:2],
      
 ```
 
-TODO:  Why is ggmap removing a bunch of points and claiming the data are missing?
+TODO:  Why is `ggmap` removing a bunch of points and claiming the data are missing?
 
 ```{r plot the grid predictions on the map, eval = TRUE}
 # ------------ plot the grid predictions on the map ---------------
@@ -781,12 +829,15 @@ g +
 
 #### Ordinary kriging using the residuals from a LUR
 
-TODO:  ADD this.  The idea is to use a traditional linear model to fit the common model, save the residuals from this model, and then import this model into `geoR` and fit an OK model.
+The idea is to use a traditional linear model to fit the common model, save the residuals from this model, and then import this model into `geoR` and fit an OK model.
 
-### Variograms to compare with Mercer
+TODO:  ADD this.  This is a homework problem.
 
-TODO:  Try to produce the variograms like Mercer.  Need to use the breaks function to allow for very fine scale distances to capture the gradient structure.
+#### Variograms to compare with Mercer
 
+The idea is to try to produce the variograms like Mercer.  Need to use the breaks function to allow for very fine scale distances to capture the gradient structure.
+
+TODO:  ADD this.  This is a homework problem.
 
 # Practice Session
 
@@ -797,9 +848,9 @@ During class we will review the output above.  Please come prepared to ask quest
 1.  Fit a LUR model (using the common model covariates) to the season-specific snapshot data.  (One model per season.)  Take the residuals from those models and evaluate them:
     a.  Estimate an emprical binned variogram to the residuals using default bins.  Plot this and discuss.
     b.  Try a different set of bins for the variogram, making sure you create a few bins at the shorter distances (within the range of 0 to approximately 650 meters).  Plot this and discuss.
-    c.  Is there evidence of spatial structure in the data?  Do you get different insights from each variogram?
+    c.  Discuss what you have learned from plotting the variograms.  Is there evidence of spatial structure in the data?  Do you get different insights from each variogram?
     
-2.  Using 10-fold cross-validation with the cluster variable to define the CV groups, estimate predictions from a 2-step model using the common model covariates.  For this model you need to separately create cross-validated predictions from the LUR model and from the OK model of the LUR residuals (of the full season-specfic dataset), and sum these to compare with the observed ln_nox data.
+2.  **Optional extra credit**:  Using 10-fold cross-validation with the cluster variable to define the CV groups, estimate predictions from a 2-step model using the common model covariates.  For this model you need to separately create cross-validated predictions from the LUR model and from the OK model of the LUR residuals (of the full season-specfic dataset), and sum these to compare with the observed ln_nox data.
 
 3.	Write a basic summary of your understanding of how universal kriging differs from land use regression.  What additional insights do you get from the Mercer et al paper now that you have done some analyses using the snapshot data?  
 
