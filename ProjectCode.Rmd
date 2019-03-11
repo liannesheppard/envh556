@@ -149,7 +149,7 @@ Observations about the datasets:
 
 * **Time**:  REC was only collected during the NIOSH survey and so doesn't have a time period.  `cohist` has whole years and a variable *period* which is an integer coded from 2-8.  `jem` has both *year* and *period*.  Coding is identical for year but the *period* variable is a factor with labels rather than an integer.  To learn how `cohist` and `jem` definitions of period align, we need to do a merge and compare them.  See below.
 
-* **Job**:  `jem` has a single variable *job* which is coded the same as the variable *job* in `REC`.  `REC` has two additional job variables:  *mdj*, the concatenation of mine (as a number), department, and job, and *job98* which is not identical to *job* and TODO:  ADD explanation
+* **Job**:  `jem` has a single variable *job* which is coded the same as the variable *job* in `REC`.  `REC` has two additional job variables:  *mdj*, the concatenation of mine (as a number), department, and job, and *job98* which is not identical to *job* and is an integer variable, a slightly recoded version of *mdj*.
 
 Here is some code to create a factor variable for faciity in `cohist` that aligns with the simiar factor variable in the other two datasets.  We also investigate the period variable in `cohist` and `jem` and then create a new variable *periodfac* which is a factor variable coded the same across datasets.  (In your analyses be careful to take note of which datasets have which information and how you will approach this.)
 
@@ -267,9 +267,6 @@ recfit <- lm(lnrec ~ facilityno + jobf, data=REC)
 # Here is the alternative to get all possible values of the facilityno and job
 # combinations, n = 105
 # Note:  still need to address the missing facility J 
-#f <- unique(REC$facilityno)
-#j <- unique(REC$jobf)
-# currently doesn't work with this option: why?
 newdat <- with(REC, expand.grid(facilityno = unique(facilityno), jobf = unique(jobf)) )
 
 # prediction over all facilityno job combinations
@@ -318,7 +315,7 @@ simplefit <- lm(lnco ~ facilityfac + as.factor(year), data=cohist)
 #    distinct()
 
 # Here is the alternative to get all possible values of the facilityno and times
-# combinations, n = ADD
+# combinations, n = 208
 newdat <- with(cohist, expand.grid(facilityfac = unique(facilityfac), year = unique(year)))
 
 # prediction over all facilityfac and year combinations
