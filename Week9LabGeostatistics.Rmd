@@ -523,22 +523,22 @@ Note 2:  Maps require access to the internet to load.
 # ---------- LA Stamen map --------------
 # uses ggmap; initial version of code kindly provided by Brian High
 # get the basic dimensions of the data
-height <- max(fall$latitude) - min(fall$latitude)
-width <- max(fall$longitude) - min(fall$longitude)
+height <- max(la_grid$latitude) - min(la_grid$latitude)
+width <- max(la_grid$longitude) - min(la_grid$longitude)
 
 # Define the boundaries of our map -- we want it somewhat bigger than our data
 # dimensions
 bbox <- c(
-            min(fall$longitude) - 0.1*width,
-            min(fall$latitude) - 0.1*height,
-            max(fall$longitude) + 0.1*width,
-            max(fall$latitude) + 0.1*height
+            min(la_grid$longitude) - 0.1*width,
+            min(la_grid$latitude) - 0.1*height,
+            max(la_grid$longitude) + 0.1*width,
+            max(la_grid$latitude) + 0.1*height
     )
 
 names(bbox) <- c('left', 'bottom', 'right', 'top')
 
 # Make a map base layer of "Stamen" tiles
-map <- suppressMessages(get_stamenmap(bbox, zoom = 12,
+map <- suppressMessages(get_stamenmap(bbox, zoom = 11,
                                      maptype = "toner-background"))
 
 # Make the map image from the tiles 
@@ -800,8 +800,6 @@ plot(test_grid[, 3:2],
      
 ```
 
-TODO:  Why is `ggmap` removing a bunch of points and claiming the data are missing?
-
 ```{r plot the grid predictions on the map, eval = TRUE}
 # ------------ plot the grid predictions on the map ---------------
 # Note: need to merge the predictions onto the grid.  
@@ -809,23 +807,29 @@ TODO:  Why is `ggmap` removing a bunch of points and claiming the data are missi
 test_grid$pred <- kc_la$predict
 test_grid$pred_nox <- exp(test_grid$pred)
 
-g + geom_point(aes(x = longitude, y = latitude, col = pred_nox), data = test_grid, alpha = 0.8) + 
-    ggtitle("Map of Los Angeles \n with fall UK predictions overlaid") +
-    scale_color_gradient(name = "NOx (ppb)", low = "yellow", high = "red") + 
-    theme(legend.position = c(.98,.02), legend.justification = c(1,0)) 
+my_theme <- theme(
+    legend.position = c(.98, .02),
+    legend.justification = c(1, 0),
+    legend.box.background = element_rect(colour = "white", size = 3),
+    legend.background = element_rect(fill = "white")
+    ) 
+
+g + geom_point(aes(x = longitude, y = latitude, col = pred_nox), 
+               data = test_grid, alpha = 0.7) + 
+    ggtitle("Map of Los Angeles \n with fall UK predictions overlaid") + 
+    scale_color_gradient(name = "NOx (ppb)", low = "yellow", high = "red") +  
+    my_theme
 
 ```
 
-```{r plot smooth grid predictions on the map, eval = FALSE}
-# so far this doesn't work to give anything but a black map
-# ------------ plot smooth grid predictions on the map ---------------
+```{r plot smooth grid predictions on the map with tiles, eval = TRUE}
+# ------------ plot smooth grid predictions on the map with tiles ----
 
-g + 
-    stat_density2d(aes(x = longitude, y = latitude, fill = pred_nox), data = test_grid, geom = "tile", contour = FALSE) + 
-    ggtitle("Map of Los Angeles \n with fall UK predictions overlaid") 
-#+
-    #scale_color_gradient(name = "NOx (ppb)", low = "yellow", high = "red") + 
-    #theme(legend.position = c(.98,.02), legend.justification = c(1,0)) 
+g %+% test_grid + aes(x = longitude, y = latitude, z = pred_nox) +
+    stat_summary_2d(fun = mean, alpha = 0.7, geom = "tile", bins = 30) +
+    scale_fill_gradient(name = "NOx (ppb)", low = "yellow", high = "red") +
+    ggtitle("Map of Los Angeles \n with fall UK predictions overlaid") + 
+    my_theme
 
 ```
 
