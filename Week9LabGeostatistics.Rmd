@@ -117,6 +117,8 @@ See also the introduction to the snapshot data section below for a discussion on
 
 The packages I was aware of (before reading *Geocomputation in R*) include `geoR` and `gstat`.  `geoR` has been around for some time; `gstat` appears to be newer and has been updated more recently (2018 vs. 2016 for `geoR`).  The two appear to give identical results, at least for a simple dataset example.  To verify this, type `demo(gstat::comp_geoR)` in the console.
 
+(Aside:  There is an interesting [stackoverflow discussion](https://stackoverflow.com/questions/21970992/compare-variogram-and-variog-function) of comparing empirical variograms in `geoR` vs. `sp` and `gstat` that addresses coordinate transformations and binning.  It is worth a look if you want to understand the details better.)
+
 Because of my familiarity, we discuss `geoR` in this lab.  Also note that the online documentation for `geoR` is dated and some of the links are broken.  After some digging around I found a full set of the documentation online and have uploaded it to the class Canvas site in the *R Resources* subdirectory in the Files area.  You may also find the introduction to `geoR` document useful to support your learning; this is also uploaded to Canvas.
 
 ### Some comments on universal kriging and prediction  
@@ -444,7 +446,7 @@ To do universal kriging, we also need covariates for the fixed part of the model
 
 ### Comments about geographic coordinates and conversions
 
-Note that `geoR` appears to do *all* its distance calculations based on the input coordinates using the Pythagorean theorem.  This won't give you correct distances on a sphere.  Thus we can't use latitude and longitude directly.  The dataset provided by Laina Mercer had two variables, `lat_m` and `long_m` that had been projected to a flat surface.  At this writing I have not found the documentation for this.  So the dataset we are using in this lab has [Lambert coordinates](https://en.wikipedia.org/wiki/Lambert_conformal_conic_projection) added (USA Contiguous Lambert Conformal Conic (srid 102004)) from the MESA Air database.  These give approximately the same meters as the coordinates Mercer used.
+Note that `geoR` appears to do *all* its distance calculations based on the input coordinates using the Pythagorean theorem.  This won't give you correct distances on a sphere.  Thus we can't use latitude and longitude directly.  The dataset provided by Laina Mercer had two variables, `lat_m` and `long_m` that had been projected to a flat surface.  At this writing I have not found the documentation for this.  So the dataset we are using in this lab has [Lambert coordinates](https://en.wikipedia.org/wiki/Lambert_conformal_conic_projection) added (USA Contiguous Lambert Conformal Conic (srid 102004)) from the MESA Air database.  These give approximately the same meters as the coordinates Mercer used.  To see a documentation of the projection formulas, see this [New Zealand government website](https://www.linz.govt.nz/data/geodetic-system/coordinate-conversion/projection-conversions/lambert-conformal-conic-geographic)
 
 There are also some useful packages and functions for working with spatial data and get distances.  Leveraging input from Brian High, Jessica Badgeley, and Nancy Carmona:
 
