@@ -820,8 +820,38 @@ g + geom_point(aes(x = longitude, y = latitude, col = pred_nox),
 
 ```
 
-```{r plot smooth grid predictions on the map with tiles, eval = TRUE}
-# ------------ plot smooth grid predictions on the map with tiles ----
+```{r plot smooth grid predictions on the map with with polygons, eval = FALSE}
+# ------------ plot smooth grid predictions on the map with polygons -------
+
+# Produces a warning (in comment below). TODO: Fix this.
+
+# Warning message:
+# Not possible to generate contour data
+
+g %+% test_grid + aes(x = longitude, y = latitude, z = pred_nox) +
+    stat_contour(aes(fill = ..level.., alpha = ..level..), 
+                 geom = "polygon", binwidth = 100) + 
+    scale_fill_continuous(name = "NOx (ppb)", low = "yellow", high = "red") +
+    ggtitle("Map of Los Angeles \n with fall UK predictions overlaid") + 
+    my_theme + guides(alpha = FALSE)
+
+```
+
+```{r plot smooth grid predictions on the map with tiles 1, eval = FALSE}
+# ------------ plot smooth grid predictions on the map with tiles 1 -------
+
+# Just shows a grey box over the area. TODO: Fix this.
+g + stat_density_2d(aes(x = longitude, y = latitude, fill = pred_nox), 
+                    data = test_grid, geom = "tile", contour = FALSE, 
+                    alpha = 0.7) + 
+    scale_fill_gradient(name = "NOx (ppb)", low = "yellow", high = "red") +  
+    ggtitle("Map of Los Angeles \n with fall UK predictions overlaid") + 
+    my_theme
+
+```
+
+```{r plot smooth grid predictions on the map with tiles 2, eval = TRUE}
+# ------------ plot smooth grid predictions on the map with tiles 2 -------
 
 g %+% test_grid + aes(x = longitude, y = latitude, z = pred_nox) +
     stat_summary_2d(fun = mean, alpha = 0.7, geom = "tile", bins = 30) +
