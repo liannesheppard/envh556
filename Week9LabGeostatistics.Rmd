@@ -66,7 +66,9 @@ if (!require("pacman")) {install.packages("pacman", repos = my_repo)}
 # scatterplot3d for the scatter3d option in geoR plotting
 # funModeling:  for EDA
 # scales: muted and other color scale functions
-pacman::p_load(tidyverse, knitr, dplyr, geoR, maps, scatterplot3d,ggmap, funModeling, Hmisc, scales)
+# akima: gridded bivariate interpolation for irregular data
+pacman::p_load(tidyverse, knitr, dplyr, geoR, maps, scatterplot3d,ggmap, 
+               funModeling, Hmisc, scales, akima)
 
 ```
 
@@ -822,18 +824,22 @@ g + geom_point(aes(x = longitude, y = latitude, col = pred_nox),
 
 ```
 
-```{r plot smooth grid predictions on the map with with polygons, eval = FALSE}
+```{r plot smooth grid predictions on the map with with polygons}
 # ------------ plot smooth grid predictions on the map with polygons -------
 
-# Produces a warning (in comment below). TODO: Fix this.
+# Interpolate to a regularly spaced grid and store as a list
+test_grid_interp <- with(test_grid, interp(longitude, latitude, pred_nox))
 
-# Warning message:
-# Not possible to generate contour data
+# Expand grid into a data frame and rescale predictions
+test_grid_dens_expand<-
+    with(test_grid_interp, expand.grid(x = x, y = y)) %>%
+    mutate(z = as.vector(test_grid_interp$z),
+           z = ifelse(is.na(z), 0, z),
+           z = z * max(test_grid$pred_nox)/max(z))
 
-g %+% test_grid + aes(x = longitude, y = latitude, z = pred_nox) +
-    stat_contour(aes(fill = ..level.., alpha = ..level..), 
-                 geom = "polygon", binwidth = 100) + 
-    scale_fill_continuous(name = "NOx (ppb)", low = "yellow", high = "red") +
+g + stat_contour(aes(x = x, y = y, z = z, fill = ..level..), alpha = 0.08, 
+                 data = test_grid_dens_expand, geom = "polygon", bins = 30) + 
+    scale_fill_gradient(name = "NOx (ppb)", low = "yellow", high = "red") +  
     ggtitle("Map of Los Angeles \n with fall UK predictions overlaid") + 
     my_theme + guides(alpha = FALSE)
 
