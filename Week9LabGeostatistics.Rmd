@@ -841,7 +841,7 @@ g + stat_contour(aes(x = x, y = y, z = z, fill = ..level..), alpha = 0.07,
     scale_fill_gradient(name = "NOx (ppb)", low = "yellow", high = "red", 
                         breaks = seq(0, 125, 25), limits = c(0, 125)) +  
     ggtitle("Map of Los Angeles \n with fall UK predictions overlaid") + 
-    my_theme + guides(alpha = FALSE)
+    my_theme
 
 ```
 
