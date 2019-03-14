@@ -830,16 +830,16 @@ g + geom_point(aes(x = longitude, y = latitude, col = pred_nox),
 # Interpolate to a regularly spaced grid and store as a list
 test_grid_interp <- with(test_grid, interp(longitude, latitude, pred_nox))
 
-# Expand grid into a data frame and rescale predictions
+# Expand grid into a data frame
 test_grid_dens_expand<-
     with(test_grid_interp, expand.grid(x = x, y = y)) %>%
     mutate(z = as.vector(test_grid_interp$z),
-           z = ifelse(is.na(z), 0, z),
-           z = z * max(test_grid$pred_nox)/max(z))
+           z = ifelse(is.na(z), 0, z))
 
-g + stat_contour(aes(x = x, y = y, z = z, fill = ..level..), alpha = 0.08, 
-                 data = test_grid_dens_expand, geom = "polygon", bins = 30) + 
-    scale_fill_gradient(name = "NOx (ppb)", low = "yellow", high = "red") +  
+g + stat_contour(aes(x = x, y = y, z = z, fill = ..level..), alpha = 0.1, 
+                 data = test_grid_dens_expand, geom = "polygon", bins = 50) + 
+    scale_fill_gradient(name = "NOx (ppb)", low = "yellow", high = "red", 
+                        breaks = seq(0, 125, 25), limits = c(0, 125)) +  
     ggtitle("Map of Los Angeles \n with fall UK predictions overlaid") + 
     my_theme + guides(alpha = FALSE)
 
