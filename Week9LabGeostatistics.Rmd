@@ -69,6 +69,10 @@ if (!require("pacman")) {install.packages("pacman", repos = my_repo)}
 # akima: gridded bivariate interpolation for irregular data
 pacman::p_load(tidyverse, knitr, dplyr, geoR, maps, scatterplot3d,ggmap, 
                funModeling, Hmisc, scales, akima)
+# Note: this lab will only knit if the latest version of ggmap is installed.  
+#   The following line does this, but needs to be run at the console before
+#   knitting.  (Installation of ggmap takes a LONG time.)
+#pacman::p_load(ggmap, install = TRUE, update = TRUE)
 
 ```
 
@@ -125,7 +129,14 @@ Because of my familiarity, we discuss `geoR` in this lab.  Also note that the on
 
 ### Some comments on universal kriging and prediction  
 
-In kriging, you can't predict on the same locations that you used to estimate the parameters.  As discussed on [stackoverflow](https://stackoverflow.com/questions/45768516/why-does-the-kriging-give-the-same-values-as-the-observed), "this is a well-known property of kriging; it comes from the fact that the model underlying kriging assumes that a value is perfectly correlated with itself."  Thus predicting a know value always returns that value, with zero prediction error.  This is also the cause of errors with duplicate observations at the same location. Think of this property of kriging as an enforced need to do cross-validation to evaluate your predictions.  Apparently you can use the `gstat` package to do smoothing instead of kriging by specifying an Err variogram instead of a Nug nugget effect.
+In kriging, you can't predict on the same locations that you used to estimate the parameters.  As discussed on [stackoverflow](https://stackoverflow.com/questions/45768516/why-does-the-kriging-give-the-same-values-as-the-observed), "this is a well-known property of kriging; it comes from the fact that the model underlying kriging assumes that a value is perfectly correlated with itself."  Thus predicting a know value always returns that value, with zero prediction error.  This is also the cause of errors with duplicate observations at the same location. Think of this property of kriging as an enforced need to do cross-validation to evaluate your predictions.  Apparently you can use the `gstat` package to do smoothing instead of kriging by specifying an "Err"" variogram instead of a "Nug"" nugget effect.
+
+## Brief discussion of variograms
+
+A semivariance is defined as one half of the average of all the squared differences of all points that are a certain distance $h$ apart.  A variogram is a plot of these squared differences as a function of distinace, presented as either all the points (a "cloud"), or as an average (typically called "binned").  Empirical variograms are useful for helping a data analyst see the spatial structure in the data.  In many situations with spatial structure, the average semivariance increseases as distance increases until it eventually levels off.  In geostatistics we use a model to approximate the structure we see in an empirical variogram.  There are different variogram models depending upon the assumed model.  Examples of common assumed models are exponential, spherical, Gaussian, and Matern.  This [link](http://www.kgs.ku.edu/Tis/surf3/s3krig2.html) gives a brief summary of semivariance and variograms (which it calls semivariograms; see the following link for discussion of terminology).
+
+There is confusion about terminology and often variogram and semivariogram are used interchangeably.  This paper, [Variogram or semivariogram? Understanding the variances in a variogram](https://link.springer.com/article/10.1007%2Fs11119-008-9056-2), gives a nice overview of the terminology and notation.  It also links well-understood estimates of variance with semivariance estimates, making the point that a variance can be expressed either in the traditional way as the squared deviation from the mean, or as 1/2 the average of squared differences between points, averaged over all possible pairs of points.
+
 
 ## Applications using `geoR`: Practice with the built-in s100 dataset, a simulated dataset
 

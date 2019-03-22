@@ -134,6 +134,22 @@ This section can cover:
 
 ### Appendix 2 (required):  Session information and Code
 
+Note:  Include the following two chunks in your code appendix.  In addition, here are some guidelines for documenting and producing clear code:
+
+TODO:  Refine the following
+
+1. In general you should finalize your code like you finalize your scientific writing:  It should be clear, concise, and nicely formatted.  Please incorporate the following strategies into your code in future assignments:
+    a. Make sure you don't have run-on lines in your compiled code.  Check for this and fix it before finalizing your assignment.  Mostly you can rely on tools to automatically reformat the lines because these tools what you want. (Sometimes they don't.) To automatically reformat, highlight the lines you want to reformat (and no more than those lines) and then:
+        i. For lines of code use: Cmd-Shift-A (Cmd is for macs; use Cntrl for Cmd on windows). 
+        ii. For comments use: Cmd-Shift-/.
+    b. Delete extraneous code and comments unless you have a reason to keep this in your R Markdown file, for instance to remind you of something important.  In the lab R Markdown files I have been intentionally leaving in some commented sections to show you alternative ways to do things, help you understand what I've done, or sometimes for other reasons.  When you copy that code for your own purposes, delete the extra material you don't need.
+    c. Break up your code to  make it more readable by using header lines for code chunks, e.g. # ----- this is a header line ---------.  You can decide your personal style for this.  Also if you put at least 4 dashes at the end of the line, RStudio incorporates this line into your outline.
+    c. Work on improving your style and try to use a consistent style.  I suggest you try to follow one of the existing guides such as the Google style guide (Links to an external site.)Links to an external site., Advanced R Guide (Hadley Wickam's tweaks of the Google style guide) (Links to an external site.)Links to an external site., or (with much more information) the tidyverse style guide (Links to an external site.)Links to an external site..  There are many details to learn, so make it a goal to progressively improve with each assignment.
+2. Some of the demonstrations I have provided in the lab assignments are for your learning, but don't need to be brought forward into your lab write-up.  For instance, once you know how to write a function and are convinced that your function works correctly, there is no need to use the non-function version.  In Lab 4 I showed you how to do cross-validation manually because I wanted you to understand thoroughly the cross-validation ideas.  Then I showed you how to write functions and turn the CV code into a function.  I also demonstrated that the function results were identical to doing it manually.  Once we were convinced that the function worked properly, there is no need to continue to use the manual cross-validation since it is always better to use a function for a repetitive task.
+3. Pay attention to organization of your analyses and code.  For instance, if you find you need a new package, add your command to load it at the beginning of the R Markdown file in the chunk where you load all the other packages.  As another example, be intentional about the choice to repeat some aspect of your code vs. just work with a saved object from a previous analysis.
+4. I think it is a good idea to keep in your R Markdown file a record of the exploratory work you did but that doesn't show up in your final report.  It is good practice with any new dataset and/or data analysis to make sure you really understand your data before you launch into your full analysis.  Often you won't put very much or any of this exploratory work in your final write-up.  However, I think it is very helpful for you to keep a record of the kinds of descriptive analyses you did by leaving the code in your R Markdown file.  This is one way that I can check that you are making sure you are understanding key features of your data and analyses.  I was surprised that I did not see much code for exploratory analyses in your R Markdown files, though perhaps you did this in Lab 3.
+
+
 ```{r session info}
 #-----session info------
 # Change to eval=TRUE in your report
