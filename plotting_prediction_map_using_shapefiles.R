@@ -41,19 +41,19 @@ ca_urb_areas_shapefile <- readOGR(file.path(shpfile_dir, shpfile), shpfile)
 
 ca_urb_proj <- proj4string(ca_urb_areas_shapefile)
 
-# Convert LA urban area shapefile data frame to a SpatialPolygon
+# Convert LA urban area polygon to a SpatialPolygon
 
 ca_urb_sp <- ca_urb_areas_shapefile[
     grepl('^Los Angeles', ca_urb_areas_shapefile$NAME10), ]@polygons
 ca_urb_sp <- SpatialPolygons(Srl = ca_urb_sp, proj4string = CRS(ca_urb_proj))
 
-# Transform projection of urban areas SpatialPoints object if necessary
+# Transform projection of urban areas SpatialPolygons object if necessary
 
 if (ca_hwy_proj != ca_urb_proj) {
-    spTransform(ca_urb_sp, ca_hwy_proj)
+    ca_urb_sp <- spTransform(ca_urb_sp, ca_hwy_proj)
 }
 
-# Convert LA urban area SpatialPoints object to a data frame for plotting
+# Convert LA urban area SpatialPolygons object to a data frame for plotting
 
 ca_urb_df <- fortify(ca_urb_sp)
 
@@ -83,7 +83,5 @@ ca_map <- ggplot() +
                         breaks = seq(0, 125, 25), limits = c(0, 125)) +  
     ggtitle("Map of Los Angeles \n with fall UK predictions overlaid") + 
     theme_void() + my_theme
-
 map_projected <- ca_map + coord_map()
-
 print(map_projected)
