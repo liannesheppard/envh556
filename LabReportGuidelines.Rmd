@@ -2,12 +2,21 @@
 title: "Lab Report Guidelines"
 author: "ENVH 556"
 date: "Created for Winter 2019; printed `r format(Sys.time(), '%d %B, %Y')`"
-output: html_document
+output: 
+    html_document:
+        fig_caption: yes
+        toc: true
+        toc_depth: 3
+        number_sections: true
+editor_options: 
+  chunk_output_type: console
 ---
 
-<!--Parts of this document were taken from guidelines prepared by Keith Baggerly for SIBD -->
+<!--Credit:  Parts of this document were taken from guidelines prepared by Keith Baggerly for SIBD -->
 
 ```{r setup, include=FALSE}
+# -------- Set-up ---------
+
 # Some useful knitr options:
 knitr::opts_chunk$set(echo = TRUE, warning = FALSE, tidy=FALSE, 
   tidy.opts=list(width.cutoff=80, blank=FALSE), cache=FALSE, messages=FALSE)
@@ -34,12 +43,12 @@ pacman::p_load(knitr, tidyverse)
 
 ```
 
-### Overview  
+# Overview  
 Each homework assignment should be formatted as a lab report using R Markdown following the outline in this document. Adhere to reproducible research principles.  Include a code Appendix that will allow an independent replication of your results.  Note that all material that students want to be considered in grading should be in the main part of the report. 
 
 ---
 
-### Lab Report Outline
+# Lab Report Outline
 
 1. Introduction
     * Background
@@ -57,6 +66,8 @@ Each homework assignment should be formatted as a lab report using R Markdown fo
     * Code (required)
 
 ---
+
+# Instructions by Section
 
 ## Introduction
 
@@ -76,13 +87,13 @@ Use this section to provide an introductory paragraph (or at most two) summarizi
 
 This section tells the reader what you did in order to answer the questions posed. Use it to describe your methods, noting how you analyzed your data. It covers all aspects of data description that don't fit naturally into the results section.   Here are some topics you can cover:
 
-#### What are our data?  
+### What are our data?  
 Where did our data come from? (Supply URLs as appropriate)  
 How many samples/subjects?  
 How many measurements per subject/sample?  
 What covariates are important?  
 
-#### How are we processing the data?  
+### How are we processing the data?  
 If the data will be filtered or grouped, what cutoffs will be used?  
 
 #### Describe the analysis approach, i.e. the methods used in the analysis  
@@ -128,45 +139,75 @@ This section can cover:
 
 * Descriptive data analyses and verification that you are analyzing the dat you intend to analyze
 
-* Inferential analyses
+* Additional descriptive analses
 
-* Important figures and tables  
+* Additional inferential analyses
 
-### Appendix 2 (required):  Session information and Code
+* Additional figures and tables  
 
-Note:  Include the following two chunks in your code appendix.  In addition, here are some guidelines for documenting and producing clear code:
+### Guidance on documenting, finalizing, and formatting code to support your code appendix
 
-TODO:  Refine the following
-
-1. In general you should finalize your code like you finalize your scientific writing:  It should be clear, concise, and nicely formatted.  Please incorporate the following strategies into your code in future assignments:
-    a. Make sure you don't have run-on lines in your compiled code.  Check for this and fix it before finalizing your assignment.  Mostly you can rely on tools to automatically reformat the lines because these tools what you want. (Sometimes they don't.) To automatically reformat, highlight the lines you want to reformat (and no more than those lines) and then:
+1. In general you should finalize your code like you finalize your scientific writing:  It should be clear, concise, and nicely formatted.  Please incorporate the following **formatting strategies** into your code in your assignments:
+    a. *Make sure you don't have run-on lines* in your compiled code.  Check for this and fix it before finalizing your assignment.  Mostly you can rely on tools to automatically reformat the lines because these tools will accomplish what you want. (Sometimes they don't.) To automatically reformat, highlight the lines you want to reformat (and no more than those lines) and then:
         i. For lines of code use: Cmd-Shift-A (Cmd is for macs; use Cntrl for Cmd on windows). 
         ii. For comments use: Cmd-Shift-/.
-    b. Delete extraneous code and comments unless you have a reason to keep this in your R Markdown file, for instance to remind you of something important.  In the lab R Markdown files I have been intentionally leaving in some commented sections to show you alternative ways to do things, help you understand what I've done, or sometimes for other reasons.  When you copy that code for your own purposes, delete the extra material you don't need.
-    c. Break up your code to  make it more readable by using header lines for code chunks, e.g. # ----- this is a header line ---------.  You can decide your personal style for this.  Also if you put at least 4 dashes at the end of the line, RStudio incorporates this line into your outline.
-    c. Work on improving your style and try to use a consistent style.  I suggest you try to follow one of the existing guides such as the Google style guide (Links to an external site.)Links to an external site., Advanced R Guide (Hadley Wickam's tweaks of the Google style guide) (Links to an external site.)Links to an external site., or (with much more information) the tidyverse style guide (Links to an external site.)Links to an external site..  There are many details to learn, so make it a goal to progressively improve with each assignment.
-2. Some of the demonstrations I have provided in the lab assignments are for your learning, but don't need to be brought forward into your lab write-up.  For instance, once you know how to write a function and are convinced that your function works correctly, there is no need to use the non-function version.  In Lab 4 I showed you how to do cross-validation manually because I wanted you to understand thoroughly the cross-validation ideas.  Then I showed you how to write functions and turn the CV code into a function.  I also demonstrated that the function results were identical to doing it manually.  Once we were convinced that the function worked properly, there is no need to continue to use the manual cross-validation since it is always better to use a function for a repetitive task.
-3. Pay attention to organization of your analyses and code.  For instance, if you find you need a new package, add your command to load it at the beginning of the R Markdown file in the chunk where you load all the other packages.  As another example, be intentional about the choice to repeat some aspect of your code vs. just work with a saved object from a previous analysis.
-4. I think it is a good idea to keep in your R Markdown file a record of the exploratory work you did but that doesn't show up in your final report.  It is good practice with any new dataset and/or data analysis to make sure you really understand your data before you launch into your full analysis.  Often you won't put very much or any of this exploratory work in your final write-up.  However, I think it is very helpful for you to keep a record of the kinds of descriptive analyses you did by leaving the code in your R Markdown file.  This is one way that I can check that you are making sure you are understanding key features of your data and analyses.  I was surprised that I did not see much code for exploratory analyses in your R Markdown files, though perhaps you did this in Lab 3.
+    b. *Delete extraneous code and comments* unless you have a reason to keep this in your R Markdown file, for instance to remind you of something important.  In the lab R Markdown files I have been intentionally leaving in some commented sections to show you alternative ways to do things, help you understand what I've done, or sometimes for other reasons.  When you copy that code for your own purposes, delete the extra material you don't need.
+    c. *Break up your code to  make it more readable*
+            i. Use header comment lines at the beginning of code chunks, e.g. # ----- this is a header line ---------.  You can decide your personal style for this.  Also if you put at least 4 dashes at the end of the header line, RStudio incorporates this line into your outline.
+            ii.  Use line spacing and indentation
+            iii.  Insert a blank line before each comment line that describes what the next section of code does
+    d. *Work on improving your style and adopt a consistent style.*  I suggest you try to follow one of the existing guides such as the [Google style guide for R
+code](https://google.github.io/styleguide/Rguide.xml), [Advanced R Guide (Hadley Wickam's tweaks of the Google style guide)](http://adv-r.had.co.nz/Style.html), or (with much more information) the [tidyverse style guide](https://style.tidyverse.org/).  There are many details to learn, so make it a goal to progressively improve with each assignment.
 
+2. Some of the demonstrations this course provided in the lab assignments are for your learning, but don't need to be brought forward into your lab write-up.  For instance, once you know how to write a function and are convinced that your function works correctly, there is no need to use the non-function version.  As an example, Lab 4 demonstrates cross-validation manually in order to convey thoroughly cross-validation ideas.  Then the Lab shows how to write functions and turn the CV code into a function.  The lab also follows the good practice of checking the function by demonstrating that the function results are identical to doing it manually.  Once we are convinced that the function works properly, there is no need to continue to use the manual cross-validation since it is always better to use a function for a repetitive task.
+
+3. Pay attention to the overall organization of your analyses and code.  For instance, if you find you need a new package, add your command to load it at the beginning of the R Markdown file in the chunk where you load all the other packages.  As another example, be intentional about the choice to repeat some aspect of your code vs. just work with a saved object from a previous analysis.
+
+4. It can be useful to keep in your R Markdown file a record of the exploratory work you did but that doesn't show up in your final report.  It is good practice with any new dataset and/or data analysis to make sure you really understand your data before you launch into your full analysis.  Often you won't put very much or any of this exploratory work in a final write-up.  However, it can be very helpful for you to keep a record of the kinds of descriptive analyses you did by leaving unevaluated code in your R Markdown file.  This is one way that you can keep track of whay you looked at in the past.  Also it is a way that those following your work can check that you are making sure you are understanding key features of your data and analyses.  
+
+5. See additional suggestions in the general presentation guidelines section below.
+
+### Appendix 2 (required):  Session information, embedded code, and functions used
+
+#### Three code chunks to include in every code appendix
+
+Include the following three chunks in your code appendix.  The output is also shown in the compiled html file for these guidelines. Note that there is very little code embedded in these guidelines and no functions, so the second two chunks produce little or no oputput.  Generally your files will have much longer code appendices.
+
+##### Session Information
 
 ```{r session info}
 #-----session info------
-# Change to eval=TRUE in your report
 sessionInfo()
 
 ```
+
+##### Code embedded in the R Markdown file
 
 ```{r code appendix, ref.label=knitr::all_labels(),echo=TRUE,eval=FALSE, tidy=TRUE, tidy.opts=list(width.cutoff=60), include=T}
 #---------code appendix-------
 
 ```
 
+##### Functions used in the R Markdown file
+
+```{r Functions used in this Rmd, eval = TRUE}
+#----------- functions used in this Rmd ------------
+
+# Show the names of all functions used (loaded in the current environment)
+lsf.str()
+
+# Show the definitions of all functions loaded into the current environment  
+lapply(c(lsf.str()), getAnywhere)
+
+```
+
 ---
 
-# ENVH 556 Lab Report Presentation Guidelines
+# Lab Report Presentation Guidelines
 
-1.	Suggested maximum length: 2 pages for text plus a maximum of 5 figures and/or tables. (Text length is based on text with 1.5 spacing, and no less than 11 point font)  
+## ENVH 556 Lab Reports
+
+1.	Suggested maximum length: 2 pages for text plus a maximum of 5 figures and/or tables. (Text length is based on text with 1.5 spacing, and no less than 11 point font).  To facilitate review and comments, please compile your R Markdown file into a word or pdf file, not a html file.  
 2.	Text should be brief. Use the introduction and methods sections to provide background and context. Use the results and discussion sections to answer all the questions posed in the assignment. Make sure the document stands alone as a comprehensible document to the reader.  
 3.	All figures and tables need appropriately descriptive captions/titles. Pay attention to table formatting, including significant digits, labels, headings for rows/columns, and that all necessary information is included (e.g. in footnotes). Additional guidance on creating tables:  
     a.	No vertical lines. Use horizontal lines to demarcate sections of a table (not every line)  
@@ -194,11 +235,11 @@ sessionInfo()
 
 ### What can be written before analyzing data? 
 
-A surprising large amount of the report can be written before the detailed analysis has begun.
+* A surprising large amount of the report can be written before the detailed analysis has begun.
 
-You can use the `eval=FALSE` option to prevent the code from being run before you are ready
+* You can use the `eval=FALSE` option to prevent the code from being run before you are ready
 
-Circulating drafts of the introduction plus data & methods sections before the data analysis begins can be very helpful and *save time*
+* Circulating drafts of the introduction plus data & methods sections before the data analysis begins can be very helpful and *save time*
 
 ---
 
@@ -214,7 +255,7 @@ Circulating drafts of the introduction plus data & methods sections before the d
 
 * Write functions for blocks of code that are reused extensively.
       * Use descriptive function names  
-      
+
 * Use descriptive names for datasets and variables
      * Name data frames and matices as well as their columns (and their rows, as appropriate)
      * Refer to your entries by name, not number
@@ -231,7 +272,7 @@ Circulating drafts of the introduction plus data & methods sections before the d
 * Think about what is inferred from each plot you show
     * Describe what allows you to make this inference
     * Think about what the plot would look like if there were no structure in the data  
-    
+
 * Make sure it is clear what each chunk of code is meant to do
 
 ---
@@ -241,10 +282,10 @@ Circulating drafts of the introduction plus data & methods sections before the d
 * How do you know you are analyzing the data you think you are analyzing?  
      * Have you verified the sample size is correct at each data massaging step?
      * How do you know data have been merged correctly?
-     
+
 * Have you clearly described the data?  
     * What low-dimensional summaries of the data have you plotted?  Do they make sense?
-    
+
 * What do you expect to see if the data are purely noise?
 
 ---

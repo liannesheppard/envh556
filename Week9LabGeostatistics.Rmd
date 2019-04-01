@@ -67,11 +67,14 @@ if (!require("pacman")) {install.packages("pacman", repos = my_repo)}
 # funModeling:  for EDA
 # scales: muted and other color scale functions
 # akima: gridded bivariate interpolation for irregular data
+# sp: spatial data methods
+# rgdal
+# downloader
 pacman::p_load(tidyverse, knitr, dplyr, geoR, maps, scatterplot3d,ggmap, 
-               funModeling, Hmisc, scales, akima)
+               funModeling, Hmisc, scales, akima, sp, rgdal, downloader)
 # Note: this lab will only knit if the latest version of ggmap is installed.  
 #   The following line does this, but needs to be run at the console before
-#   knitting.  (Installation of ggmap takes a LONG time.)
+#   knitting.  (Note: Installation of ggmap takes a LONG time.)
 #pacman::p_load(ggmap, install = TRUE, update = TRUE)
 
 ```
@@ -133,9 +136,9 @@ In kriging, you can't predict on the same locations that you used to estimate th
 
 ## Brief discussion of variograms
 
-A semivariance is defined as one half of the average of all the squared differences of all points that are a certain distance $h$ apart.  A variogram is a plot of these squared differences as a function of distinace, presented as either all the points (a "cloud"), or as an average (typically called "binned").  Empirical variograms are useful for helping a data analyst see the spatial structure in the data.  In many situations with spatial structure, the average semivariance increseases as distance increases until it eventually levels off.  In geostatistics we use a model to approximate the structure we see in an empirical variogram.  There are different variogram models depending upon the assumed model.  Examples of common assumed models are exponential, spherical, Gaussian, and Matern.  This [link](http://www.kgs.ku.edu/Tis/surf3/s3krig2.html) gives a brief summary of semivariance and variograms (which it calls semivariograms; see the following link for discussion of terminology).
+A semivariance is defined as one half of the average of all the squared differences of all points that are a certain distance $h$ apart.  A variogram is a plot of these squared differences as a function of distance, presented as either all the points (a "cloud"), or as an average (typically called "binned").  Empirical variograms are useful for helping a data analyst see the spatial structure in the data.  In many situations with spatial structure, the average semivariance increases as distance increases until it eventually levels off.  In geostatistics we use a model to approximate the structure we see in an empirical variogram.  There are different variogram models depending upon the assumed covariance model.  Examples of common assumed models are exponential, spherical, Gaussian, and Matern.  This [link](http://www.kgs.ku.edu/Tis/surf3/s3krig2.html) gives a brief summary of semivariance and variograms (which it calls semivariograms; see the following link for discussion of terminology and the confusing overlapping terms in the literature).
 
-There is confusion about terminology and often variogram and semivariogram are used interchangeably.  This paper, [Variogram or semivariogram? Understanding the variances in a variogram](https://link.springer.com/article/10.1007%2Fs11119-008-9056-2), gives a nice overview of the terminology and notation.  It also links well-understood estimates of variance with semivariance estimates, making the point that a variance can be expressed either in the traditional way as the squared deviation from the mean, or as 1/2 the average of squared differences between points, averaged over all possible pairs of points.
+There is confusion about terminology and often variogram and semivariogram are used interchangeably.  This paper, [Variogram or semivariogram? Understanding the variances in a variogram](https://link.springer.com/article/10.1007%2Fs11119-008-9056-2), gives a nice overview of the terminology and notation.  It also links well-understood estimates of variance with semivariance estimates, making the point that a variance can be expressed either in the traditional way as the squared deviation from the mean, or as 1/2 the average of squared differences between points, averaged over all possible pairs of points.  This helps you see that the formula for a variogram is a re-expression of a standard variance formula, though now looking at each term that goes into the sum as a function of distance.
 
 
 ## Applications using `geoR`: Practice with the built-in s100 dataset, a simulated dataset
@@ -374,12 +377,12 @@ pred.grid <- expand.grid(seq(0,1,l=51), seq(0,1,l=51))
 kc <- krige.conv(s100, loc=pred.grid, krige=krige.control(obj.m=ml))
 
 # define colors for plotting
-# TODO:  this is a crude approach; look into ColorBrewer or other palette
+# TODO:  this is a crude approach; look into ColorBrewer or other palette for a 
+#   more sophisticated set of choices
 col.range <- c("darkblue","blue","green","yellow","orange","red")
 
 # add prediction plots, 3 types:
-# TODO:  As Sun about choices here
-# TODO:  Set xlim, ylim so plots are square?  getting funny limits
+# Set xlim, ylim to ensure all plots are square
 # floor used to get quick and dirty quartiles based on cts data
 plot(s100$coords[,1:2], 
      col=col.range[c(2:4,6)][floor(s100$data+2)], 
@@ -492,7 +495,7 @@ summary(fall_geo)
 
 ```
 
-For later use, we need to convert the grid to geodata.  Also, the full grid isn't working, so we use a subset.
+For later use, we need to convert the grid to geodata.  Also, the full grid isn't working, so we use a subset.  TODO:  Ask Brian?: (Optional!) Figure out if we can make this work by dividing the prediction step into two pieces.
 
 ```{r convert LA grid to geodata, eval = TRUE}
 # ------------ convert LA grid to geodata --------
@@ -579,7 +582,7 @@ Now add the grid to the map.  This plot isn't particularly informative, other th
 ```{r plot the grid on the map, eval = TRUE}
 # ------------ plot the grid on the map ---------------
 # Note: we read the grid csv data above
-#TODO:  The warning about points removed deserves investigation.
+# The map range is set above so no points are removed.
 g + geom_point(aes(x = longitude, y = latitude), data = la_grid, alpha = 0.3) + 
     ggtitle("Map of Los Angeles \n with the grid locations overlaid") 
 
@@ -786,18 +789,19 @@ kc_la <- krige.conv(fall_geo,
 
 ### Plotting the predictions
 
-Display the predictions on a map.  The first chunk gives code to the default `geoR` plots, but it is hidden since I didn't find this output that helpful.  The second visible chunk adds our predictions to a Stamen map.  TODO:  We still need to figure out how to smooth these instead of plotting the individual points.
+Display the predictions on a map.  The first chunk gives code to the default `geoR` plots, but it is hidden since I didn't find this output that helpful.  The second visible chunk adds our predictions to a Stamen map.  Later plots show refinements to the plotted predictions, with smoothing.
+
 
 ```{r fall predictions, echo = FALSE, eval = FALSE}
 # ------------ fall predictions ----------
 
 quant <- quantile(kc_la$predict, seq(0.1, 0.9, 0.1))
-# TODO: Revisit breaks. (force minimum to be non-negative -- matters??)
+# Consider: Revisit breaks. (force minimum to be non-negative -- matters??)
 breaks <- c(max(min(kc_la$predict),0),quant[c(2,4,6,8)],max(kc_la$predict))
-# TODO:  fix up color range with a better range
+# Consider:  fix up color range with a better range
 col.range <- c("yellow","orange","red","purple","blue","black")
 
-#TODO:  address $ categories in titles
+# Consider:  address $ categories in titles
 par(mfrow=c(1,2))
 plot(fall[, 3:2],
      col = col.range[breaks],
@@ -829,12 +833,45 @@ my_theme <- theme(
 
 g + geom_point(aes(x = longitude, y = latitude, col = pred_nox), 
                data = test_grid, alpha = 0.7) + 
-    ggtitle("Map of Los Angeles \n with fall UK predictions overlaid") + 
+    ggtitle("Map of Los Angeles \n with fall UK predictions overlaid as points") + 
     scale_color_gradient(name = "NOx (ppb)", low = "yellow", high = "red") +  
     my_theme
 
 ```
 
+This refinement is the same gridded predictions, but now drops all points over the water.
+
+```{r plot gridded predictions not on the water, eval = TRUE}
+# ------------ plot gridded predictions not on the water ---------------
+#TODO: Ask Brian?: No overlaid plot with +.  Not working interactively at all once I added %+%
+
+# identifies locations over the water and excludes them in spdf_test_grid_in_la
+#   leverages previous chunk results
+proj_str <- "+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0"
+
+spdf_test_grid <- SpatialPointsDataFrame(
+    coords = test_grid[, c("longitude", "latitude")], data = test_grid, 
+    proj4string = CRS(proj_str))
+
+la_county <-  map_data("county") %>% 
+    filter(region == 'california', subregion == 'los angeles')
+
+spla <- SpatialPoints(coords = la_county[, c("long", "lat")], 
+                      proj4string = CRS(proj_str))
+
+spdf_test_grid_in_la <- spdf_test_grid[!is.na(over(spdf_test_grid, spla)), ]
+test_grid_in_la <- as.data.frame( spdf_test_grid_in_la)
+
+
+g %+% geom_point(aes(x = longitude, y = latitude, col = pred_nox), 
+               data = test_grid_in_la, alpha = 0.7) + 
+    ggtitle("Map of Los Angeles \n with fall UK predictions overlaid, \n omitting points over the water") + 
+    scale_color_gradient(name = "NOx (ppb)", low = "yellow", high = "red") +  
+    my_theme
+
+```
+
+Now show an example plotting smooth gridded predicitons on the map with polygons.
 ```{r plot smooth grid predictions on the map with with polygons}
 # ------------ plot smooth grid predictions on the map with polygons -------
 
@@ -851,32 +888,129 @@ g + stat_contour(aes(x = x, y = y, z = z, fill = ..level..), alpha = 0.07,
                  data = test_grid_dens_expand, geom = "polygon", bins = 50) + 
     scale_fill_gradient(name = "NOx (ppb)", low = "yellow", high = "red", 
                         breaks = seq(0, 125, 25), limits = c(0, 125)) +  
-    ggtitle("Map of Los Angeles \n with fall UK predictions overlaid") + 
+    ggtitle("Map of Los Angeles \n with fall UK predictions overlaid, \n smoothed predictions (with interpolation due to missing grid points)") + 
     my_theme
 
 ```
 
+Now show an example plotting smooth gridded predicitons on the map with tiles.  First tile example using stat_density_2d.  TODO:  Ask Brian?: Does this work, or should I remove it??
 ```{r plot smooth grid predictions on the map with tiles 1, eval = FALSE}
 # ------------ plot smooth grid predictions on the map with tiles 1 -------
 
-# Just shows a grey box over the area. TODO: Fix this.
-g + stat_density_2d(aes(x = longitude, y = latitude, fill = pred_nox), 
-                    data = test_grid, geom = "tile", contour = FALSE, 
+# Old code: Just shows a grey box over the area. TODO: Ask Brian?: Fix this.
+# g + stat_density_2d(aes(x = longitude, y = latitude, fill = pred_nox), 
+#                     data = test_grid, geom = "tile", contour = FALSE, 
+#                     alpha = 0.7) + 
+#     scale_fill_gradient(name = "NOx (ppb)", low = "yellow", high = "red") +  
+#     ggtitle("Map of Los Angeles \n with fall UK predictions overlaid as tiles") + 
+#     my_theme
+
+# new try:  Still shows a gray box over the area, plus a legend
+g %+% test_grid + aes(x = longitude, y = latitude, fill = pred_nox) +
+    stat_density_2d(geom = "tile", contour = FALSE, 
                     alpha = 0.7) + 
     scale_fill_gradient(name = "NOx (ppb)", low = "yellow", high = "red") +  
-    ggtitle("Map of Los Angeles \n with fall UK predictions overlaid") + 
+    ggtitle("Map of Los Angeles \n with fall UK predictions overlaid as tiles") + 
     my_theme
 
 ```
 
+Second tiles example uses stat_summary_2d. 
 ```{r plot smooth grid predictions on the map with tiles 2, eval = TRUE}
 # ------------ plot smooth grid predictions on the map with tiles 2 -------
 
+# Note: we replace "+" with "%+%" to override the data prevously mapped (i.e., replace
+#   the current data frame, due to S3 method precedence issues)
 g %+% test_grid + aes(x = longitude, y = latitude, z = pred_nox) +
     stat_summary_2d(fun = mean, alpha = 0.7, geom = "tile", bins = 30) +
     scale_fill_gradient(name = "NOx (ppb)", low = "yellow", high = "red") +
-    ggtitle("Map of Los Angeles \n with fall UK predictions overlaid") + 
+    ggtitle("Map of Los Angeles \n with fall UK predictions overlaid, \n using tiles with stat_summary_2d function") + 
     my_theme
+
+```
+
+Now we add code to plot the predictions on a map using shapefiles.
+
+```{r prediction map with shapefiles, eval = TRUE}
+#----- prediction map with shapefiles --------
+
+# need 3 specific libraries in this chunk: rgdal, sp, downloader
+
+# Define URL for shapefile data library top-level folder
+data_lib <- 'http://www.dot.ca.gov/hq/tsip/gis/datalibrary/zip'
+
+# Get a shapefile for California state highways
+url <- paste(data_lib, "highway/MAY2016_State_Highway_NHS.zip", sep = "/")
+shpfile_dir <- "shapefiles"
+shpfile_zip <- "MAY2016_State_Highway_NHS.zip"
+shpfile <- "MAY2016_State_Highway_NHS"
+if (!file.exists(shpfile_zip)) {
+    download(url, dest = shpfile_zip, mode="wb")
+    }
+unzip (shpfile_zip, exdir = shpfile_dir)
+
+ca_hwy_shapefile <- readOGR(shpfile_dir, shpfile)
+ca_hwy_shapefile_df <- fortify(ca_hwy_shapefile)
+
+# Get map projection string
+ca_hwy_proj <- proj4string(ca_hwy_shapefile)
+
+# Get a shapefile for California urban areas
+url <- paste(data_lib, "Boundaries/2010_adjusted_urban_area.zip", sep = "/")
+shpfile_dir <- "shapefiles"
+shpfile_zip <- "2010_adjusted_urban_area.zip"
+shpfile <- "2010_adjusted_urban_area"
+if (!file.exists(shpfile_zip)) {
+    download(url, dest = shpfile_zip, mode="wb")
+    }
+unzip (shpfile_zip, exdir = shpfile_dir)
+
+ca_urb_areas_shapefile <- readOGR(file.path(shpfile_dir, shpfile), shpfile)
+
+# Get map projection string
+ca_urb_proj <- proj4string(ca_urb_areas_shapefile)
+
+# Convert LA urban area shapefile data frame to a SpatialPolygon
+ca_urb_sp <- ca_urb_areas_shapefile[
+    grepl('^Los Angeles', ca_urb_areas_shapefile$NAME10), ]@polygons
+ca_urb_sp <- SpatialPolygons(Srl = ca_urb_sp, proj4string = CRS(ca_urb_proj))
+
+# Transform projection of urban areas SpatialPoints object if necessary
+if (ca_hwy_proj != ca_urb_proj) {
+    spTransform(ca_urb_sp, ca_hwy_proj)
+}
+
+# Convert LA urban area SpatialPoints object to a data frame for plotting
+ca_urb_df <- fortify(ca_urb_sp)
+
+# Convert highway shapefile data frame to a SpatialPointsDataFrame
+ca_hwy_spdf <- ca_hwy_shapefile_df
+coordinates(ca_hwy_spdf) <- ~ long + lat
+proj4string(ca_hwy_spdf) <- CRS(ca_hwy_proj)
+
+# Subset highways data frame to only include those points in LA for plotting
+ca_hwy_spdf_subset <- ca_hwy_spdf[!is.na(over(ca_hwy_spdf, ca_urb_sp)), ]
+ca_hwy_df <- as.data.frame(ca_hwy_spdf_subset)
+
+# Plot the LA border (ca_urb_df), LA highways (ca_hwy_df), and predictions
+ca_map <- ggplot() +
+    geom_path(data = ca_urb_df, 
+              aes(x = long, y = lat, group = group),
+              color = 'black', size = 0.5) + 
+    geom_path(data = ca_hwy_df, 
+              aes(x = long, y = lat, group = group),
+              color = 'blue', size = 0.4) + 
+    stat_contour(aes(x = x, y = y, z = z, fill = ..level..), alpha = 0.05, 
+                 data = test_grid_dens_expand, geom = "polygon", bins = 50) + 
+    scale_fill_gradient(name = "NOx (ppb)", low = "yellow", high = "red", 
+                        breaks = seq(0, 125, 25), limits = c(0, 125)) +  
+    ggtitle("Map of Los Angeles \n with fall UK predictions overlaid, \n smoothed predictions over a shapefile") + 
+    theme_void() + my_theme
+
+map_projected <- ca_map + coord_map()
+
+print(map_projected)
+
 
 ```
 
