@@ -495,7 +495,7 @@ summary(fall_geo)
 
 ```
 
-For later use, we need to convert the grid to geodata.  Also, the full grid isn't working, so we use a subset.  TODO:  Ask Brian?: (Optional!) Figure out if we can make this work by dividing the prediction step into two pieces.
+For later use, we need to convert the grid to geodata.  Also, the full grid isn't working, so we use a subset.  TODO:  (Optional!) Figure out if we can make this work by dividing the prediction step into two pieces.
 
 ```{r convert LA grid to geodata, eval = TRUE}
 # ------------ convert LA grid to geodata --------
@@ -841,9 +841,18 @@ g + geom_point(aes(x = longitude, y = latitude, col = pred_nox),
 
 This refinement is the same gridded predictions, but now drops all points over the water.
 
-```{r plot gridded predictions not on the water, eval = TRUE}
+```{r plot gridded predictions not on the water, eval = FALSE}
 # ------------ plot gridded predictions not on the water ---------------
-#TODO: Ask Brian?: No overlaid plot with +.  Not working interactively at all once I added %+%
+# TODO: Fix this ... just shows basemap with no predictions plotted.
+# 
+# Brian writes:
+# 
+# Here is some code which should remove the data points in the test_grid which
+# are over water. It gets the coordinates for LA County boundary and then
+# subsets test_grid to those points within the county boundary. The county does
+# not include the water. So, this should work, but it does not because the
+# resulting subset has zero rows for some reason. The sp::over() function is
+# returning all NAs, but it should not.
 
 # identifies locations over the water and excludes them in spdf_test_grid_in_la
 #   leverages previous chunk results
@@ -893,29 +902,7 @@ g + stat_contour(aes(x = x, y = y, z = z, fill = ..level..), alpha = 0.07,
 
 ```
 
-Now show an example plotting smooth gridded predicitons on the map with tiles.  First tile example using stat_density_2d.  TODO:  Ask Brian?: Does this work, or should I remove it??
-```{r plot smooth grid predictions on the map with tiles 1, eval = FALSE}
-# ------------ plot smooth grid predictions on the map with tiles 1 -------
-
-# Old code: Just shows a grey box over the area. TODO: Ask Brian?: Fix this.
-# g + stat_density_2d(aes(x = longitude, y = latitude, fill = pred_nox), 
-#                     data = test_grid, geom = "tile", contour = FALSE, 
-#                     alpha = 0.7) + 
-#     scale_fill_gradient(name = "NOx (ppb)", low = "yellow", high = "red") +  
-#     ggtitle("Map of Los Angeles \n with fall UK predictions overlaid as tiles") + 
-#     my_theme
-
-# new try:  Still shows a gray box over the area, plus a legend
-g %+% test_grid + aes(x = longitude, y = latitude, fill = pred_nox) +
-    stat_density_2d(geom = "tile", contour = FALSE, 
-                    alpha = 0.7) + 
-    scale_fill_gradient(name = "NOx (ppb)", low = "yellow", high = "red") +  
-    ggtitle("Map of Los Angeles \n with fall UK predictions overlaid as tiles") + 
-    my_theme
-
-```
-
-Second tiles example uses stat_summary_2d. 
+Now show an example plotting smooth gridded predicitons on the map with tiles using stat_summary_2d. 
 ```{r plot smooth grid predictions on the map with tiles 2, eval = TRUE}
 # ------------ plot smooth grid predictions on the map with tiles 2 -------
 
@@ -934,65 +921,77 @@ Now we add code to plot the predictions on a map using shapefiles.
 ```{r prediction map with shapefiles, eval = TRUE}
 #----- prediction map with shapefiles --------
 
-# need 3 specific libraries in this chunk: rgdal, sp, downloader
+# Load additional packages
+pacman::p_load(rgdal, sp, downloader)
 
 # Define URL for shapefile data library top-level folder
+
 data_lib <- 'http://www.dot.ca.gov/hq/tsip/gis/datalibrary/zip'
 
 # Get a shapefile for California state highways
+
 url <- paste(data_lib, "highway/MAY2016_State_Highway_NHS.zip", sep = "/")
 shpfile_dir <- "shapefiles"
 shpfile_zip <- "MAY2016_State_Highway_NHS.zip"
 shpfile <- "MAY2016_State_Highway_NHS"
 if (!file.exists(shpfile_zip)) {
     download(url, dest = shpfile_zip, mode="wb")
-    }
+}
 unzip (shpfile_zip, exdir = shpfile_dir)
 
 ca_hwy_shapefile <- readOGR(shpfile_dir, shpfile)
 ca_hwy_shapefile_df <- fortify(ca_hwy_shapefile)
 
 # Get map projection string
+
 ca_hwy_proj <- proj4string(ca_hwy_shapefile)
 
 # Get a shapefile for California urban areas
+
 url <- paste(data_lib, "Boundaries/2010_adjusted_urban_area.zip", sep = "/")
 shpfile_dir <- "shapefiles"
 shpfile_zip <- "2010_adjusted_urban_area.zip"
 shpfile <- "2010_adjusted_urban_area"
 if (!file.exists(shpfile_zip)) {
     download(url, dest = shpfile_zip, mode="wb")
-    }
+}
 unzip (shpfile_zip, exdir = shpfile_dir)
 
 ca_urb_areas_shapefile <- readOGR(file.path(shpfile_dir, shpfile), shpfile)
 
 # Get map projection string
+
 ca_urb_proj <- proj4string(ca_urb_areas_shapefile)
 
-# Convert LA urban area shapefile data frame to a SpatialPolygon
+# Convert LA urban area polygon to a SpatialPolygon
+
 ca_urb_sp <- ca_urb_areas_shapefile[
     grepl('^Los Angeles', ca_urb_areas_shapefile$NAME10), ]@polygons
 ca_urb_sp <- SpatialPolygons(Srl = ca_urb_sp, proj4string = CRS(ca_urb_proj))
 
-# Transform projection of urban areas SpatialPoints object if necessary
+# Transform projection of urban areas SpatialPolygons object if necessary
+
 if (ca_hwy_proj != ca_urb_proj) {
-    spTransform(ca_urb_sp, ca_hwy_proj)
+    ca_urb_sp <- spTransform(ca_urb_sp, ca_hwy_proj)
 }
 
-# Convert LA urban area SpatialPoints object to a data frame for plotting
+# Convert LA urban area SpatialPolygons object to a data frame for plotting
+
 ca_urb_df <- fortify(ca_urb_sp)
 
 # Convert highway shapefile data frame to a SpatialPointsDataFrame
+
 ca_hwy_spdf <- ca_hwy_shapefile_df
 coordinates(ca_hwy_spdf) <- ~ long + lat
 proj4string(ca_hwy_spdf) <- CRS(ca_hwy_proj)
 
 # Subset highways data frame to only include those points in LA for plotting
+
 ca_hwy_spdf_subset <- ca_hwy_spdf[!is.na(over(ca_hwy_spdf, ca_urb_sp)), ]
 ca_hwy_df <- as.data.frame(ca_hwy_spdf_subset)
 
 # Plot the LA border (ca_urb_df), LA highways (ca_hwy_df), and predictions
+
 ca_map <- ggplot() +
     geom_path(data = ca_urb_df, 
               aes(x = long, y = lat, group = group),
@@ -1006,11 +1005,8 @@ ca_map <- ggplot() +
                         breaks = seq(0, 125, 25), limits = c(0, 125)) +  
     ggtitle("Map of Los Angeles \n with fall UK predictions overlaid, \n smoothed predictions over a shapefile") + 
     theme_void() + my_theme
-
 map_projected <- ca_map + coord_map()
-
 print(map_projected)
-
 
 ```
 

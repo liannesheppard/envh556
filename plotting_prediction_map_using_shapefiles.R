@@ -1,6 +1,5 @@
-library(rgdal)
-library(sp)
-library(downloader)
+# Load additional packages
+pacman::p_load(rgdal, sp, downloader)
 
 # Define URL for shapefile data library top-level folder
 
