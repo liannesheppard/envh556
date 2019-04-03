@@ -495,7 +495,7 @@ summary(fall_geo)
 
 ```
 
-For later use, we need to convert the grid to geodata.  Also, the full grid isn't working, so we use a subset.  TODO:  (Optional!) Figure out if we can make this work by dividing the prediction step into two pieces.
+For later use, we need to convert the grid to geodata.  Also, the full grid isn't working, so we use a subset.  TODO:  Future work: Figure out a solution. Perhaps we can make this work by dividing the prediction step into two pieces?
 
 ```{r convert LA grid to geodata, eval = TRUE}
 # ------------ convert LA grid to geodata --------
@@ -759,7 +759,7 @@ res <- c("10-fold wls", mse_cv, sqrt(mse_cv), r2_cv)
 
 **Step 3**:  Estimate the kriging predictions.  
 
-Note:  `geoR` kriging is failing when we pass it the entire grid of >18,000 points.  It doesn't seem to fail if we use a subset of this grid with 11,000 or fewer points.  TODO:  We should find out why this is happening and correct it.
+Note:  `geoR` kriging is failing when we pass it the entire grid of >18,000 points.  It doesn't seem to fail if we use a subset of this grid with 11,000 or fewer points.  TODO:  Future work if we don't convert to `gstat`. We should find out why this is happening and correct it.
 
 ```{r krige in LA}
 # ------------ krige in LA ------------
@@ -839,7 +839,7 @@ g + geom_point(aes(x = longitude, y = latitude, col = pred_nox),
 
 ```
 
-This refinement is the same gridded predictions, but now drops all points over the water.
+This refinement is the same gridded predictions, but now drops all points over the water.  However, currently this implementation does not work so the result is not shown.
 
 ```{r plot gridded predictions not on the water, eval = FALSE}
 # ------------ plot gridded predictions not on the water ---------------
