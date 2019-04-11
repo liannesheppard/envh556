@@ -364,13 +364,30 @@ knitr::kable(res)
 
 # Code Appendix
 
+## Session Information
+
 ```{r session.info}
 #-----------session.info: beginning of Code Appendix -------------
 
 sessionInfo()
 ```
 
+## Code in the R Markdown file
+
 ```{r appendix.code, ref.label=knitr::all_labels(), echo=TRUE, eval=FALSE, tidy=TRUE, tidy.opts=list(width.cutoff=60), include=T}
+
+```
+
+## User-written functions loaded in the R Markdown environment
+
+```{r Functions used in this Rmd, eval = TRUE}
+#----------- functions used in this Rmd ------------
+
+# Show the names of all functions used (loaded in the current environment)
+lsf.str()
+
+# Show the definitions of all functions loaded into the current environment  
+lapply(c(lsf.str()), getAnywhere)
 
 ```
 
